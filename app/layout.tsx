@@ -10,12 +10,15 @@ const onest = Onest({
 });
 
 export const metadata: Metadata = {
-  title: {
-    default: 'check-up.in.ua — комплексне обстеження організму',
-    template: '%s | check-up.in.ua',
-  },
-  description: 'Підбір програм комплексного обстеження організму. Харків, Рівне та інші міста України.',
+  title: { default: 'check-up.in.ua — комплексне обстеження організму', template: '%s | check-up.in.ua' },
+  description: 'Підбір програм комплексного обстеження організму. Харків та інші міста України.',
   metadataBase: new URL('https://check-up.in.ua'),
 };
 
-export default function RootLayout({ children }:
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="uk" className={`${onest.variable} h-full antialiased`}>
+      <body className="min-h-full flex flex-col">{children}</body>
+    </html>
+  );
+}
