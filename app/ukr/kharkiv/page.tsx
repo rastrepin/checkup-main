@@ -1,20 +1,14 @@
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import { supabase } from '@/lib/supabase';
+import type { CheckupProgram, ClinicBranch } from '@/lib/types';
 import QuizWrapper from '@/components/quiz/QuizWrapper';
+import ProgramCatalog from '@/components/city/ProgramCatalog';
+import FaqBlock from '@/components/city/FaqBlock';
 
-export default function KharkivPage() {
-  return (
-    <main className="max-w-3xl mx-auto px-4 py-8">
-      <nav className="text-sm text-gray-500 mb-4">Головна → Харків</nav>
-      <h1 className="text-2xl font-bold mb-6">Комплексне обстеження організму в Харкові</h1>
+export const revalidate = 3600;
 
-      {/* Quiz section */}
-      <section id="quiz-section" className="mb-8">
-        <QuizWrapper
-          clinicSlug="onclinic-kharkiv"
-          city="kharkiv"
-          locale="ua"
-          sourcePage="/ukr/kharkiv"
-        />
-      </section>
-    </main>
-  );
-}
+// ─── Metadata ────────────────────────────────────────────────────────────────
+
+export const metadata: Metadata = {
+  title: 'Че�

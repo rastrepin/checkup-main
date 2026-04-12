@@ -1,8 +1,7 @@
-export default function Page() {
-  return (
-    <main className="max-w-3xl mx-auto px-4 py-8">
-      <nav className="text-sm text-gray-500 mb-4">Главная → Харьков</nav>
-      <h1 className="text-2xl font-bold">Комплексное обследование организма в Харькове</h1>
-    </main>
-  );
-}
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import { supabase } from '@/lib/supabase';
+import type { CheckupProgram, ClinicBranch } from '@/lib/types';
+import QuizWrapper from '@/components/quiz/QuizWrapper';
+import ProgramCatalogRu from '@/components/city/ProgramCatalogRu';
+import FaqBlock from '@/components/ci
