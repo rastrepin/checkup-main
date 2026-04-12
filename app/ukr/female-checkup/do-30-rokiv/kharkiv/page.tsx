@@ -9,7 +9,7 @@ export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: 'Чекап для жінок до 30 років у Харкові ፈ від 11 724 грн',
-  description: 'Комплексне обстеження для жінок до 30 — репродуктивне здоров'я, щитоподібна залоза, онкоскринінг. Від 11 724 грн в ОН Клінік Харків.',
+  description: "Комплексне обстеження для жінок до 30 — репродуктивне здоров'я, щитоподібна залоза, онкоскринінг. Від 11 724 грн в ОН Клінік Харків.",
   alternates: {
     canonical: 'https://check-up.in.ua/ukr/female-checkup/do-30-rokiv/kharkiv',
     languages: { uk: '/ukr/female-checkup/do-30-rokiv/kharkiv', ru: '/female-checkup/do-30-let/kharkov' },
