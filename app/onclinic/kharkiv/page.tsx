@@ -1,17 +1,10 @@
 import type { Metadata } from 'next';
-import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 import ProgramsSection from './ProgramsSection';
+import { db } from '@/lib/supabase';
 
 export const revalidate = 3600;
 const CLINIC_ID = '4d7134c2-1ec4-4ee3-a19a-6021b085fa88';
-
-function db() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-}
 
 export const metadata: Metadata = {
   title: 'ОН Клінік Харків — програми чекап, філії, ціни | check-up.in.ua',
@@ -42,18 +35,22 @@ const DOCTORS = [
 ];
 
 export default async function Page() {
-  const { data: programs } = await db()
-    .from('checkup_programs')
-    .select('*')
-    .eq('clinic_id', CLINIC_ID)
-    .eq('is_specialized', false)
-    .order('gender')
-    .order('price_discount');
-
-  const safe = programs ?? [];
+  let safe: any[] = [];
+  try {
+    const { data } = await db()
+      .from('checkup_programs')
+      .select('*')
+      .eq('clinic_id', CLINIC_ID)
+      .eq('is_specialized', false)
+      .order('gender')
+      .order('price_discount');
+    safe = data ?? [];
+  } catch { safe = []; }
   const minPrice = safe.length ? Math.min(...safe.map((p: any) => p.price_discount)) : 0;
-  const femaleMin = Math.min(...safe.filter((p: any) => p.gender === 'female').map((p: any) => p.price_discount));
-  const maleMin = Math.min(...safe.filter((p: any) => p.gender === 'male').map((p: any) => p.price_discount));
+  const femalePrograms = safe.filter((p: any) => p.gender === 'female');
+  const malePrograms = safe.filter((p: any) => p.gender === 'male');
+  const femaleMin = femalePrograms.length ? Math.min(...femalePrograms.map((p: any) => p.price_discount)) : 0;
+  const maleMin = malePrograms.length ? Math.min(...malePrograms.map((p: any) => p.price_discount)) : 0;
 
   function fmt(n: number) { return n.toLocaleString('uk-UA'); }
 
@@ -183,7 +180,4 @@ export default async function Page() {
           </div>
         </footer>
 
-      </main>
-    </>
-  );
-}
+      
