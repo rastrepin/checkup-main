@@ -73,17 +73,13 @@ export default function QuizEngine({ clinicSlug, city, locale = 'ua' }: QuizEngi
       // Fetch program and branches, then go to roadmap
       const programSlug = getProgram(gender, age);
 
+      const sb = supabase as any;
       const [programRes, branchesRes] = await Promise.all([
-        supabase
-          .from('checkup_programs')
-          .select('*')
-          .eq('slug', programSlug)
-          .single(),
-        supabase
-          .from('clinic_branches')
-          .select('*')
-          .eq('clinic_id', (await (supabase as any).from('clinics').select('id').eq('slug', clinicSlug).single()).data?.id)
-          .order('sort_order'),
+        sb.from('checkup_programs').select('*').eq('slug', programSlug).single(),
+        (async () => {
+          const clinicRes = await sb.from('clinics').select('id').eq('slug', clinicSlug).single();
+          return sb.from('clinic_branches').select('*').eq('clinic_id', clinicRes.data?.id).order('sort_order');
+        })(),
       ]);
 
       if (programRes.data) setSelectedProgram(programRes.data as CheckupProgram);
@@ -202,5 +198,4 @@ export default function QuizEngine({ clinicSlug, city, locale = 'ua' }: QuizEngi
         {phase === 'tags' ? 'Отримати дорожню карту' : 'Далі'}
       </button>
     </div>
-  );
-}
+  
