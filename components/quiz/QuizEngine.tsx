@@ -82,7 +82,7 @@ export default function QuizEngine({ clinicSlug, city, locale = 'ua' }: QuizEngi
         supabase
           .from('clinic_branches')
           .select('*')
-          .eq('clinic_id', (await supabase.from('clinics').select('id').eq('slug', clinicSlug).single()).data?.id)
+          .eq('clinic_id', (await (supabase as any).from('clinics').select('id').eq('slug', clinicSlug).single()).data?.id)
           .order('sort_order'),
       ]);
 
