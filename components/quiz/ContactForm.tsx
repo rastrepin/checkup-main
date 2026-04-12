@@ -60,7 +60,7 @@ export default function ContactForm({ sourcePage, clinicSlug, city }: ContactFor
       // Get UTM from URL
       const params = new URLSearchParams(window.location.search);
 
-      await supabase.from('leads').insert({
+      await (supabase as any).from('leads').insert({
         city,
         clinic_slug: clinicSlug,
         source_page: sourcePage,
