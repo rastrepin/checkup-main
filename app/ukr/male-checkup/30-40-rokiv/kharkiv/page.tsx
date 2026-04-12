@@ -1,106 +1,94 @@
 import type { Metadata } from 'next';
-import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
+import { db } from '@/lib/supabase';
+import type { CheckupProgram } from '@/lib/types';
+import ProgramCatalog from '@/components/city/ProgramCatalog';
+import FaqBlock from '@/components/city/FaqBlock';
 
 export const revalidate = 3600;
-const CLINIC_ID = '4d7134c2-1ec4-4ee3-a19a-6021b085fa88';
-
-function db() {
-  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
-}
 
 export const metadata: Metadata = {
-  title: 'Чекап для чоловіків 30–40 років у Харкові 2026 | check-up.in.ua',
-  description: 'Комплексне обстеження для чоловіків 30–40 років у Харкові: серце, метаболізм, тестостерон, простата. ОН Клінік.',
+  title: 'Чекап для чоловіків 30-40 років у Харкові ፈ від 7 722 грн',
+  description: 'Комплексне обстеження для чоловіків 30-40 — серцево-судинні ризики, ліпідограма, щитоподібна залоза. Від 7 722 грн в ОН Клінік Харків.',
   alternates: {
     canonical: 'https://check-up.in.ua/ukr/male-checkup/30-40-rokiv/kharkiv',
-    languages: {
-      'uk': 'https://check-up.in.ua/ukr/male-checkup/30-40-rokiv/kharkiv',
-      'ru': 'https://check-up.in.ua/male-checkup/30-40-let/kharkov',
-    },
+    languages: { uk: '/ukr/male-checkup/30-40-rokiv/kharkiv', ru: '/male-checkup/30-40-let/kharkov' },
   },
 };
 
-function fmt(n: number) { return n.toLocaleString('uk-UA'); }
-function pct(r: number, s: number) { return Math.round((1 - s / r) * 100); }
+async function fetchPrograms() {
+  try {
+    let q = db()
+      .from('checkup_programs')
+      .select('*')
+      .eq('clinic_id', '4d7134c2-1ec4-4ee3-a19a-6021b085fa88')
+      .eq('gender', 'male')
+      .eq('is_active', true)
+      .eq('is_specialized', false)
+      .order('price_discount', { ascending: true });
+    q = q.in('age_group', ['any', '30-40']);
+    const { data } = await q;
+    return (data ?? []) as CheckupProgram[];
+  } catch { return []; }
+}
 
-export default async function Page() {
-  const { data: programs } = await db()
-    .from('checkup_programs')
-    .select('*')
-    .eq('clinic_id', CLINIC_ID)
-    .eq('gender', 'male')
-    .in('age_group', ['30-40'])
-    .eq('is_specialized', false)
-    .order('price_discount');
+const FAQ = [
+  { q: 'Яка різниця між програмою до 30 та 30-40?', a: 'Програма та ціна однакові. Різниця — у фокусі лікаря при інтерпретації: у 30-40 більше уваги приділяється серцево-судинним ризикам та ліпідному профілю.' },
+  { q: 'Як часто проходити чекап?', a: 'До 40 років — раз на 2-3 роки за відсутності скарг.' },
+];
 
-  const safe = programs ?? [];
+export default async function Male3040KharkivPage() {
+  const programs = await fetchPrograms();
 
   return (
-    <main className="bg-[#f9fbfd] min-h-screen">
-      <div className="max-w-4xl mx-auto px-4 py-8">
+    <main className="max-w-3xl mx-auto px-4 pt-6 pb-24">
+      <nav className="text-xs text-gray-500 mb-4">
+        <Link href="/">Головна</Link>{' → '}
+        <Link href="/ukr/male-checkup/kharkiv">Чекап для чоловіків</Link>{' → '}
+        <span className="text-gray-800">30–40 років</span>
+      </nav>
 
-        <nav className="text-xs text-gray-400 mb-6 flex flex-wrap gap-1 items-center">
-          <Link href="/" className="hover:text-[#005485]">Головна</Link>
-          <span>→</span>
-          <Link href="/ukr/kharkiv" className="hover:text-[#005485]">Харків</Link>
-          <span>→</span>
-          <Link href="/ukr/male-checkup/kharkiv" className="hover:text-[#005485]">Чекап для чоловіків</Link>
-          <span>→</span>
-          <span className="text-gray-600">30–40 років</span>
-        </nav>
+      <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">
+        Чекап для чоловіків 30–40 років у Харкові
+      </h1>
+      <div className="h-0.5 w-16 bg-teal-400 mb-4" />
 
-        <div className="mb-10">
-          <h1 className="text-3xl font-bold text-[#0b1a24] mb-3 h1-teal-line">
-            Чекап для чоловіків 30–40 років у Харкові
-          </h1>
-          <p className="text-gray-500 mt-4 max-w-xl">Комплексне обстеження для чоловіків 30–40 років у Харкові: серце, метаболізм, тестостерон, простата. ОН Клінік.</p>
-        </div>
-
-        {safe.length > 0 ? (
-          <section className="mb-12">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {safe.map((p: any) => {
-                const d = pct(p.price_regular, p.price_discount);
-                return (
-                  <div key={p.id} className="bg-white border border-gray-200 rounded-[10px] p-5">
-                    <div className="inline-block text-xs font-semibold px-2.5 py-1 rounded-full bg-[#e8f4fd] text-[#005485] mb-3">ОН Клінік Харків</div>
-                    <h3 className="text-base font-bold text-[#0b1a24] mb-2 leading-snug">{p.name_ua}</h3>
-                    <div className="flex items-baseline gap-2 mb-3">
-                      <span className="text-xl font-bold text-[#0b1a24]">{fmt(p.price_discount)} грн</span>
-                      {d > 0 && <><span className="text-sm text-gray-400 line-through">{fmt(p.price_regular)}</span><span className="text-xs font-bold text-white bg-[#d60242] px-1.5 py-0.5 rounded">-{d}%</span></>}
-                    </div>
-                    <p className="text-[13px] text-gray-500 mb-4">
-                      {[p.consultations_count ? `${p.consultations_count} консультацій` : null, p.analyses_count ? `${p.analyses_count} аналізів` : null, p.diagnostics_count ? `${p.diagnostics_count} досліджень` : null].filter(Boolean).join(' · ')}
-                    </p>
-                    <a href={`https://onclinic.check-up.in.ua/kharkiv/checkup/${p.slug}`}
-                      className="block w-full text-center py-3 rounded-[10px] bg-[#005485] text-white font-semibold text-sm hover:bg-[#004470] transition-colors">
-                      Записатися
-                    </a>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-        ) : (
-          <p className="text-gray-400 mb-10">Програми для цієї групи незабаром з'являться.</p>
-        )}
-
-        <section className="bg-white rounded-[12px] border border-gray-100 px-6 py-6 mb-10 text-sm text-gray-600 space-y-3">
-          <p>У 30–40 років зростають ризики серцево-судинних захворювань і метаболічного синдрому. Програма включає ліпідний профіль, ЕКГ, рівень тестостерону та ПСА.</p>
-          <p>Раннє виявлення гіпертонії, переддіабету та гормональних відхилень значно знижує ризики в подальшому.</p>
-        </section>
-
-        <div className="rounded-[12px] bg-[#005485] text-white px-6 py-8 text-center">
-          <h2 className="text-xl font-bold mb-2">Потрібна консультація?</h2>
-          <p className="text-blue-100 text-sm mb-5">Підберемо програму за вашим станом здоров'я та бюджетом.</p>
-          <Link href="/ukr/kharkiv#quiz"
-            className="inline-block bg-white text-[#005485] font-bold text-sm px-6 py-3 rounded-[10px] hover:bg-blue-50 transition-colors">
-            Пройти тест
-          </Link>
-        </div>
-
+      <div className="flex flex-wrap gap-2 text-sm text-gray-500 mb-8">
+        <span>від 7 722 грн</span>
+        <span>·</span>
+        <span>2 візити</span>
+        <span>·</span>
+        <span>ОН Клінік Харків</span>
       </div>
+
+      <section className="mb-10 bg-gray-50 rounded-xl p-5">
+        <h2 className="text-lg font-semibold text-gray-900 mb-3">Що перевіряти у 30–40 років</h2>
+        <div className="space-y-3 text-sm">
+          <div><p className="font-medium text-gray-800">Все з програми до 30</p><p className="text-gray-600">Урологічний скринінг, гормональний профіль, базова біохімія зберігаються.</p></div>
+          <div><p className="font-medium text-gray-800">Серцево-судинні ризики</p><p className="text-gray-600">Ліпідограма — контроль холестерину та ризику атеросклерозу.</p></div>
+          <div><p className="font-medium text-gray-800">Метаболізм</p><p className="text-gray-600">Розширена біохімія — сечова кислота, сечовина (ризик подагри). Щитоподібна залоза — повний тиреоїдний пакет.</p></div>
+        </div>
+      </section>
+
+      {programs.length > 0 && (
+        <section className="mb-10">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Програма обстеження в ОН Клінік Харків</h2>
+          <ProgramCatalog programs={programs} />
+        </section>
+      )}
+
+      <FaqBlock items={FAQ} />
+
+      <section className="mb-8">
+        <p className="text-sm text-gray-600">Чекап для чоловіків 30-40 років у Харкові доступний в мережі «ОН Клінік Харків». Програма «Чоловічий профілактичний». Вартість — від 7 722 грн.</p>
+      </section>
+
+      <nav className="text-sm flex flex-wrap gap-4">
+        <span className="text-gray-500">Інші вікові групи:</span>
+        <Link href="/ukr/male-checkup/do-30-rokiv/kharkiv" className="text-sm text-teal-600 hover:underline">До 30 років</Link>
+        <Link href="/ukr/male-checkup/40-50-rokiv/kharkiv" className="text-sm text-teal-600 hover:underline">40–50 років</Link>
+        <Link href="/ukr/male-checkup/vid-50-rokiv/kharkiv" className="text-sm text-teal-600 hover:underline">Від 50 років</Link>
+      </nav>
     </main>
   );
 }
