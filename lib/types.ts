@@ -35,7 +35,7 @@ export interface CheckupProgram {
   name_ua: string;
   name_ru: string;
   gender: 'female' | 'male' | null;
-  age_group: 'any' | 'after-40' | null;
+  age_group: 'do-30' | '30-40' | '40-50' | '50+' | 'after-40' | 'any' | null;
   price_regular: number;
   price_discount: number;
   consultations_count: number | null;
