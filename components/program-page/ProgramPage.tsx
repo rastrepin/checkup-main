@@ -240,11 +240,11 @@ export default function ProgramPage({ program, basePath }: Props) {
         )}
 
         {/* GEO block */}
-        <section className="mb-8 text-sm text-gray-500">
+        <section className="mb-8 text-sm text-gray-600 bg-gray-50 rounded-xl p-5">
           <p>
             Програма доступна в містах-партнерах check-up.in.ua.{' '}
-            <a href="/ukr/kharkiv" className="text-teal-600 hover:underline">Харків</a>,{' '}
-            <a href="/ukr/rivne" className="text-teal-600 hover:underline">Рівне</a> — оберіть місто вище, щоб побачити ціни.
+            <a href="/ukr/kharkiv" className="text-[#005485] hover:underline">Харків</a>,{' '}
+            <a href="/ukr/rivne" className="text-[#005485] hover:underline">Рівне</a> — оберіть місто вище, щоб побачити ціни.
           </p>
         </section>
 
