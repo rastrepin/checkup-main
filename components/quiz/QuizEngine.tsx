@@ -41,7 +41,7 @@ export default function QuizEngine({ clinicSlug, city, locale = 'ua' }: QuizEngi
   const {
     phase, gender, age, tags,
     setPhase, setGender, setAge, toggleTag,
-    setSelectedProgram, setBranches,
+    setSelectedProgram, setStandardProgram, setClinicProgram, setBranches,
   } = useQuiz();
 
   // Determine total steps and current step for progress
@@ -70,19 +70,41 @@ export default function QuizEngine({ clinicSlug, city, locale = 'ua' }: QuizEngi
     } else if (phase === 'age') {
       setPhase('tags');
     } else if (phase === 'tags' && gender && age) {
-      // Fetch program and branches, then go to roadmap
-      const programSlug = getProgram(gender, age);
-
       const sb = supabase as any;
-      const [programRes, branchesRes] = await Promise.all([
-        sb.from('checkup_programs').select('*').eq('slug', programSlug).single(),
-        (async () => {
-          const clinicRes = await sb.from('clinics').select('id').eq('slug', clinicSlug).single();
-          return sb.from('clinic_branches').select('*').eq('clinic_id', clinicRes.data?.id).order('sort_order');
-        })(),
+
+      // Age group values for filter
+      const ageGroupMap: Record<string, string[]> = {
+        'do-30': ['do-30', 'any'],
+        '30-40': ['30-40', 'any'],
+        '40-50': ['40-50', 'after-40', 'any'],
+        '50+': ['50+', 'after-40', 'any'],
+      };
+      const ageValues = ageGroupMap[age] ?? ['any'];
+
+      // Get clinic id + branches, fetch all non-specialized programs for gender+age
+      const clinicRes = await sb.from('clinics').select('id').eq('slug', clinicSlug).single();
+      const clinicId = clinicRes.data?.id;
+
+      const [programsRes, branchesRes] = await Promise.all([
+        sb.from('checkup_programs')
+          .select('*')
+          .eq('clinic_id', clinicId)
+          .eq('is_specialized', false)
+          .eq('is_active', true)
+          .or(`gender.eq.${gender},gender.is.null`)
+          .in('age_group', ageValues)
+          .order('price_discount', { ascending: true }),
+        sb.from('clinic_branches').select('*').eq('clinic_id', clinicId).order('sort_order'),
       ]);
 
-      if (programRes.data) setSelectedProgram(programRes.data as CheckupProgram);
+      const programs: CheckupProgram[] = programsRes.data ?? [];
+      const stdProg = programs.find((p: CheckupProgram) => p.slug.startsWith('standard-')) ?? null;
+      const clinicProg = programs.find((p: CheckupProgram) => !p.slug.startsWith('standard-') && !p.slug.startsWith('regular-')) ?? null;
+
+      setStandardProgram(stdProg);
+      setClinicProgram(clinicProg);
+      // Default selection: standard if available, else clinic
+      setSelectedProgram(stdProg ?? clinicProg ?? null);
       if (branchesRes.data) setBranches(branchesRes.data);
 
       setPhase('roadmap');

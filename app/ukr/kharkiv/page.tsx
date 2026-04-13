@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { db } from '@/lib/supabase';
 import type { CheckupProgram } from '@/lib/types';
-import QuizWrapper from '@/components/quiz/QuizWrapper';
+import QuizModal, { QuizOpenBtn } from '@/components/quiz/QuizModal';
 import ProgramCatalog from '@/components/city/ProgramCatalog';
 import FaqBlock from '@/components/city/FaqBlock';
 
@@ -105,12 +105,9 @@ export default async function KharkivPage() {
         </p>
 
         {/* Fix 1.1 — ONE CTA only */}
-        <a
-          href="#programs"
-          className="block w-full py-4 bg-[#005485] text-white text-center rounded-xl text-base font-bold mb-5 hover:bg-[#003d66] transition-colors"
-        >
-          {'Підібрати програму'}
-        </a>
+        <QuizOpenBtn className="block w-full py-4 bg-[#005485] text-white text-center rounded-xl text-base font-bold mb-5 hover:bg-[#003d66] transition-colors">
+          Підібрати програму
+        </QuizOpenBtn>
 
         {/* Fix 1.9 — rating 5.0, 88 відгуків */}
         <div className="flex flex-wrap gap-3 text-xs text-gray-500 justify-center mb-10">
@@ -124,10 +121,8 @@ export default async function KharkivPage() {
           </span>
         </div>
 
-        {/* Quiz */}
-        <section id="quiz" className="mb-10">
-          <QuizWrapper clinicSlug="onclinic-kharkiv" city="kharkiv" locale="ua" sourcePage="/ukr/kharkiv" />
-        </section>
+        {/* Quiz trigger point — quiz opens as modal overlay */}
+        <div id="quiz" />
 
         {/* Programs — age pills filter via ProgramCatalog */}
         {programs.length > 0 && (
@@ -177,12 +172,9 @@ export default async function KharkivPage() {
               <p className="text-sm text-gray-500 leading-relaxed">{'Прийшли натщесерце — пройшли все за 2-3 години. Результати на пошту за 1-2 дні. Через тиждень — терапевт за результатами.'}</p>
             </div>
           </div>
-          <a
-            href="#programs"
-            className="block w-full mt-6 py-4 bg-[#005485] text-white text-center rounded-xl text-base font-bold hover:bg-[#003d66] transition-colors"
-          >
-            {'Обрати програму'}
-          </a>
+          <QuizOpenBtn className="block w-full mt-6 py-4 bg-[#005485] text-white text-center rounded-xl text-base font-bold hover:bg-[#003d66] transition-colors">
+            Обрати програму
+          </QuizOpenBtn>
         </section>
 
         {/* Clinic section */}
@@ -246,22 +238,27 @@ export default async function KharkivPage() {
         </section>
       </main>
 
-      {/* Fix 1.11 — Sticky bar */}
+      {/* Fix 1.11 — Sticky bar (hides when quiz is open via CSS) */}
       <div
-        className="fixed bottom-0 z-50 bg-white border-t border-gray-200 px-4 py-3 flex justify-between items-center"
+        className="fixed bottom-0 z-50 bg-white border-t border-gray-200 px-4 py-3 flex justify-between items-center quiz-open:hidden"
         style={{ left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 430 }}
       >
         <div>
-          <p className="text-[11px] text-gray-500">{'Повна програма'}</p>
-          <p className="text-base font-extrabold text-[#005485]">{'від 6 110 грн'}</p>
+          <p className="text-[11px] text-gray-500">Повна програма</p>
+          <p className="text-base font-extrabold text-[#005485]">від 6 110 грн</p>
         </div>
-        <a
-          href="#programs"
-          className="py-3 px-6 bg-[#005485] text-white rounded-xl text-sm font-bold hover:bg-[#003d66] transition-colors"
-        >
-          {'Підібрати програму'}
-        </a>
+        <QuizOpenBtn className="py-3 px-6 bg-[#005485] text-white rounded-xl text-sm font-bold hover:bg-[#003d66] transition-colors">
+          Підібрати програму
+        </QuizOpenBtn>
       </div>
+
+      {/* Quiz modal overlay */}
+      <QuizModal
+        clinicSlug="onclinic-kharkiv"
+        city="kharkiv"
+        locale="ua"
+        sourcePage="/ukr/kharkiv"
+      />
     </>
   );
 }

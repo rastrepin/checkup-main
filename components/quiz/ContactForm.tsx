@@ -113,9 +113,9 @@ export default function ContactForm({ sourcePage, clinicSlug, city }: ContactFor
 
       {/* Cabinet teaser */}
       <div className="bg-[#f0f7ff] rounded-[10px] p-3.5 mb-4 border border-[#d0e4f5]">
-        <div className="text-[13px] font-semibold text-[#005485] mb-1.5">В особистому кабінеті:</div>
+        <div className="text-[13px] font-semibold text-[#005485] mb-1.5">Після запису ви отримаєте:</div>
         <div className="text-xs text-gray-700 leading-relaxed space-y-1">
-          {['Ваша програма та склад обстежень', 'Дата та час візитів', 'Підготовка до обстеження', 'Дані лікарів', 'Результати та рекомендації'].map(item => (
+          {['Програму та перелік аналізів', 'Інструкції з підготовки до обстеження', 'Адресу та як дістатися до клініки'].map(item => (
             <div key={item} className="flex items-center gap-1.5">
               <IconCheckCircle size={14} className="text-[#005485] shrink-0" />
               <span>{item}</span>
