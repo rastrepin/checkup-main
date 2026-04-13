@@ -105,14 +105,16 @@ export default function ProgramPage({ program, basePath }: Props) {
           <h2 className="text-lg font-semibold text-gray-900 mb-4">
             Перелік досліджень ({program.analyses.length})
           </h2>
-          <ol className="space-y-2 mb-4">
+          <ul className="space-y-2 mb-4 list-none">
             {program.analyses.map((item, i) => (
               <li key={i} className="flex gap-3 text-sm text-gray-700">
-                <span className="text-teal-600 font-medium shrink-0">{i + 1}.</span>
+                <span className="text-[#005485] font-bold text-xs shrink-0 w-5 h-5 rounded-full bg-blue-50 flex items-center justify-center mt-0.5">
+                  {i + 1}
+                </span>
                 {item}
               </li>
             ))}
-          </ol>
+          </ul>
           <PrintButton />
         </section>
 
@@ -163,7 +165,7 @@ export default function ProgramPage({ program, basePath }: Props) {
 
         {/* Clinic cards */}
         <div id="clinic-section">
-          <ClinicCards gender={program.gender} />
+          <ClinicCards gender={program.gender} ageRange={program.ageRange} />
         </div>
 
         {/* Related programs */}

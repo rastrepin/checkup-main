@@ -180,4 +180,7 @@ export default async function Page() {
           </div>
         </footer>
 
-      
+      </main>
+    </>
+  );
+}

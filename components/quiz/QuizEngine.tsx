@@ -198,4 +198,5 @@ export default function QuizEngine({ clinicSlug, city, locale = 'ua' }: QuizEngi
         {phase === 'tags' ? 'Отримати дорожню карту' : 'Далі'}
       </button>
     </div>
-  
+  );
+}
