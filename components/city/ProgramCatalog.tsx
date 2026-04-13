@@ -46,18 +46,10 @@ const MICRO: Record<GenderKey, Record<AgeKey, string>> = {
 // Program category detection
 // Standard (Стандарт check-up.in.ua): slug matches template patterns
 function isStandard(p: CheckupProgram) {
-  return (
-    p.slug.startsWith('first-checkup') ||
-    p.slug.startsWith('male-first-checkup') ||
-    p.slug.startsWith('female-first-checkup')
-  );
+  return p.slug.startsWith('standard-');
 }
 function isRegular(p: CheckupProgram) {
-  return (
-    p.slug.startsWith('regular-checkup') ||
-    p.slug.startsWith('male-regular') ||
-    p.slug.startsWith('female-regular')
-  );
+  return p.slug.startsWith('regular-');
 }
 
 function scrollToQuiz() {

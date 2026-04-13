@@ -23,10 +23,10 @@ const CITIES = [
 
 // Map AgeRange → age_group values in Supabase
 function ageGroupFilter(ageRange: AgeRange): string[] {
-  if (ageRange === 'do-30') return ['any', 'do-30'];
-  if (ageRange === '30-40') return ['any', '30-40'];
-  if (ageRange === '40-50') return ['after-40', 'any'];
-  if (ageRange === '50+') return ['after-40', 'any'];
+  if (ageRange === 'do-30') return ['do-30', 'any'];
+  if (ageRange === '30-40') return ['30-40', 'any'];
+  if (ageRange === '40-50') return ['40-50', 'after-40', 'any'];
+  if (ageRange === '50+') return ['50+', 'after-40', 'any'];
   return ['any'];
 }
 
