@@ -11,8 +11,39 @@ interface Props {
 
 export default function ProgramPage({ program, basePath }: Props) {
 
+
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Головна', item: 'https://check-up.in.ua/' },
+      { '@type': 'ListItem', position: 2, name: program.gender === 'female' ? 'Жіночий чекап' : 'Чоловічий чекап', item: `https://check-up.in.ua/ukr/${basePath}` },
+      { '@type': 'ListItem', position: 3, name: program.titleShort, item: `https://check-up.in.ua/ukr/${basePath}/${program.slug}` },
+    ],
+  };
+
+  const medicalSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'MedicalProcedure',
+    name: program.title,
+    description: program.description,
+  };
+
+  const faqSchema = program.faq.length > 0 ? {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: program.faq.map((item: { q: string; a: string }) => ({
+      '@type': 'Question',
+      name: item.q,
+      acceptedAnswer: { '@type': 'Answer', text: item.a },
+    })),
+  } : null;
+
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(medicalSchema) }} />
+      {faqSchema && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />}
       <main className="max-w-3xl mx-auto px-4 pt-6 pb-24">
 
         {/* Breadcrumbs */}
