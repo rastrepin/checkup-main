@@ -91,7 +91,7 @@ export default async function KharkivPage() {
         {/* Fix 1.1 — H1 with italic "в Харкові" */}
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1 leading-tight">
           {'Чекап організму '}
-          <em style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontStyle: 'italic', fontWeight: 400, color: '#005485' }}>
+          <em style={{ fontFamily: "var(--font-cormorant), 'Cormorant Garamond', Georgia, serif", fontStyle: 'italic', fontWeight: 400, color: '#005485' }}>
             {'в Харкові'}
           </em>
         </h1>
