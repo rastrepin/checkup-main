@@ -101,7 +101,7 @@ export default function QuizModal({
           <div className="px-5 pt-5">
             <QuizProvider presetGender={presetGender} presetAge={presetAge}>
               <QuizEngine clinicSlug={clinicSlug} city={city} locale={locale} />
-              <RoadmapResult />
+              <RoadmapResult city={city} />
               <BranchSelector />
               <ContactForm sourcePage={sourcePage} clinicSlug={clinicSlug} city={city} />
               <BookingConfirmation />

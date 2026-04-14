@@ -5,6 +5,10 @@ import { useQuiz } from './QuizContext';
 import { IconRoute, IconChevronDown } from './icons';
 import { TAG_ICONS } from './icons';
 
+interface Props {
+  city?: string;
+}
+
 const TAG_NOTES: Record<string, string> = {
   fatigue: 'Програма включає ТТГ та загальний аналіз крові для оцінки стану щитовидної залози та загального самопочуття.',
   headache: 'Програма включає ЕКГ та ліпідограму. Повідомте терапевту про характер болю — він оцінить, чи потрібне додаткове обстеження.',
@@ -24,7 +28,7 @@ function discountPct(regular: number, sale: number) {
   return Math.round((1 - sale / regular) * 100);
 }
 
-export default function RoadmapResult() {
+export default function RoadmapResult({ city = 'kharkiv' }: Props) {
   const {
     phase, gender, age, tags,
     standardProgram, clinicProgram, chosenProgramType,
@@ -33,14 +37,27 @@ export default function RoadmapResult() {
 
   const [visit1Open, setVisit1Open] = useState(true);
   const [visit2Open, setVisit2Open] = useState(false);
+  const [stdOpen, setStdOpen] = useState(false);
+  const [clinicOpen, setClinicOpen] = useState(false);
 
   if (phase !== 'roadmap') return null;
 
   const focusTags = tags.filter(t => t !== 'checkup');
   const genderLabel = gender === 'female' ? 'жінок' : 'чоловіків';
   const ageLabel = age === 'do-30' ? 'до 30' : age === '50+' ? 'від 50' : age;
-
   const canProceed = chosenProgramType !== null;
+
+  // Standard card subtitle
+  const stdSpecialists = gender === 'female' ? 'Терапевт, гінеколог' : 'Терапевт';
+  const stdSubtitle = `${stdSpecialists} · 2 візити`;
+
+  // Clinic card subtitle
+  const clinicSubtitle = clinicProgram
+    ? [
+        clinicProgram.consultations_count ? `${clinicProgram.consultations_count} спеціалістів` : null,
+        clinicProgram.diagnostics_count ? `${clinicProgram.diagnostics_count} досліджень` : null,
+      ].filter(Boolean).join(' · ')
+    : '';
 
   return (
     <div>
@@ -151,90 +168,154 @@ export default function RoadmapResult() {
 
       {/* Standard program card */}
       {standardProgram && (
-        <button
+        <div
+          role="radio"
+          aria-checked={chosenProgramType === 'standard'}
+          tabIndex={0}
           onClick={() => setChosenProgramType('standard')}
-          className={`w-full text-left rounded-[10px] border-2 p-4 mb-3 transition-all duration-150 ${
+          onKeyDown={e => e.key === 'Enter' && setChosenProgramType('standard')}
+          className={`cursor-pointer rounded-[10px] border-2 mb-3 transition-all duration-150 ${
             chosenProgramType === 'standard'
               ? 'border-[#005485] bg-[#e8f4fd]'
               : 'border-gray-200 bg-white hover:border-gray-300'
           }`}
         >
-          <div className="flex items-start justify-between gap-2 mb-1">
-            <span className="text-[10px] font-bold tracking-widest uppercase text-[#005485]">
-              Стандарт
-            </span>
-            {chosenProgramType === 'standard' && (
-              <span className="w-5 h-5 rounded-full bg-[#005485] flex items-center justify-center shrink-0">
-                <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-                  <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
+          {/* Clickable card body */}
+          <div className="p-4">
+            <div className="flex items-start justify-between gap-2 mb-1">
+              <span className="text-[10px] font-bold tracking-widest uppercase text-[#005485]">
+                Стандарт
               </span>
-            )}
-          </div>
-          <div className="text-sm font-semibold text-[#0b1a24] mb-1 leading-snug">{standardProgram.name_ua}</div>
-          {standardProgram.consultations_count || standardProgram.analyses_count ? (
-            <div className="text-xs text-gray-500 mb-2">
-              {[
-                standardProgram.consultations_count ? `${standardProgram.consultations_count} консульт.` : null,
-                standardProgram.analyses_count ? `${standardProgram.analyses_count} аналізів` : null,
-              ].filter(Boolean).join(' · ')}
-            </div>
-          ) : null}
-          <div className="text-lg font-bold text-[#005485]">
-            {fmt(standardProgram.price_discount)} грн
-          </div>
-        </button>
-      )}
-
-      {/* Clinic program card */}
-      {clinicProgram && (
-        <button
-          onClick={() => setChosenProgramType('clinic')}
-          className={`w-full text-left rounded-[10px] border-2 p-4 mb-5 transition-all duration-150 ${
-            chosenProgramType === 'clinic'
-              ? 'border-[#005485] bg-[#e8f4fd]'
-              : 'border-gray-200 bg-white hover:border-gray-300'
-          }`}
-        >
-          <div className="flex items-start justify-between gap-2 mb-1">
-            <span className="text-[10px] font-bold tracking-widest uppercase text-gray-500">
-              Програма ОН Клінік
-            </span>
-            <div className="flex items-center gap-1.5 shrink-0">
-              {discountPct(clinicProgram.price_regular, clinicProgram.price_discount) > 0 && (
-                <span className="text-[10px] font-bold text-[#d60242] bg-red-50 px-1.5 py-0.5 rounded-full">
-                  -{discountPct(clinicProgram.price_regular, clinicProgram.price_discount)}%
-                </span>
-              )}
-              {chosenProgramType === 'clinic' && (
-                <span className="w-5 h-5 rounded-full bg-[#005485] flex items-center justify-center">
+              {chosenProgramType === 'standard' && (
+                <span className="w-5 h-5 rounded-full bg-[#005485] flex items-center justify-center shrink-0">
                   <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
                     <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </span>
               )}
             </div>
-          </div>
-          <div className="text-sm font-semibold text-[#0b1a24] mb-1 leading-snug">{clinicProgram.name_ua}</div>
-          {clinicProgram.consultations_count || clinicProgram.analyses_count ? (
-            <div className="text-xs text-gray-500 mb-2">
-              {[
-                clinicProgram.consultations_count ? `${clinicProgram.consultations_count} консульт.` : null,
-                clinicProgram.analyses_count ? `${clinicProgram.analyses_count} аналізів` : null,
-              ].filter(Boolean).join(' · ')}
+            <div className="text-sm font-semibold text-[#0b1a24] mb-0.5 leading-snug">{standardProgram.name_ua}</div>
+            <div className="text-xs text-gray-500 mb-2">{stdSubtitle}</div>
+            <div className="text-lg font-bold text-[#005485]">
+              {fmt(standardProgram.price_discount)} грн
             </div>
-          ) : null}
-          <div className="flex items-baseline gap-2">
-            <span className="text-lg font-bold text-[#005485]">
-              {fmt(clinicProgram.price_discount)} грн
-            </span>
-            {clinicProgram.price_regular > clinicProgram.price_discount && (
-              <span className="text-sm text-gray-400 line-through">
-                {fmt(clinicProgram.price_regular)} грн
-              </span>
+          </div>
+
+          {/* "Що входить ↓" toggle — stops card-click propagation */}
+          <div
+            className="px-4 pb-3 pt-2 border-t border-gray-100"
+            onClick={e => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setStdOpen(v => !v)}
+              className="text-xs font-semibold text-[#005485] bg-transparent border-none cursor-pointer p-0"
+            >
+              {stdOpen ? 'Що входить ↑' : 'Що входить ↓'}
+            </button>
+            {stdOpen && (
+              <div className="mt-2 text-xs text-gray-600 space-y-1 leading-relaxed">
+                {standardProgram.consultations_count ? (
+                  <div>• {standardProgram.consultations_count} консультації ({gender === 'female' ? 'терапевт, гінеколог' : 'терапевт'})</div>
+                ) : null}
+                {standardProgram.analyses_count ? (
+                  <div>• {standardProgram.analyses_count} аналізів (загальний аналіз крові, глюкоза, біохімія, ліпідограма, ТТГ)</div>
+                ) : null}
+                {standardProgram.diagnostics_count ? (
+                  <div>• {standardProgram.diagnostics_count} досліджень (ЕКГ, УЗД{gender === 'female' ? ', молочні залози, малий таз' : ''})</div>
+                ) : null}
+              </div>
             )}
           </div>
-        </button>
+        </div>
+      )}
+
+      {/* Clinic program card */}
+      {clinicProgram && (
+        <div
+          role="radio"
+          aria-checked={chosenProgramType === 'clinic'}
+          tabIndex={0}
+          onClick={() => setChosenProgramType('clinic')}
+          onKeyDown={e => e.key === 'Enter' && setChosenProgramType('clinic')}
+          className={`cursor-pointer rounded-[10px] border-2 mb-5 transition-all duration-150 ${
+            chosenProgramType === 'clinic'
+              ? 'border-[#005485] bg-[#e8f4fd]'
+              : 'border-gray-200 bg-white hover:border-gray-300'
+          }`}
+        >
+          {/* Clickable card body */}
+          <div className="p-4">
+            <div className="flex items-start justify-between gap-2 mb-1">
+              <span className="text-[10px] font-bold tracking-widest uppercase text-gray-500">
+                Програма ОН Клінік
+              </span>
+              <div className="flex items-center gap-1.5 shrink-0">
+                {discountPct(clinicProgram.price_regular, clinicProgram.price_discount) > 0 && (
+                  <span className="text-[10px] font-bold text-[#d60242] bg-red-50 px-1.5 py-0.5 rounded-full">
+                    -{discountPct(clinicProgram.price_regular, clinicProgram.price_discount)}%
+                  </span>
+                )}
+                {chosenProgramType === 'clinic' && (
+                  <span className="w-5 h-5 rounded-full bg-[#005485] flex items-center justify-center">
+                    <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                      <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="text-sm font-semibold text-[#0b1a24] mb-0.5 leading-snug">{clinicProgram.name_ua}</div>
+            {clinicSubtitle && (
+              <div className="text-xs text-gray-500 mb-2">{clinicSubtitle}</div>
+            )}
+            <div className="flex items-baseline gap-2">
+              <span className="text-lg font-bold text-[#005485]">
+                {fmt(clinicProgram.price_discount)} грн
+              </span>
+              {clinicProgram.price_regular > clinicProgram.price_discount && (
+                <span className="text-sm text-gray-400 line-through">
+                  {fmt(clinicProgram.price_regular)} грн
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* "Що входить ↓" toggle */}
+          <div
+            className="px-4 pb-3 pt-2 border-t border-gray-100"
+            onClick={e => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setClinicOpen(v => !v)}
+              className="text-xs font-semibold text-[#005485] bg-transparent border-none cursor-pointer p-0"
+            >
+              {clinicOpen ? 'Що входить ↑' : 'Що входить ↓'}
+            </button>
+            {clinicOpen && (
+              <div className="mt-2 text-xs text-gray-600 space-y-1 leading-relaxed">
+                {clinicProgram.consultations_count ? (
+                  <div>• {clinicProgram.consultations_count} спеціалістів</div>
+                ) : null}
+                {clinicProgram.analyses_count ? (
+                  <div>• {clinicProgram.analyses_count} аналізів</div>
+                ) : null}
+                {clinicProgram.diagnostics_count ? (
+                  <div>• {clinicProgram.diagnostics_count} досліджень</div>
+                ) : null}
+                <a
+                  href={`https://onclinic.check-up.in.ua/${city}/checkup/${clinicProgram.slug}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block text-[#005485] underline mt-1"
+                >
+                  Детальніше на сайті клініки →
+                </a>
+              </div>
+            )}
+          </div>
+        </div>
       )}
 
       {/* Fallback: neither loaded */}
@@ -244,7 +325,7 @@ export default function RoadmapResult() {
         </div>
       )}
 
-      {/* CTA — navy, disabled until program chosen (Fix 6.7) */}
+      {/* CTA — navy, disabled until program chosen */}
       <button
         onClick={() => canProceed && setPhase('branch')}
         disabled={!canProceed}
@@ -259,6 +340,7 @@ export default function RoadmapResult() {
 
       <div className="text-center mt-3">
         <button
+          type="button"
           onClick={() => setPhase('tags')}
           className="bg-transparent border-none text-gray-400 text-xs cursor-pointer"
         >
