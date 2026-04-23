@@ -1,0 +1,71 @@
+{
+  "_comment": "TODO: replace all data in this file with Supabase when tables are ready",
+  "mioma_stats": {
+    "clinics_count": 12,
+    "cities_count": 7,
+    "doctors_count": 28
+  },
+  "cities_with_clinics": [
+    { "slug": "rivne", "name": "Рівне", "clinic": "РОКЛ ім. Юрія Семенюка", "methods": ["laparo_myomectomy", "hystero_myomectomy"] },
+    { "slug": "kharkiv", "name": "Харків", "clinic": "ON Clinic", "methods": ["laparo_myomectomy", "hysteroscopy", "hysterectomy"] },
+    { "slug": "dnipro", "name": "Дніпро", "clinic": "[клініка]", "methods": [] },
+    { "slug": "lviv", "name": "Львів", "clinic": "[клініка]", "methods": [] },
+    { "slug": "odesa", "name": "Одеса", "clinic": "[клініка]", "methods": [] }
+  ],
+  "methods_pricing": {
+    "medications": { "price_from": 2000, "unit": "грн/міс", "clinics_count": null },
+    "hystero_myomectomy": { "price_from": 15000, "unit": "грн", "clinics_count": 8 },
+    "laparo_myomectomy": { "price_from": 35000, "unit": "грн", "clinics_count": 10 },
+    "open_myomectomy": { "price_from": 30000, "unit": "грн", "clinics_count": 12 },
+    "ema": { "price_from": 45000, "unit": "грн", "clinics_count": 4 },
+    "hysterectomy": { "price_from": 40000, "unit": "грн", "clinics_count": null }
+  },
+  "nszu": {
+    "package_surgical": "Хірургічні втручання в умовах стаціонару (в тому числі одного дня) дорослим та дітям (пакет NH20)",
+    "package_non_surgical": "Стаціонарна допомога дорослим та дітям без проведення хірургічних операцій (NH31)",
+    "avg_wait_weeks_min": 2,
+    "avg_wait_weeks_max": 6
+  },
+  "doctors": [
+    {
+      "id": "trokhymovych-rm",
+      "name": "Трохимович Руслана Миколаївна",
+      "specialty": "Акушер-гінеколог",
+      "category": "вища категорія",
+      "experience_years": 26,
+      "operations_laparo": 340,
+      "city": "Рівне",
+      "clinic": "РОКЛ",
+      "profile_url": null,
+      "methods": ["laparo_myomectomy", "hystero_myomectomy"]
+    },
+    {
+      "id": "doctor-kharkiv-1",
+      "name": "[ПІБ]",
+      "specialty": "Акушер-гінеколог",
+      "category": null,
+      "experience_years": null,
+      "operations_laparo": null,
+      "city": "Харків",
+      "clinic": "ON Clinic",
+      "profile_url": null,
+      "methods": ["laparo_myomectomy"]
+    }
+  ],
+  "quiz_result_example": {
+    "laparo_myomectomy": {
+      "price_from": 35000,
+      "includes": "стаціонар 3 доби та анестезія",
+      "extra": "передопераційні аналізи 1 500–2 000 грн, контрольне УЗД 800 грн",
+      "doctor_operations": 340,
+      "doctor_name": "Трохимович Р.М."
+    }
+  },
+  "reviewer": {
+    "name": "Трохимович Руслана Миколаївна",
+    "title": "акушер-гінеколог, вища категорія, 26 років досвіду",
+    "comment_mioma": "Рішення про операцію при міомі — ніколи не термінове, крім виняткових випадків гострого болю. Я завжди прошу пацієнтку взяти тиждень на роздуми, уточнити другу думку, якщо є сумніви. Операція, зроблена без розуміння пацієнткою — це наполовину зроблена робота.",
+    "comment_symptom": "Найчастіше пацієнтки з рясними місячними приходять тоді, коли анемія вже значна. Не соромтеся приходити раніше — рання діагностика рятує від багатьох проблем, і більшість причин ми успішно лікуємо без операції."
+  },
+  "editor_email": "editor@check-up.in.ua"
+}
