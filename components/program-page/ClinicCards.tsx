@@ -25,7 +25,7 @@ const CITIES = [
 function ageGroupFilter(ageRange: AgeRange): string[] {
   if (ageRange === 'do-30') return ['do-30', 'any'];
   if (ageRange === '30-40') return ['30-40', 'any'];
-  if (ageRange === '40-50') return ['40-50', 'after-40', 'any'];
+  if (ageRange === '40-50') return ['40-50', 'any']; // 'after-40' is legacy for 50+, not 40-50
   if (ageRange === '50+') return ['50+', 'after-40', 'any'];
   return ['any'];
 }
@@ -94,6 +94,7 @@ export default function ClinicCards({
           .or(`gender.eq.${gender},gender.is.null`)
           .in('age_group', ageValues)
           .eq('is_active', true)
+          .eq('is_specialized', false)
           .order('price_discount', { ascending: true });
 
         if (progErr) throw progErr;
@@ -171,8 +172,7 @@ export default function ClinicCards({
 
       {city && !loading && !error && cards.length === 0 && (
         <div className="bg-gray-50 rounded-xl p-6 text-sm text-gray-500">
-          Поки що клінік у цьому місті немає. Програма стандартна — можна пройти
-          в будь-якій клініці-партнері check-up.in.ua.
+          У цьому місті програма поки недоступна. Оберіть інше місто або <a href="/kontakty" className="underline text-[#005485]">зв'яжіться з нами</a>.
         </div>
       )}
 
