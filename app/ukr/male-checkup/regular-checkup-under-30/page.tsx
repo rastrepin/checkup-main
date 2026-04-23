@@ -5,7 +5,7 @@ import { maleRegularDo30 } from '@/lib/programs/data';
 export const revalidate = 3600;
 
 export const metadata: Metadata = {
-  title: `${maleRegularDo30.title} | check-up.in.ua`,
+  title: `${maleRegularDo30.title}`,
   description: maleRegularDo30.description,
 };
 
