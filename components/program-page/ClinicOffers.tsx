@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 
 interface ClinicOffer {
   programId: string;
   programName: string;
+  programSlug: string;
   priceDiscount: number;
   priceRegular: number;
   consultationsCount: number | null;
@@ -23,13 +24,13 @@ const CITIES: { value: string; label: string }[] = [
 ];
 
 export default function ClinicOffers({
-  programSlug,
   gender,
   ageGroup,
+  programType,
 }: {
-  programSlug: string;
   gender: string;
   ageGroup: string;
+  programType: 'full' | 'regular';
 }) {
   const [city, setCity] = useState('');
   const [platformProgramId, setPlatformProgramId] = useState<string | null>(null);
@@ -44,7 +45,6 @@ export default function ClinicOffers({
     if (cityParam) setCity(cityParam);
   }, []);
 
-  // Update URL when city changes
   const handleCityChange = (newCity: string) => {
     setCity(newCity);
     const url = new URL(window.location.href);
@@ -53,17 +53,21 @@ export default function ClinicOffers({
     window.history.replaceState({}, '', url.toString());
   };
 
-  // Step 1: fetch platform_program id by slug
+  // Step 1: find platform_program_id by gender + age_group (not by slug)
   useEffect(() => {
+    if (!gender || !ageGroup) return;
     const sb = supabase as any;
     sb.from('platform_programs')
       .select('id')
-      .eq('slug', programSlug)
+      .eq('gender', gender)
+      .eq('age_group', ageGroup)
+      .eq('is_specialized', false)
       .single()
-      .then(({ data, error }: any) => {
-        if (!error && data) setPlatformProgramId(data.id);
+      .then(({ data, error: err }: any) => {
+        if (!err && data) setPlatformProgramId(data.id);
+        else console.warn('platform_program not found for', gender, ageGroup, err);
       });
-  }, [programSlug]);
+  }, [gender, ageGroup]);
 
   // Step 2: fetch offers when city and platformProgramId are ready
   useEffect(() => {
@@ -75,46 +79,47 @@ export default function ClinicOffers({
       try {
         const sb = supabase as any;
 
-        const { data, error: err } = await sb.rpc
-          ? null // use raw query fallback below
-          : null;
+        // Get clinic IDs active in this city (via clinic_branches.city)
+        const { data: branches } = await sb
+          .from('clinic_branches')
+          .select('clinic_id')
+          .eq('city', city)
+          .eq('is_active', true);
 
-        // Fetch via joins using Supabase client
+        const clinicIds: string[] = [...new Set(
+          (branches ?? []).map((b: any) => b.clinic_id)
+        )];
+
+        if (clinicIds.length === 0) { setOffers([]); setLoading(false); return; }
+
+        // Fetch platform_program_offers for this program + these clinics
         const { data: rows, error: fetchErr } = await sb
           .from('platform_program_offers')
           .select(`
             sort_order,
             checkup_programs!inner (
-              id,
-              name_ua,
-              price_discount,
-              price_regular,
-              consultations_count,
-              analyses_count,
-              diagnostics_count,
-              is_active,
-              clinic_id,
-              clinics!inner (
-                id,
-                name,
-                slug,
-                logo_url,
-                is_active,
-                clinic_branches!inner (
-                  city
-                )
-              )
+              id, name_ua, slug,
+              price_discount, price_regular,
+              consultations_count, analyses_count, diagnostics_count,
+              is_active, clinic_id,
+              clinics!inner ( id, name, slug, logo_url, is_active )
             )
           `)
           .eq('platform_program_id', platformProgramId)
           .eq('checkup_programs.is_active', true)
           .eq('checkup_programs.clinics.is_active', true)
-          .eq('checkup_programs.clinics.clinic_branches.city', city)
+          .in('checkup_programs.clinic_id', clinicIds)
           .order('sort_order', { ascending: true });
 
         if (fetchErr) throw fetchErr;
 
-        // Deduplicate by clinic (one offer per clinic)
+        // Filter by program type based on slug prefix
+        // regular programs have slug starting with 'regular-'
+        const isRegularSlug = (slug: string) => slug.startsWith('regular-');
+        const typeFilter = (slug: string) =>
+          programType === 'regular' ? isRegularSlug(slug) : !isRegularSlug(slug);
+
+        // Deduplicate: 1 card per clinic, take first match by sort_order
         const seen = new Set<string>();
         const result: ClinicOffer[] = [];
 
@@ -122,11 +127,13 @@ export default function ClinicOffers({
           const cp = row.checkup_programs;
           const clinic = cp?.clinics;
           if (!cp || !clinic) continue;
-          if (seen.has(clinic.id)) continue;
+          if (!typeFilter(cp.slug)) continue;        // skip wrong type
+          if (seen.has(clinic.id)) continue;         // 1 per clinic
           seen.add(clinic.id);
           result.push({
             programId: cp.id,
             programName: cp.name_ua,
+            programSlug: cp.slug,
             priceDiscount: cp.price_discount,
             priceRegular: cp.price_regular,
             consultationsCount: cp.consultations_count,
@@ -148,7 +155,7 @@ export default function ClinicOffers({
         setLoading(false);
       }
     })();
-  }, [city, platformProgramId]);
+  }, [city, platformProgramId, programType]);
 
   return (
     <section className="my-10" id="clinics">
@@ -225,25 +232,4 @@ export default function ClinicOffers({
             )}
 
             {/* Price */}
-            <div className="text-xl font-extrabold text-[#005485] mb-3">
-              {offer.priceDiscount.toLocaleString('uk-UA')}&nbsp;грн
-              {offer.priceRegular > offer.priceDiscount && (
-                <span className="ml-2 text-sm font-normal text-gray-400 line-through">
-                  {offer.priceRegular.toLocaleString('uk-UA')}&nbsp;грн
-                </span>
-              )}
-            </div>
-
-            {/* CTA */}
-            <a
-              href={`/ukr/${city}?program=${offer.clinicSlug}`}
-              className="block w-full text-center py-3 bg-[#005485] text-white rounded-xl text-sm font-semibold hover:bg-[#004070] transition-colors"
-            >
-              Записатися
-            </a>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
+            <div c

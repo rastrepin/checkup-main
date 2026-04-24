@@ -198,9 +198,9 @@ export default function ProgramPage({ program, basePath }: Props) {
         {/* Clinic offers — from platform_program_offers */}
         <div id="clinic-section">
           <ClinicOffers
-            programSlug={program.slug}
             gender={program.gender}
             ageGroup={program.ageRange}
+            programType={program.type}
           />
         </div>
 
