@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import BookingModal from './BookingModal';
 
 interface ClinicOffer {
   programId: string;
@@ -31,6 +32,7 @@ export default function ClinicOffers({
   ageGroup: string;
 }) {
   const [city, setCity] = useState('');
+  const [bookingOffer, setBookingOffer] = useState<ClinicOffer | null>(null);
   const [platformProgramId, setPlatformProgramId] = useState<string | null>(null);
   const [offers, setOffers] = useState<ClinicOffer[]>([]);
   const [loading, setLoading] = useState(false);
@@ -227,6 +229,4 @@ export default function ClinicOffers({
             <div className="text-xl font-extrabold text-[#005485] mb-3">
               {offer.priceDiscount.toLocaleString('uk-UA')}&nbsp;грн
               {offer.priceRegular > offer.priceDiscount && (
-                <span className="ml-2 text-sm font-normal text-gray-400 line-through">
-                  {offer.priceRegular.toLocaleString('uk-UA')}&nbsp;грн
-  
+                <span className="ml-2 text-
