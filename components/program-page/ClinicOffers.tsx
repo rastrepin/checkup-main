@@ -149,7 +149,7 @@ export default function ClinicOffers({
         setLoading(false);
       }
     })();
-  }, [city, platformProgramId, programType]);
+  }, [city, platformProgramId]);
 
   return (
     <section className="my-10" id="clinics">
