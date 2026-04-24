@@ -33,9 +33,11 @@ function ageGroupFilter(ageRange: AgeRange): string[] {
 export default function ClinicCards({
   gender,
   ageRange,
+  programType,
 }: {
   gender: Gender;
   ageRange: AgeRange;
+  programType: 'full' | 'regular';
 }) {
   const [city, setCity] = useState('');
   const [cards, setCards] = useState<ClinicCard[]>([]);
@@ -95,6 +97,7 @@ export default function ClinicCards({
           .in('age_group', ageValues)
           .eq('is_active', true)
           .eq('is_specialized', false)
+          .filter('slug', programType === 'regular' ? 'ilike' : 'not.ilike', '%regular-%')
           .order('price_discount', { ascending: true });
 
         if (progErr) throw progErr;
@@ -138,7 +141,7 @@ export default function ClinicCards({
         setLoading(false);
       }
     })();
-  }, [city, gender, ageRange]);
+  }, [city, gender, ageRange, programType]);
 
   return (
     <section className="my-10" id="clinics">

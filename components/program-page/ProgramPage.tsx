@@ -196,7 +196,7 @@ export default function ProgramPage({ program, basePath }: Props) {
 
         {/* Clinic cards */}
         <div id="clinic-section">
-          <ClinicCards gender={program.gender} ageRange={program.ageRange} />
+          <ClinicCards gender={program.gender} ageRange={program.ageRange} programType={program.type} />
         </div>
 
         {/* Related programs */}
