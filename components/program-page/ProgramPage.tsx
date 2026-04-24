@@ -1,6 +1,7 @@
 import type { ProgramData } from '@/lib/programs/data';
 import SystemsToggle from './SystemsToggle';
-import ClinicCards from './ClinicCards';
+import ClinicOffers from './ClinicOffers';
+import SimilarPrograms from './SimilarPrograms';
 import StickyBar from './StickyBar';
 import PrintButton from './PrintButton';
 
@@ -194,28 +195,21 @@ export default function ProgramPage({ program, basePath }: Props) {
           </div>
         )}
 
-        {/* Clinic cards */}
+        {/* Clinic offers — from platform_program_offers */}
         <div id="clinic-section">
-          <ClinicCards gender={program.gender} ageRange={program.ageRange} programType={program.type} />
+          <ClinicOffers
+            programSlug={program.slug}
+            gender={program.gender}
+            ageGroup={program.ageRange}
+          />
         </div>
 
-        {/* Related programs */}
-        {program.relatedPrograms.length > 0 && (
-          <section className="mb-8">
-            <h2 className="text-lg font-semibold text-gray-900 mb-3">Суміжні програми</h2>
-            <div className="flex flex-wrap gap-2">
-              {program.relatedPrograms.map((p, i) => (
-                <a
-                  key={i}
-                  href={p.href}
-                  className="px-4 py-2 border border-gray-300 rounded-full text-sm text-gray-700 hover:border-teal-400 hover:text-teal-700 transition-colors"
-                >
-                  {p.title}
-                </a>
-              ))}
-            </div>
-          </section>
-        )}
+        {/* Similar programs — from platform_programs */}
+        <SimilarPrograms
+          gender={program.gender}
+          ageGroup={program.ageRange}
+          currentSlug={program.slug}
+        />
 
         {/* FAQ */}
         {program.faq.length > 0 && (
