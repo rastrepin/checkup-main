@@ -26,11 +26,9 @@ const CITIES: { value: string; label: string }[] = [
 export default function ClinicOffers({
   gender,
   ageGroup,
-  programType,
 }: {
   gender: string;
   ageGroup: string;
-  programType: 'full' | 'regular';
 }) {
   const [city, setCity] = useState('');
   const [platformProgramId, setPlatformProgramId] = useState<string | null>(null);
@@ -113,13 +111,8 @@ export default function ClinicOffers({
 
         if (fetchErr) throw fetchErr;
 
-        // Filter by program type based on slug prefix
-        // regular programs have slug starting with 'regular-'
-        const isRegularSlug = (slug: string) => slug.startsWith('regular-');
-        const typeFilter = (slug: string) =>
-          programType === 'regular' ? isRegularSlug(slug) : !isRegularSlug(slug);
-
         // Deduplicate: 1 card per clinic, take first match by sort_order
+        // No slug filtering — platform_program_offers already contains the correct offers
         const seen = new Set<string>();
         const result: ClinicOffer[] = [];
 
@@ -127,7 +120,6 @@ export default function ClinicOffers({
           const cp = row.checkup_programs;
           const clinic = cp?.clinics;
           if (!cp || !clinic) continue;
-          if (!typeFilter(cp.slug)) continue;        // skip wrong type
           if (seen.has(clinic.id)) continue;         // 1 per clinic
           seen.add(clinic.id);
           result.push({
@@ -232,4 +224,9 @@ export default function ClinicOffers({
             )}
 
             {/* Price */}
-            <div c
+            <div className="text-xl font-extrabold text-[#005485] mb-3">
+              {offer.priceDiscount.toLocaleString('uk-UA')}&nbsp;грн
+              {offer.priceRegular > offer.priceDiscount && (
+                <span className="ml-2 text-sm font-normal text-gray-400 line-through">
+                  {offer.priceRegular.toLocaleString('uk-UA')}&nbsp;грн
+  

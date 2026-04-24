@@ -200,7 +200,6 @@ export default function ProgramPage({ program, basePath }: Props) {
           <ClinicOffers
             gender={program.gender}
             ageGroup={program.ageRange}
-            programType={program.type}
           />
         </div>
 
@@ -274,3 +273,4 @@ export default function ProgramPage({ program, basePath }: Props) {
     </>
   );
 }
+                                       
