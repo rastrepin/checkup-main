@@ -1,39 +1,59 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase';
-import type { CheckupProgram, ClinicBranch } from '@/lib/types';
-import QuizWrapper from '@/components/quiz/QuizWrapper';
+import { db } from '@/lib/supabase';
+import type { CheckupProgram } from '@/lib/types';
+import QuizHeroWidget from '@/components/quiz/QuizHeroWidget';
+import { QuizOpenBtn } from '@/components/quiz/QuizModal';
 import ProgramCatalog from '@/components/city/ProgramCatalog';
 import FaqBlock from '@/components/city/FaqBlock';
 
 export const revalidate = 3600;
 
-// ─── Metadata ────────────────────────────────────────────────────────────────
-
 export const metadata: Metadata = {
-  title: 'Чекап організму в Харкові ᐈ Програми обстеження від 7 722 грн',
-  description:
-    'Комплексне обстеження організму в Харкові — програми для жінок та чоловіків від 7 722 грн. 27 досліджень за 2 візити. Запис онлайн.',
+  title: 'Чекап організму в Харкові ᐈ Програми обстеження від 6 110 грн | check-up.in.ua',
+  description: 'Комплексне обстеження організму в Харкові — програми для жінок та чоловіків від 6 110 грн. ОН Клінік, 3 філії біля метро. Запис онлайн.',
   alternates: {
     canonical: 'https://check-up.in.ua/ukr/kharkiv',
-    languages: {
-      uk: 'https://check-up.in.ua/ukr/kharkiv',
-      ru: 'https://check-up.in.ua/kharkov',
-    },
+    languages: { uk: '/ukr/kharkiv', ru: '/kharkov' },
   },
   openGraph: {
-    title: 'Чекап організму в Харкові — від 7 722 грн',
-    description: 'Комплексне обстеження для жінок та чоловіків. 3 філії ОН Клінік. Запис онлайн.',
+    title: 'Чекап організму в Харкові — від 6 110 грн | check-up.in.ua',
+    description: 'Програми комплексного обстеження в ОН Клінік. 3 філії біля метро, результати онлайн.',
     url: 'https://check-up.in.ua/ukr/kharkiv',
+    siteName: 'check-up.in.ua',
     locale: 'uk_UA',
     type: 'website',
   },
 };
 
-// ─── Static data ──────────────────────────────────────────────────────────────
+const CITY_SLUG = 'kharkiv';
 
-const CLINIC_SLUG = 'onclinic-kharkiv';
-const SUBDOMAIN = 'https://onclinic.check-up.in.ua/kharkiv';
+async function fetchClinicId(): Promise<string | null> {
+  try {
+    const sb = db() as any;
+    const { data: clinic } = await sb
+      .from('clinics')
+      .select('id')
+      .eq('city', CITY_SLUG)
+      .eq('is_active', true)
+      .single();
+    return clinic?.id ?? null;
+  } catch { return null; }
+}
+
+async function fetchAllPrograms() {
+  try {
+    const clinicId = await fetchClinicId();
+    if (!clinicId) return [];
+    const { data } = await (db() as any)
+      .from('checkup_programs')
+      .select('*')
+      .eq('clinic_id', clinicId)
+      .eq('is_active', true)
+      .order('price_discount', { ascending: true });
+    return (data ?? []) as CheckupProgram[];
+  } catch { return []; }
+}
 
 const FAQ_ITEMS = [
   {
