@@ -52,7 +52,7 @@ export default function LeadForm({
     setError(null);
 
     try {
-      const { error: dbError } = await supabase.from('leads').insert({
+      const { error: dbError } = await (supabase as any).from('leads').insert({
         name: name.trim(),
         phone: phone.trim(),
         city: city.trim() || null,

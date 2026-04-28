@@ -82,8 +82,8 @@ export default function ClinicOffers({
           .eq('city', city)
           .eq('is_active', true);
 
-        const clinicIds: string[] = [...new Set(
-          (branches ?? []).map((b: any) => b.clinic_id)
+        const clinicIds: string[] = [...new Set<string>(
+          (branches ?? []).map((b: any) => String(b.clinic_id))
         )];
 
         if (clinicIds.length === 0) { setOffers([]); setLoading(false); return; }

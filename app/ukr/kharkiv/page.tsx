@@ -401,7 +401,7 @@ export default async function KharkivPage() {
           <h2 className="text-[22px] lg:text-[28px] font-bold text-[#0b1a24] mb-6 tracking-tight">
             {'Часті запитання про чекап у Харкові'}
           </h2>
-          <FaqBlock items={FAQ} twoColumn />
+          <FaqBlock items={FAQ} />
         </div>
       </section>
 
