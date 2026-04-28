@@ -21,6 +21,9 @@ export interface QuizState {
   age: AgeGroup | null;
   tags: string[];
   selectedProgram: CheckupProgram | null;
+  standardProgram: CheckupProgram | null;
+  clinicProgram: CheckupProgram | null;
+  chosenProgramType: 'standard' | 'clinic' | null;
   selectedBranchId: string | null;
   branches: ClinicBranch[];
   name: string;
@@ -35,6 +38,9 @@ interface QuizActions {
   setAge: (a: AgeGroup) => void;
   toggleTag: (id: string) => void;
   setSelectedProgram: (p: CheckupProgram | null) => void;
+  setStandardProgram: (p: CheckupProgram | null) => void;
+  setClinicProgram: (p: CheckupProgram | null) => void;
+  setChosenProgramType: (t: 'standard' | 'clinic') => void;
   setSelectedBranchId: (id: string | null) => void;
   setBranches: (b: ClinicBranch[]) => void;
   setName: (n: string) => void;
@@ -50,6 +56,9 @@ const initialState: QuizState = {
   age: null,
   tags: [],
   selectedProgram: null,
+  standardProgram: null,
+  clinicProgram: null,
+  chosenProgramType: null,
   selectedBranchId: null,
   branches: [],
   name: '',
@@ -105,6 +114,13 @@ export function QuizProvider({ children, presetGender, presetAge, branches: init
   }, []);
 
   const setSelectedProgram = useCallback((p: CheckupProgram | null) => setState(s => ({ ...s, selectedProgram: p })), []);
+  const setStandardProgram = useCallback((p: CheckupProgram | null) => setState(s => ({ ...s, standardProgram: p })), []);
+  const setClinicProgram = useCallback((p: CheckupProgram | null) => setState(s => ({ ...s, clinicProgram: p })), []);
+  const setChosenProgramType = useCallback((t: 'standard' | 'clinic') => setState(s => ({
+    ...s,
+    chosenProgramType: t,
+    selectedProgram: t === 'standard' ? s.standardProgram : s.clinicProgram,
+  })), []);
   const setSelectedBranchId = useCallback((id: string | null) => setState(s => ({ ...s, selectedBranchId: id })), []);
   const setBranches = useCallback((b: ClinicBranch[]) => setState(s => ({ ...s, branches: b })), []);
   const setName = useCallback((name: string) => setState(s => ({ ...s, name })), []);
@@ -123,7 +139,7 @@ export function QuizProvider({ children, presetGender, presetAge, branches: init
   }, [startPhase, presetGender, presetAge, initialBranches]);
 
   return (
-    <QuizContext.Provider value={{ ...state, setPhase, setGender, setAge, toggleTag, setSelectedProgram, setSelectedBranchId, setBranches, setName, setPhone, setPreferredContact, setConsentGiven, reset }}>
+    <QuizContext.Provider value={{ ...state, setPhase, setGender, setAge, toggleTag, setSelectedProgram, setStandardProgram, setClinicProgram, setChosenProgramType, setSelectedBranchId, setBranches, setName, setPhone, setPreferredContact, setConsentGiven, reset }}>
       {children}
     </QuizContext.Provider>
   );

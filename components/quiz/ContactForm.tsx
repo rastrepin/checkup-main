@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useQuiz, type PreferredContact } from './QuizContext';
 import { IconCheck, IconCheckCircle } from './icons';
 import { supabase } from '@/lib/supabase';
@@ -26,10 +27,11 @@ interface ContactFormProps {
 }
 
 export default function ContactForm({ sourcePage, clinicSlug, city }: ContactFormProps) {
+  const router = useRouter();
   const {
     phase, name, phone, preferredContact, consentGiven,
     setName, setPhone, setPreferredContact, setConsentGiven, setPhase,
-    gender, age, tags, selectedProgram, selectedBranchId,
+    gender, age, tags, selectedProgram, selectedBranchId, branches,
   } = useQuiz();
 
   const [honeypot, setHoneypot] = useState('');
@@ -58,28 +60,44 @@ export default function ContactForm({ sourcePage, clinicSlug, city }: ContactFor
 
     try {
       // Get UTM from URL
-      const params = new URLSearchParams(window.location.search);
+      const urlParams = new URLSearchParams(window.location.search);
 
-      await supabase.from('leads').insert({
-        city,
-        clinic_slug: clinicSlug,
-        source_page: sourcePage,
-        name: name.trim(),
-        phone: phoneDigits.length >= 10 ? `+${phoneDigits}` : phone,
-        preferred_contact: preferredContact,
-        quiz_answers: { gender, age, tags },
-        selected_program_slug: selectedProgram?.slug || null,
-        selected_branch_id: selectedBranchId,
-        consent_given: true,
-        consent_given_at: new Date().toISOString(),
-        utm_source: params.get('utm_source'),
-        utm_medium: params.get('utm_medium'),
-        utm_campaign: params.get('utm_campaign'),
-      });
+      // Find selected branch for cabinet page
+      const branch = branches.find(b => b.id === selectedBranchId);
 
-      setPhase('confirmed');
+      const { data: insertedLead } = await (supabase as any)
+        .from('leads')
+        .insert({
+          city,
+          clinic_slug: clinicSlug,
+          source_page: sourcePage,
+          name: name.trim(),
+          phone: phoneDigits.length >= 10 ? `+${phoneDigits}` : phone,
+          preferred_contact: preferredContact,
+          quiz_answers: { gender, age, tags },
+          selected_program_slug: selectedProgram?.slug || null,
+          selected_branch_id: selectedBranchId,
+          // Extra fields for cabinet preview page
+          program_name: selectedProgram?.name_ua || null,
+          price: selectedProgram?.price_discount || null,
+          branch_address: branch?.address_ua || null,
+          consent_given: true,
+          consent_given_at: new Date().toISOString(),
+          utm_source: urlParams.get('utm_source'),
+          utm_medium: urlParams.get('utm_medium'),
+          utm_campaign: urlParams.get('utm_campaign'),
+        })
+        .select('id')
+        .single();
+
+      const token = insertedLead?.id;
+      if (token) {
+        router.push(`/cabinet/preview/${token}`);
+      } else {
+        setPhase('confirmed');
+      }
     } catch {
-      // Silent fail — form still transitions
+      // Silent fail — fallback to inline confirmation
       setPhase('confirmed');
     } finally {
       setSubmitting(false);
@@ -113,9 +131,9 @@ export default function ContactForm({ sourcePage, clinicSlug, city }: ContactFor
 
       {/* Cabinet teaser */}
       <div className="bg-[#f0f7ff] rounded-[10px] p-3.5 mb-4 border border-[#d0e4f5]">
-        <div className="text-[13px] font-semibold text-[#005485] mb-1.5">В особистому кабінеті:</div>
+        <div className="text-[13px] font-semibold text-[#005485] mb-1.5">Після запису ви отримаєте:</div>
         <div className="text-xs text-gray-700 leading-relaxed space-y-1">
-          {['Ваша програма та склад обстежень', 'Дата та час візитів', 'Підготовка до обстеження', 'Дані лікарів', 'Результати та рекомендації'].map(item => (
+          {['Програму та перелік аналізів', 'Інструкції з підготовки до обстеження', 'Адресу та як дістатися до клініки'].map(item => (
             <div key={item} className="flex items-center gap-1.5">
               <IconCheckCircle size={14} className="text-[#005485] shrink-0" />
               <span>{item}</span>

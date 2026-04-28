@@ -5,31 +5,59 @@ import { useQuiz } from './QuizContext';
 import { IconRoute, IconChevronDown } from './icons';
 import { TAG_ICONS } from './icons';
 
+interface Props {
+  city?: string;
+}
+
 const TAG_NOTES: Record<string, string> = {
-  fatigue: 'Зверніть увагу терапевта на показники ТТГ, феритин та вітамін D. При потребі — направлення до ендокринолога.',
-  headache: 'Дуплексне сканування судин шиї покаже стан кровопостачання. Повідомте терапевту про характер болю.',
-  back: 'Повідомте терапевту — при потребі направить до ортопеда або невролога. Базові аналізи виключать запальні процеси.',
-  stomach: 'УЗД черевної порожнини покаже стан органів ШКТ. Терапевт оцінить потребу в гастроскопії.',
-  heart: 'ЕКГ та аналізи (входять) дадуть базову картину. Ліпідограма покаже судинні ризики.',
-  hormones: 'Аналіз ТТГ (входить) — базова оцінка. Терапевт може рекомендувати розширену гормональну панель.',
-  skin: 'Випадіння волосся та шкірні проблеми часто пов\'язані з ТТГ та ЗАК (вже в програмі). Терапевт оцінить.',
+  fatigue: 'Програма включає ТТГ та загальний аналіз крові для оцінки стану щитовидної залози та загального самопочуття.',
+  headache: 'Програма включає ЕКГ та ліпідограму. Повідомте терапевту про характер болю — він оцінить, чи потрібне додаткове обстеження.',
+  back: 'Програма включає базові аналізи та консультацію терапевта. Розкажіть про скарги — він оцінить, чи потрібне направлення до спеціаліста.',
+  stomach: 'Програма включає УЗД черевної порожнини — терапевт оцінить результати та дасть рекомендації.',
+  heart: 'Програма включає ЕКГ та ліпідограму для оцінки серцево-судинних ризиків.',
+  hormones: 'Програма включає ТТГ — базова оцінка функції щитовидної залози. Терапевт оцінить результати та при потребі направить до ендокринолога.',
+  skin: 'Програма включає ТТГ та загальний аналіз крові — часто шкірні та волосяні зміни пов\'язані з цими показниками.',
 };
 
-export default function RoadmapResult() {
-  const { phase, gender, age, tags, selectedProgram, setPhase } = useQuiz();
+function fmt(n: number) {
+  return n.toLocaleString('uk-UA');
+}
+
+function discountPct(regular: number, sale: number) {
+  if (regular <= sale) return 0;
+  return Math.round((1 - sale / regular) * 100);
+}
+
+export default function RoadmapResult({ city = 'kharkiv' }: Props) {
+  const {
+    phase, gender, age, tags,
+    standardProgram, clinicProgram, chosenProgramType,
+    setChosenProgramType, setPhase,
+  } = useQuiz();
+
   const [visit1Open, setVisit1Open] = useState(true);
   const [visit2Open, setVisit2Open] = useState(false);
+  const [stdOpen, setStdOpen] = useState(false);
+  const [clinicOpen, setClinicOpen] = useState(false);
 
   if (phase !== 'roadmap') return null;
 
   const focusTags = tags.filter(t => t !== 'checkup');
-  const programName = selectedProgram ? selectedProgram.name_ua : '';
-  const price = selectedProgram ? selectedProgram.price_discount : 0;
-  const priceRegular = selectedProgram ? selectedProgram.price_regular : 0;
-  const discount = priceRegular > 0 ? Math.round((1 - price / priceRegular) * 100) : 0;
-
   const genderLabel = gender === 'female' ? 'жінок' : 'чоловіків';
   const ageLabel = age === 'do-30' ? 'до 30' : age === '50+' ? 'від 50' : age;
+  const canProceed = chosenProgramType !== null;
+
+  // Standard card subtitle
+  const stdSpecialists = gender === 'female' ? 'Терапевт, гінеколог' : 'Терапевт';
+  const stdSubtitle = `${stdSpecialists} · 2 візити`;
+
+  // Clinic card subtitle
+  const clinicSubtitle = clinicProgram
+    ? [
+        clinicProgram.consultations_count ? `${clinicProgram.consultations_count} спеціалістів` : null,
+        clinicProgram.diagnostics_count ? `${clinicProgram.diagnostics_count} досліджень` : null,
+      ].filter(Boolean).join(' · ')
+    : '';
 
   return (
     <div>
@@ -68,19 +96,19 @@ export default function RoadmapResult() {
           <div className="px-3.5 pb-3.5 pt-0">
             <div className="border-t border-gray-100 pt-3 text-[13px] text-gray-700 leading-relaxed">
               <div className="mb-2">
-                <span className="font-semibold">Забір крові:</span> загальний аналіз, глюкоза, біохімія, тиреоїдний пакет, вітамін D
+                <span className="font-semibold">Забір крові:</span> загальний аналіз, глюкоза, біохімія, ліпідограма, ТТГ
               </div>
               <div className="mb-2">
                 <span className="font-semibold">Діагностика:</span> ЕКГ, УЗД (черевна порожнина, нирки, щитоподібна залоза
-                {gender === 'female' ? ', малий таз, молочні залози' : ', простата'})
+                {gender === 'female' ? ', малий таз, молочні залози' : ''})
               </div>
               <div>
                 <span className="font-semibold">
-                  {gender === 'female' ? 'Гінеколог:' : 'Уролог:'}
+                  {gender === 'female' ? 'Гінеколог:' : 'Спеціаліст:'}
                 </span>
                 {gender === 'female'
-                  ? ' огляд, мазки, ПАП-тест, кольпоскопія'
-                  : ' огляд з доплерографією, мікроскопія секрету простати'}
+                  ? ' огляд, мазки, ПАП-тест'
+                  : ' консультація терапевта (або уролога для 40+) — оцінка результатів'}
               </div>
             </div>
 
@@ -108,7 +136,7 @@ export default function RoadmapResult() {
       </div>
 
       {/* Visit 2 */}
-      <div className="bg-white rounded-[10px] border border-gray-200 mb-4 overflow-hidden">
+      <div className="bg-white rounded-[10px] border border-gray-200 mb-5 overflow-hidden">
         <button
           onClick={() => setVisit2Open(!visit2Open)}
           className="w-full flex items-center gap-3 p-3.5 cursor-pointer bg-transparent border-none text-left"
@@ -127,48 +155,193 @@ export default function RoadmapResult() {
         {visit2Open && (
           <div className="px-3.5 pb-3.5 pt-0">
             <div className="border-t border-gray-100 pt-3 text-[13px] text-gray-700 leading-relaxed">
-              <span className="font-semibold">Терапевт:</span> аналіз всіх результатів, висновок, рекомендації, індивідуальний план профілактики. Можливо онлайн.
+              <span className="font-semibold">Терапевт:</span> аналіз всіх результатів, висновок, рекомендації, індивідуальний план профілактики.
             </div>
           </div>
         )}
       </div>
 
-      {/* Program info */}
-      <div className="bg-white rounded-[10px] border border-gray-200 p-4 mb-4">
-        <div className="text-[13px] font-bold uppercase tracking-[0.05em] text-[#005485] mb-2">
-          Програма
-        </div>
-        <div className="text-[15px] font-semibold mb-1">{programName}</div>
-        <div className="flex items-baseline gap-2">
-          <span className="text-lg font-bold text-[#005485]">{price.toLocaleString('uk-UA')} грн</span>
-          {discount > 0 && (
-            <>
-              <span className="text-sm text-gray-400 line-through">{priceRegular.toLocaleString('uk-UA')} грн</span>
-              <span className="text-xs font-semibold text-[#d60242] bg-red-50 px-1.5 py-0.5 rounded">-{discount}%</span>
-            </>
-          )}
-        </div>
-        {selectedProgram && (
-          <div className="text-xs text-gray-500 mt-1">
-            {selectedProgram.consultations_count} консультацій · {selectedProgram.analyses_count} аналізів · {selectedProgram.diagnostics_count} досліджень
-          </div>
-        )}
+      {/* === Program selection === */}
+      <div className="text-[11px] font-bold tracking-widest uppercase text-gray-500 mb-3">
+        Оберіть програму
       </div>
 
-      {/* CTA */}
+      {/* Standard program card */}
+      {standardProgram && (
+        <div
+          role="radio"
+          aria-checked={chosenProgramType === 'standard'}
+          tabIndex={0}
+          onClick={() => setChosenProgramType('standard')}
+          onKeyDown={e => e.key === 'Enter' && setChosenProgramType('standard')}
+          className={`cursor-pointer rounded-[10px] border-2 mb-3 transition-all duration-150 ${
+            chosenProgramType === 'standard'
+              ? 'border-[#005485] bg-[#e8f4fd]'
+              : 'border-gray-200 bg-white hover:border-gray-300'
+          }`}
+        >
+          {/* Clickable card body */}
+          <div className="p-4">
+            <div className="flex items-start justify-between gap-2 mb-1">
+              <span className="text-[10px] font-bold tracking-widest uppercase text-[#005485]">
+                Стандарт
+              </span>
+              {chosenProgramType === 'standard' && (
+                <span className="w-5 h-5 rounded-full bg-[#005485] flex items-center justify-center shrink-0">
+                  <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                    <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </span>
+              )}
+            </div>
+            <div className="text-sm font-semibold text-[#0b1a24] mb-0.5 leading-snug">{standardProgram.name_ua}</div>
+            <div className="text-xs text-gray-500 mb-2">{stdSubtitle}</div>
+            <div className="text-lg font-bold text-[#005485]">
+              {fmt(standardProgram.price_discount)} грн
+            </div>
+          </div>
+
+          {/* "Що входить ↓" toggle — stops card-click propagation */}
+          <div
+            className="px-4 pb-3 pt-2 border-t border-gray-100"
+            onClick={e => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setStdOpen(v => !v)}
+              className="text-xs font-semibold text-[#005485] bg-transparent border-none cursor-pointer p-0"
+            >
+              {stdOpen ? 'Що входить ↑' : 'Що входить ↓'}
+            </button>
+            {stdOpen && (
+              <div className="mt-2 text-xs text-gray-600 space-y-1 leading-relaxed">
+                {standardProgram.consultations_count ? (
+                  <div>• {standardProgram.consultations_count} консультації ({gender === 'female' ? 'терапевт, гінеколог' : 'терапевт'})</div>
+                ) : null}
+                {standardProgram.analyses_count ? (
+                  <div>• {standardProgram.analyses_count} аналізів (загальний аналіз крові, глюкоза, біохімія, ліпідограма, ТТГ)</div>
+                ) : null}
+                {standardProgram.diagnostics_count ? (
+                  <div>• {standardProgram.diagnostics_count} досліджень (ЕКГ, УЗД{gender === 'female' ? ', молочні залози, малий таз' : ''})</div>
+                ) : null}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Clinic program card */}
+      {clinicProgram && (
+        <div
+          role="radio"
+          aria-checked={chosenProgramType === 'clinic'}
+          tabIndex={0}
+          onClick={() => setChosenProgramType('clinic')}
+          onKeyDown={e => e.key === 'Enter' && setChosenProgramType('clinic')}
+          className={`cursor-pointer rounded-[10px] border-2 mb-5 transition-all duration-150 ${
+            chosenProgramType === 'clinic'
+              ? 'border-[#005485] bg-[#e8f4fd]'
+              : 'border-gray-200 bg-white hover:border-gray-300'
+          }`}
+        >
+          {/* Clickable card body */}
+          <div className="p-4">
+            <div className="flex items-start justify-between gap-2 mb-1">
+              <span className="text-[10px] font-bold tracking-widest uppercase text-gray-500">
+                Програма ОН Клінік
+              </span>
+              <div className="flex items-center gap-1.5 shrink-0">
+                {discountPct(clinicProgram.price_regular, clinicProgram.price_discount) > 0 && (
+                  <span className="text-[10px] font-bold text-[#d60242] bg-red-50 px-1.5 py-0.5 rounded-full">
+                    -{discountPct(clinicProgram.price_regular, clinicProgram.price_discount)}%
+                  </span>
+                )}
+                {chosenProgramType === 'clinic' && (
+                  <span className="w-5 h-5 rounded-full bg-[#005485] flex items-center justify-center">
+                    <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                      <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="text-sm font-semibold text-[#0b1a24] mb-0.5 leading-snug">{clinicProgram.name_ua}</div>
+            {clinicSubtitle && (
+              <div className="text-xs text-gray-500 mb-2">{clinicSubtitle}</div>
+            )}
+            <div className="flex items-baseline gap-2">
+              <span className="text-lg font-bold text-[#005485]">
+                {fmt(clinicProgram.price_discount)} грн
+              </span>
+              {clinicProgram.price_regular > clinicProgram.price_discount && (
+                <span className="text-sm text-gray-400 line-through">
+                  {fmt(clinicProgram.price_regular)} грн
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* "Що входить ↓" toggle */}
+          <div
+            className="px-4 pb-3 pt-2 border-t border-gray-100"
+            onClick={e => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setClinicOpen(v => !v)}
+              className="text-xs font-semibold text-[#005485] bg-transparent border-none cursor-pointer p-0"
+            >
+              {clinicOpen ? 'Що входить ↑' : 'Що входить ↓'}
+            </button>
+            {clinicOpen && (
+              <div className="mt-2 text-xs text-gray-600 space-y-1 leading-relaxed">
+                {clinicProgram.consultations_count ? (
+                  <div>• {clinicProgram.consultations_count} спеціалістів</div>
+                ) : null}
+                {clinicProgram.analyses_count ? (
+                  <div>• {clinicProgram.analyses_count} аналізів</div>
+                ) : null}
+                {clinicProgram.diagnostics_count ? (
+                  <div>• {clinicProgram.diagnostics_count} досліджень</div>
+                ) : null}
+                <a
+                  href={`https://onclinic.check-up.in.ua/${city}/checkup/${clinicProgram.slug}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block text-[#005485] underline mt-1"
+                >
+                  Детальніше на сайті клініки →
+                </a>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Fallback: neither loaded */}
+      {!standardProgram && !clinicProgram && (
+        <div className="text-sm text-gray-400 text-center py-4 mb-4">
+          Програми завантажуються...
+        </div>
+      )}
+
+      {/* CTA — navy, disabled until program chosen */}
       <button
-        onClick={() => setPhase('branch')}
-        className="w-full py-4 bg-[#d60242] text-white rounded-[10px] text-base font-semibold cursor-pointer hover:bg-[#b80238] transition-colors"
+        onClick={() => canProceed && setPhase('branch')}
+        disabled={!canProceed}
+        className={`w-full py-4 rounded-[10px] text-base font-semibold text-white transition-colors ${
+          canProceed
+            ? 'bg-[#005485] cursor-pointer hover:bg-[#003d66]'
+            : 'bg-[#d1d5db] cursor-default'
+        }`}
       >
-        Обрати філію та записатися
+        {canProceed ? 'Обрати філію та записатися' : 'Оберіть програму вище'}
       </button>
 
       <div className="text-center mt-3">
         <button
-          onClick={() => {
-            // Reset to quiz start
-            // QuizContext reset handled by parent
-          }}
+          type="button"
+          onClick={() => setPhase('tags')}
           className="bg-transparent border-none text-gray-400 text-xs cursor-pointer"
         >
           ↻ Пройти заново
