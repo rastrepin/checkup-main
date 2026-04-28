@@ -63,7 +63,7 @@ const SCHEMA = {
 };
 
 export default async function KharkovPage() {
-  const { data: clinic } = await supabase
+  const { data: clinic } = await (supabase as any)
     .from('clinics')
     .select('id')
     .eq('slug', CLINIC_SLUG)
