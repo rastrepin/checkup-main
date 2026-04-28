@@ -273,4 +273,3 @@ export default function ProgramPage({ program, basePath }: Props) {
     </>
   );
 }
-                                       
