@@ -1,60 +1,92 @@
-import type { ReactNode } from 'react';
+import { ButtonHTMLAttributes, forwardRef } from 'react';
 
-type ButtonVariant = 'primary' | 'ghost' | 'crimson';
+type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
+type Size = 'sm' | 'md' | 'lg';
 
-interface ButtonProps {
-  variant: ButtonVariant;
-  text: string;
-  icon?: ReactNode;
-  onClick?: () => void;
-  href?: string;
-  className?: string;
-  type?: 'button' | 'submit' | 'reset';
-  disabled?: boolean;
+interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: Variant;
+  size?: Size;
+  loading?: boolean;
+  fullWidth?: boolean;
 }
 
-export function Button({
-  variant,
-  text,
-  icon,
-  onClick,
-  href,
-  className = '',
-  type = 'button',
-  disabled,
-}: ButtonProps) {
-  const isShort = text.trim().split(/\s+/).length === 1;
+const base =
+  'inline-flex items-center justify-center font-semibold rounded-[10px] transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
 
-  const base =
-    'inline-flex items-center justify-center rounded-full transition cursor-pointer select-none';
+const variants: Record<Variant, string> = {
+  primary:
+    'bg-[var(--navy)] text-white hover:opacity-90 focus-visible:ring-[var(--navy)]',
+  secondary:
+    'bg-[var(--teal)] text-white hover:opacity-90 focus-visible:ring-[var(--teal)]',
+  ghost:
+    'bg-transparent text-[var(--navy)] border border-[var(--navy)] hover:bg-[var(--navy)] hover:text-white focus-visible:ring-[var(--navy)]',
+  danger:
+    'bg-[var(--crimson)] text-white hover:opacity-90 focus-visible:ring-[var(--crimson)]',
+};
 
-  const styles: Record<ButtonVariant, string> = {
-    primary: isShort
-      ? 'bg-[#005485] hover:bg-[#003a5e] text-white px-8 py-4 text-[13px] font-bold uppercase tracking-[0.1em]'
-      : 'bg-[#005485] hover:bg-[#003a5e] text-white px-7 py-4 text-[15px] font-semibold gap-2.5 shadow-[0_8px_24px_rgba(0,84,133,0.18)]',
-    ghost: isShort
-      ? 'bg-transparent text-[#005485] border-[1.5px] border-[#005485]/30 px-7 py-4 text-xs font-bold uppercase tracking-[0.08em]'
-      : 'bg-transparent text-[#005485] border-[1.5px] border-[#005485]/25 hover:border-[#005485] hover:bg-[#005485]/[0.04] px-6 py-3.5 text-sm font-semibold gap-2',
-    crimson: isShort
-      ? 'bg-[#d60242] hover:bg-[#b50139] text-white px-8 py-4 text-[13px] font-bold uppercase tracking-[0.1em]'
-      : 'bg-[#d60242] hover:bg-[#b50139] text-white px-7 py-4 text-[15px] font-semibold gap-2.5',
-  };
+const sizes: Record<Size, string> = {
+  sm: 'px-4 py-2 text-sm',
+  md: 'px-6 py-3 text-[15px]',
+  lg: 'px-8 py-4 text-base',
+};
 
-  const cls = `${base} ${styles[variant]} ${className}`;
-
-  if (href) {
+const Button = forwardRef<HTMLButtonElement, ButtonProps>(
+  (
+    {
+      variant = 'primary',
+      size = 'md',
+      loading = false,
+      fullWidth = false,
+      className = '',
+      children,
+      disabled,
+      ...rest
+    },
+    ref,
+  ) => {
     return (
-      <a href={href} className={cls}>
-        {text}
-        {icon && !isShort && icon}
-      </a>
+      <button
+        ref={ref}
+        disabled={disabled || loading}
+        className={[
+          base,
+          variants[variant],
+          sizes[size],
+          fullWidth ? 'w-full' : '',
+          className,
+        ]
+          .filter(Boolean)
+          .join(' ')}
+        {...rest}
+      >
+        {loading && (
+          <svg
+            className="mr-2 h-4 w-4 animate-spin"
+            viewBox="0 0 24 24"
+            fill="none"
+            aria-hidden
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            />
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+            />
+          </svg>
+        )}
+        {children}
+      </button>
     );
-  }
+  },
+);
 
-  return (
-    <button type={type} onClick={onClick} disabled={disabled} className={cls}>
-      {text}
-      {icon && !isShort && icon}
-    </button>
-  );
-}
+Button.displayName = 'Button';
+
+export default Button;
