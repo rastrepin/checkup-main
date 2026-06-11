@@ -8,7 +8,7 @@ import FaqBlock from '@/components/city/FaqBlock';
 export const revalidate = 3600;
 
 export const metadata: Metadata = {
-  title: 'Чекап для чоловіків у Харкові ፈ Програми за віком від 7 722 грн',
+  title: 'Чекап для чоловіків у Харкові — Програми за віком від 7 722 грн',
   description: 'Чоловічий чекап у Харкові — програми для кожного віку. Урологія, гормони, серце. Від 7 722 грн в ОН Клінік. Запис онлайн.',
   alternates: {
     canonical: 'https://check-up.in.ua/ukr/male-checkup/kharkiv',
