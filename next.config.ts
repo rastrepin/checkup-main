@@ -1,6 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  async rewrites() {
+    return {
+      fallback: [
+        { source: '/:path*', destination: `${process.env.TILDA_ORIGIN}/:path*` },
+      ],
+    };
+  },
   async redirects() {
     return [
       // === Пріоритет 1: сторінки з трафіком ===
