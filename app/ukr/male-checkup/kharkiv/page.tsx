@@ -42,6 +42,7 @@ async function fetchPrograms() {
       .eq('gender', 'male')
       .eq('is_active', true)
       .eq('is_specialized', false)
+      .eq('program_type', 'clinic') // freeze 09.08.2026 (Ihor) — не показувати заморожені 'standard' програми
       .order('price_discount', { ascending: true });
     return (data ?? []) as CheckupProgram[];
   } catch { return []; }
