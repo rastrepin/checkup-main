@@ -7,6 +7,7 @@ export const revalidate = 3600;
 export const metadata: Metadata = {
   title: `${maleRegularThirtyForty.title}`,
   description: maleRegularThirtyForty.description,
+  robots: { index: false, follow: false }, // freeze 09.08.2026 (Ihor) — старий Program Page, поза Типом 5/5a
 };
 
 export default function Page() {
