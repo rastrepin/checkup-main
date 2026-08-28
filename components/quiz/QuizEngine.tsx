@@ -26,7 +26,7 @@ const AGE_OPTIONS: { value: AgeGroup; label: string }[] = [
 
 function getProgram(gender: string, age: string): string {
   if (gender === 'female') {
-    return ['40-50', '50+'].includes(age) ? 'zhinochyi-pislia-40' : 'zhinochyi-profilaktychnyi';
+    return ['40-50', '50+'].includes(age) ? 'zhinochyi-pislya-40' : 'zhinochyi-profilaktychnyi';
   }
   return ['40-50', '50+'].includes(age) ? 'cholovichyi-pislia-40' : 'cholovichyi-profilaktychnyi';
 }

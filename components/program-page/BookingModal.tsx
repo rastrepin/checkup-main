@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase, resolveClinicName } from '@/lib/supabase';
 
 interface Branch {
   id: string;
@@ -86,25 +86,42 @@ export default function BookingModal({
     setSubmitting(true);
     try {
       const params = new URLSearchParams(window.location.search);
-      await (supabase as any).from('leads').insert({
-        city,
-        clinic_id: clinicId,
-        clinic_slug: clinicSlug,
-        source_page: window.location.pathname,
-        name: name.trim(),
-        phone: phoneDigits.length >= 10 ? `+${phoneDigits}` : phone,
-        preferred_contact: preferredContact,
-        selected_program_slug: programSlug,
-        selected_branch_id: selectedBranchId || null,
-        program_name: programName,
-        price,
-        consent_given: true,
-        consent_given_at: new Date().toISOString(),
-        utm_source: params.get('utm_source'),
-        utm_medium: params.get('utm_medium'),
-        utm_campaign: params.get('utm_campaign'),
-      });
+      const { data: inserted } = await (supabase as any)
+        .from('leads')
+        .insert({
+          city,
+          clinic_id: clinicId,
+          clinic_slug: clinicSlug,
+          source_page: window.location.pathname,
+          name: name.trim(),
+          phone: phoneDigits.length >= 10 ? `+${phoneDigits}` : phone,
+          preferred_contact: preferredContact,
+          selected_program_slug: programSlug,
+          selected_branch_id: selectedBranchId || null,
+          program_name: programName,
+          price,
+          consent_given: true,
+          consent_given_at: new Date().toISOString(),
+          utm_source: params.get('utm_source'),
+          utm_medium: params.get('utm_medium'),
+          utm_campaign: params.get('utm_campaign'),
+        })
+        .select('id')
+        .single();
+
       setSubmitted(true);
+
+      // Best-effort: резолв назви клініки для UI/сповіщень (LEADS-TRANSPORT-STANDARD п.3).
+      // Лід вже збережено рядком вище — clinic_id більше не має hard FK, тож
+      // невідповідний/застарілий id не міг завалити insert. Якщо резолв не
+      // вдасться, лід все одно лишається збереженим із сирим clinic_id.
+      resolveClinicName(clinicId)
+        .then((resolvedName) => {
+          if (resolvedName) {
+            console.info(`[lead ${inserted?.id ?? 'unknown'}] clinic resolved: ${resolvedName}`);
+          }
+        })
+        .catch(() => {});
     } catch {
       setSubmitted(true); // show success even on error — don't block user
     } finally {
