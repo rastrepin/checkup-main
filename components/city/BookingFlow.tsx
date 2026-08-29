@@ -62,16 +62,21 @@ export function BookCta({
   programSlug?: string;
   sourceCta: string;
   label: string;
-  variant?: 'primary' | 'hero';
+  variant?: 'primary' | 'hero' | 'crimson';
   className?: string;
   /** Резолвлені назви обраних доп. послуг (AdditionalServices) — опційно,
    *  прокидається в open-booking-flow. Рішення Cowork 29.08.2026 п.2. */
   selectedAdditionalServices?: string[];
 }) {
+  // 'crimson' — accent-exclusivity (brand-tokens-v3 / checkup-design §Кольори):
+  // crimson лише на CTA сайдбара і StickyMobileCta на сторінках Типу 5a
+  // (завдання Cowork 29.08.2026, "UX-переробка"), ніде більше на сторінці.
   const base =
     variant === 'hero'
-      ? 'inline-flex items-center justify-center min-h-12 px-7 rounded-[10px] bg-[#005485] text-white font-semibold text-base hover:bg-[#004470] transition-colors'
-      : 'w-full inline-flex items-center justify-center min-h-12 px-5 rounded-[10px] bg-[#005485] text-white font-semibold text-sm hover:bg-[#004470] transition-colors';
+      ? 'inline-flex items-center justify-center min-h-12 px-7 rounded-[10px] bg-navy text-white font-semibold text-base hover:bg-navy-dark transition-colors'
+      : variant === 'crimson'
+      ? 'w-full inline-flex items-center justify-center min-h-12 px-5 rounded-[10px] bg-crimson text-white font-semibold text-sm hover:bg-crimson-hover transition-colors'
+      : 'w-full inline-flex items-center justify-center min-h-12 px-5 rounded-[10px] bg-navy text-white font-semibold text-sm hover:bg-navy-dark transition-colors';
   return (
     <button
       type="button"

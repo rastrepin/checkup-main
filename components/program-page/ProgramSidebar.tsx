@@ -1,4 +1,5 @@
 import { BookCta } from '@/components/city/BookingFlow';
+import AccordionSection from '@/components/shared/AccordionSection';
 
 // components-map-FIXED.md §3, mode="program" (платформа check-up.in.ua, checkup-main).
 // Еталон з'являється з першою живою сторінкою (це вона) — Program-варіант PriceSidebar.
@@ -7,6 +8,13 @@ import { BookCta } from '@/components/city/BookingFlow';
 // "ВІДПОВІДЬ COWORK — механізм CTA", п.1): programSlug/sourceCta для BookCta,
 // реюз open-booking-flow + вже задеплойеного /api/leads, окремий BookingFlow-modal
 // не створюється — рендериться один раз на сторінці.
+//
+// ОНОВЛЕНО 29.08.2026 (завдання "UX-переробка", п.4): compositionSummary — новий
+// проп, скасовує попереднє "без композиції складу" (узгоджено з Норматив тим же
+// числом). Сайдбар відповідає на 4 питання без переходів: скільки коштує (ціна),
+// що входить (лічильники завжди + розкривний повний перелік), де пройти (branches).
+// Четверте питання, скільки візитів, СВІДОМО не показується — program_services
+// порожня, дані немає, не вигадувати (п.4 завдання).
 
 export interface ProgramSidebarBranch {
   name: string;
@@ -23,6 +31,11 @@ export interface ProgramSidebarAdditionalService {
   available: boolean;
 }
 
+export interface ProgramSidebarCompositionGroup {
+  type: string;
+  items: string[];
+}
+
 export interface ProgramSidebarProps {
   mode: 'program';
   price: number;
@@ -34,6 +47,8 @@ export interface ProgramSidebarProps {
   counts: ProgramSidebarCount[];
   subdomainHref: string;
   additionalServices: ProgramSidebarAdditionalService[];
+  /** Розкривний повний склад програми, згорнутий за замовчуванням (п.4, 29.08.2026). */
+  compositionSummary?: ProgramSidebarCompositionGroup[];
   /** Доповнення понад §3 — для BookCta (open-booking-flow), див. коментар вище файлу. */
   programSlug: string;
   sourceCta: string;
@@ -52,6 +67,7 @@ export default function ProgramSidebar({
   counts,
   subdomainHref,
   additionalServices,
+  compositionSummary,
   programSlug,
   sourceCta,
 }: ProgramSidebarProps) {
@@ -60,38 +76,61 @@ export default function ProgramSidebar({
     month: 'long',
     year: 'numeric',
   });
+  const countsLabel = counts.map((c) => `${c.count} ${c.label}`).join(' · ');
 
   return (
     <div className="bg-white border border-gray-200 rounded-[10px] p-5">
-      <h3 className="text-base font-bold text-[#0b1a24] mb-1 leading-snug">{official_name}</h3>
+      <h3 className="text-base font-bold text-text-primary mb-1 leading-snug">{official_name}</h3>
 
-      {/* Ціна видима одразу — без accordion/розкриття (НЕ PriceMobileAccordion-патерн, §3) */}
-      <div className="text-2xl font-bold text-[#0b1a24] mb-0.5">{fmt(price)} грн</div>
-      <p className="text-xs text-gray-500 mb-1">Ціна на {dateLabel}</p>
+      {/* Скільки коштує — видима одразу, без accordion (НЕ PriceMobileAccordion-патерн, §3) */}
+      <div className="text-2xl font-bold text-text-primary mb-0.5">{fmt(price)} грн</div>
+      <p className="text-xs text-text-secondary mb-1">Ціна на {dateLabel}</p>
       {priceDateNotice && (
         <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-2 py-1.5 mb-2">
           {priceDateNotice}
         </p>
       )}
 
-      {counts.length > 0 && (
-        <p className="text-[13px] text-gray-500 mb-4">
-          {counts.map((c) => `${c.count} ${c.label}`).join(' · ')}
-        </p>
+      {/* Що входить — лічильники завжди видимі; повний перелік розкривається кліком */}
+      {countsLabel && (
+        compositionSummary && compositionSummary.length > 0 ? (
+          <AccordionSection summary={<>Що входить · {countsLabel}</>} className="mb-4">
+            <ul className="space-y-2.5">
+              {compositionSummary.map((group) => (
+                <li key={group.type}>
+                  <p className="text-xs font-semibold text-text-secondary mb-1">{group.type}</p>
+                  <ul className="text-[13px] text-gray-600 space-y-0.5 list-disc list-inside">
+                    {group.items.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </li>
+              ))}
+            </ul>
+          </AccordionSection>
+        ) : (
+          <p className="text-[13px] text-text-secondary mb-4">{countsLabel}</p>
+        )
       )}
 
-      <BookCta programSlug={programSlug} sourceCta={sourceCta} label="Записатися" className="mb-2.5" />
+      <BookCta
+        programSlug={programSlug}
+        sourceCta={sourceCta}
+        label="Записатися"
+        variant="crimson"
+        className="mb-2.5"
+      />
 
       <a
         href={subdomainHref}
-        className="block text-center text-[13px] text-[#005485] mb-4 hover:underline"
+        className="block text-center text-[13px] text-navy mb-4 hover:underline"
       >
         Що входить у програму →
       </a>
 
       {additionalServices.length > 0 && (
         <div className="border-t border-gray-100 pt-3 mb-3">
-          <p className="text-xs font-semibold text-gray-500 mb-2">Додатково в клініці</p>
+          <p className="text-xs font-semibold text-text-secondary mb-2">Додатково в клініці</p>
           <ul className="space-y-1.5">
             {additionalServices.map((item) => (
               <li key={item.label} className="flex items-start gap-2 text-[13px]">
@@ -100,8 +139,6 @@ export default function ProgramSidebar({
                 </span>
                 <span className={item.available ? 'text-gray-700' : 'text-gray-400'}>
                   {item.label}
-                  {/* null/false-стан — принцип AdditionalCosts: лейбл завжди видимий,
-                      статус-текст замінює відсутнє значення, не порожній рядок (§3) */}
                   {!item.available && <span className="text-gray-400"> — уточнюйте в клініці</span>}
                 </span>
               </li>
@@ -110,9 +147,10 @@ export default function ProgramSidebar({
         </div>
       )}
 
+      {/* Де пройти */}
       {branches.length > 0 && (
         <div className="border-t border-gray-100 pt-3">
-          <p className="text-xs font-semibold text-gray-500 mb-2">Локації</p>
+          <p className="text-xs font-semibold text-text-secondary mb-2">Локації</p>
           <ul className="space-y-1 text-[13px] text-gray-600">
             {branches.map((b) => (
               <li key={b.address}>{b.name} · {b.address}</li>

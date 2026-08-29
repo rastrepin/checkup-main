@@ -45,6 +45,7 @@ export default function StickyMobileCta({ programNameShort, price, programSlug, 
         programSlug={programSlug}
         sourceCta={sourceCta}
         label="Записатися"
+        variant="crimson"
         className="!w-auto shrink-0 px-5"
       />
     </div>

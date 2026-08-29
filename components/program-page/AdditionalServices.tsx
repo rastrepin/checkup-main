@@ -92,7 +92,7 @@ export default function AdditionalServices({ available, unavailable, programSlug
               return (
                 <label
                   key={item.id}
-                  className="flex items-start gap-3 border border-gray-200 rounded-[10px] px-4 py-3 cursor-pointer hover:border-[#005485]"
+                  className="flex items-start gap-3 border border-gray-200 rounded-[10px] px-4 py-3 cursor-pointer hover:border-navy"
                 >
                   <input
                     type="checkbox"
@@ -120,19 +120,20 @@ export default function AdditionalServices({ available, unavailable, programSlug
           <button
             type="button"
             onClick={handleBook}
-            className="mt-4 w-full sm:w-auto px-6 py-3 rounded-[10px] bg-[#005485] text-white font-semibold text-sm hover:bg-[#004470] transition-colors"
+            className="mt-4 w-full sm:w-auto px-6 py-3 rounded-[10px] bg-navy text-white font-semibold text-sm hover:bg-navy-dark transition-colors"
           >
             {selected.size > 0 ? `Записатися з обраним (${selected.size})` : 'Записатися'}
           </button>
         </div>
       )}
 
-      {/* Секція unavailable — обов'язкова, без чекбоксів/цін/CTA */}
+      {/* Секція unavailable — обов'язкова, без чекбоксів/цін/CTA.
+          Стиль: gray-100 + border-warm — "довідкові й опорні блоки" (UX-переробка 29.08.2026, п.2/п.6) */}
       <div>
         <p className="text-sm font-semibold text-gray-500 mb-3">Що варто пройти, але в ОН Клінік не проводиться</p>
         <div className="space-y-3">
           {unavailable.map((item) => (
-            <div key={item.name} className="border border-gray-100 rounded-[10px] px-4 py-3 bg-gray-50">
+            <div key={item.name} className="border border-border-warm rounded-[10px] px-4 py-3 bg-gray-100">
               <p className="text-sm font-semibold text-[#0b1a24]">{item.name}</p>
               <p className="text-[13px] text-gray-500 mt-1">{item.why}</p>
               <p className="text-[13px] text-gray-600 mt-1.5">{item.whereToGo}</p>

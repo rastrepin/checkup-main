@@ -15,9 +15,12 @@ const variants: Record<BadgeVariant, string> = {
   'gray':         'bg-gray-100 text-[var(--text-secondary)]',
   'navy-outline': 'border border-[var(--navy)] text-[var(--navy)] bg-transparent',
   'teal-outline': 'border border-[var(--teal)] text-[var(--teal)] bg-transparent',
-  // USPSTF-позначка ступеня доказовості (A/B). Новий колірний варіант — амбер,
-  // навмисно поза навігаційною палітрою (navy/teal/crimson), щоб не конкурувати з CTA.
-  'uspstf':       'bg-amber-50 text-amber-700 border border-amber-200',
+  // USPSTF-позначка ступеня доказовості (A/B). ОНОВЛЕНО 29.08.2026 (завдання
+  // "UX-переробка", п.6): teal pill замість amber — brand-tokens-v3/checkup-design
+  // "teal як pills і badges для категорій" (той самий механізм, що StageCard).
+  // Скасовує попереднє amber-рішення (не було доступного teal-контракту на момент
+  // першого білду ProgramSidebar).
+  'uspstf':       'bg-teal-soft text-navy border border-teal',
 };
 
 const sizes: Record<BadgeSize, string> = {

@@ -6,6 +6,7 @@ import ProgramSidebar from '@/components/program-page/ProgramSidebar';
 import StickyMobileCta from '@/components/program-page/StickyMobileCta';
 import AdditionalServices from '@/components/program-page/AdditionalServices';
 import InPageNav from '@/components/shared/InPageNav';
+import AccordionSection from '@/components/shared/AccordionSection';
 import InfoFrame from '@/components/shared/InfoFrame';
 import CrossAgeNav from '@/components/shared/CrossAgeNav';
 import BookingFlow from '@/components/city/BookingFlow';
@@ -111,6 +112,16 @@ export default async function Page() {
 
   const sidebarBranches = branches.map((b) => ({ name: b.name_ua, address: b.address_ua }));
 
+  // Розкривний повний склад (п.4, 29.08.2026) — лише групи, для яких є реальні дані
+  // в checkup_programs.composition. Візити не показуємо: program_services порожня.
+  const composition = (program.composition ?? {}) as { consultations?: string[]; analyses_extra?: string[] };
+  const compositionSummary = [
+    composition.consultations?.length ? { type: 'Консультації', items: composition.consultations } : null,
+    composition.analyses_extra?.length
+      ? { type: 'Аналізи — додатково до профілактичного набору', items: composition.analyses_extra }
+      : null,
+  ].filter((g): g is { type: string; items: string[] } => g !== null);
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@graph': [
@@ -150,25 +161,31 @@ export default async function Page() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
+      <div className="bg-warm-bg">
+        <div className="max-w-6xl mx-auto px-4 pt-8 pb-6">
+          <nav className="text-sm text-gray-500 mb-4" aria-label="Хлібні крихти">
+            <Link href="/ukr/kharkiv" className="hover:underline">Чекапи в Харкові</Link>
+            {' → '}
+            <Link href="/ukr/female-checkup/kharkiv" className="hover:underline">Жіночий чекап</Link>
+            {' → '}
+            <span className="text-gray-700">40-50 років</span>
+          </nav>
+
+          <div className="max-w-[680px]">
+            <h1 id="hero" className="text-[28px] sm:text-3xl font-bold text-text-primary leading-tight mb-4 scroll-mt-24">
+              Обстеження для жінок 40-50 років: що перевіряти і де пройти в Харкові
+            </h1>
+            <p className="text-[15px] text-text-secondary leading-relaxed">
+              У проміжку 40-50 років більшість жінок ще не мають скарг, але саме в цей час починають накопичуватися
+              зміни, які проявляться пізніше. Перевірити варто артеріальний тиск, холестерин, глюкозу, стан щитоподібної
+              залози за наявності підстав, а також пройти огляд гінеколога зі скринінгом шийки матки. Обсяг залежить від
+              спадкової історії, ваги і того, що ви проходили раніше.
+            </p>
+          </div>
+        </div>
+      </div>
+
       <main className="max-w-6xl mx-auto px-4 py-8">
-        <nav className="text-sm text-gray-500 mb-4" aria-label="Хлібні крихти">
-          <Link href="/ukr/kharkiv" className="hover:underline">Чекапи в Харкові</Link>
-          {' → '}
-          <Link href="/ukr/female-checkup/kharkiv" className="hover:underline">Жіночий чекап</Link>
-          {' → '}
-          <span className="text-gray-700">40-50 років</span>
-        </nav>
-
-        <h1 id="hero" className="text-[28px] sm:text-3xl font-bold text-[#0b1a24] leading-tight mb-4 scroll-mt-24">
-          Обстеження для жінок 40-50 років: що перевіряти і де пройти в Харкові
-        </h1>
-        <p className="text-[15px] text-gray-600 leading-relaxed mb-4">
-          У проміжку 40-50 років більшість жінок ще не мають скарг, але саме в цей час починають накопичуватися
-          зміни, які проявляться пізніше. Перевірити варто артеріальний тиск, холестерин, глюкозу, стан щитоподібної
-          залози за наявності підстав, а також пройти огляд гінеколога зі скринінгом шийки матки. Обсяг залежить від
-          спадкової історії, ваги і того, що ви проходили раніше.
-        </p>
-
         <InPageNav
           items={[
             { id: 'shcho-pereviryaty', label: 'Що перевіряти' },
@@ -188,6 +205,7 @@ export default async function Page() {
               official_name={program.name_ua}
               branches={sidebarBranches}
               counts={counts}
+              compositionSummary={compositionSummary}
               subdomainHref={SUBDOMAIN_HREF}
               additionalServices={[]}
               programSlug={CHECKUP_PROGRAM_SLUG}
@@ -229,7 +247,7 @@ export default async function Page() {
                     найближчі десять років. Саме в 40-50 років ця оцінка вперше стає практично значущою: до 40
                     ризик у більшості жінок низький незалежно від показників.
                   </p>
-                  <p className="text-[12px] text-gray-400">
+                  <p className="text-[12px] text-gray-500">
                     Джерело: УКПМД «Гіпертонічна хвороба (артеріальна гіпертензія)», наказ МОЗ України №1581 від
                     12.09.2024.
                   </p>
@@ -254,7 +272,7 @@ export default async function Page() {
                     зростає. Це відбувається поступово, тому значення має не одне вимірювання, а порівняння з
                     попереднім.
                   </p>
-                  <p className="text-[12px] text-gray-400">
+                  <p className="text-[12px] text-gray-500">
                     Джерело: клінічна настанова «Профілактика серцево-судинних захворювань», наказ МОЗ України
                     №564 від 13.06.2016.
                   </p>
@@ -277,12 +295,14 @@ export default async function Page() {
                     значень. На цьому етапі зміна харчування і фізичної активності здатна зупинити перехід у
                     діабет. Саме тому виявити його в 40-50 років практичніше, ніж у 60.
                   </p>
-                  <p className="text-[12px] text-gray-400">
+                  <p className="text-[12px] text-gray-500">
                     Джерела: УКПМД «Цукровий діабет 2 типу у дорослих», наказ МОЗ України №1300 від 24.07.2024;
                     USPSTF, 2021.
                   </p>
                 </div>
 
+                <AccordionSection summary="Показати всі обстеження">
+                <div className="space-y-6">
                 <div>
                   <h3 className="text-base font-bold text-[#0b1a24] mb-1.5 flex items-center gap-2">
                     Рак шийки матки <Badge variant="uspstf" size="sm">USPSTF A</Badge>
@@ -294,7 +314,7 @@ export default async function Page() {
                   <p className="text-[14px] text-gray-600 leading-relaxed mb-2">
                     Позитивний результат означає потребу в дообстеженні, а не наявність раку чи дисплазії.
                   </p>
-                  <p className="text-[12px] text-gray-400">
+                  <p className="text-[12px] text-gray-500">
                     Джерела: наказ МОЗ України №1368 від 05.08.2024; наказ МОЗ України №1057 від 18.06.2024.
                   </p>
                 </div>
@@ -325,7 +345,7 @@ export default async function Page() {
                     Практичний висновок для 40-50 років: рішення про мамографію приймають індивідуально, з огляду
                     на спадкову історію і результати огляду.
                   </p>
-                  <p className="text-[12px] text-gray-400">
+                  <p className="text-[12px] text-gray-500">
                     Джерела: наказ МОЗ України №1368 від 05.08.2024; наказ МОЗ України №195 від 03.02.2025;
                     USPSTF, 2024; Mayo Clinic Family Health Book, розділ «Breast Health».
                   </p>
@@ -342,38 +362,42 @@ export default async function Page() {
                     рясними менструаціями загальний аналіз крові виявляє не завжди.
                   </p>
                 </div>
+                </div>
+                </AccordionSection>
               </div>
             </section>
 
-            <section id="chogo-ne-potribno" className="scroll-mt-24 mb-10">
-              <h2 className="text-xl font-bold text-[#0b1a24] mb-3">Чого зазвичай не потрібно</h2>
-              <p className="text-[15px] text-gray-600 leading-relaxed mb-4">
-                Кожне обстеження у скринінгу має підставу: воно шукає конкретний стан у конкретній групі людей.
-                За межами цієї групи воно дає більше уточнень і тривоги, ніж відповідей.
-              </p>
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-base font-bold text-[#0b1a24] mb-1.5">Скринінг колоректального раку до 50 років</h3>
-                  <p className="text-[14px] text-gray-600 leading-relaxed mb-2">
-                    Жінці до 50 років без симптомів і без обтяженої спадковості рутинний скринінг колоректального
-                    раку не показаний. Раніше його починають, якщо в родині був колоректальний рак або
-                    аденоматозні поліпи, є спадкові синдроми чи запальні захворювання кишківника.
-                  </p>
-                  <p className="text-[12px] text-gray-400">
-                    Джерела: наказ МОЗ України №1368 від 05.08.2024; настанова «Скринінг та профілактика
-                    колоректального раку», Реєстр медико-технологічних документів ДЕЦ МОЗ.
-                  </p>
+            <section id="chogo-ne-potribno" className="scroll-mt-24 mb-10 bg-gray-50 rounded-xl p-6">
+              {/* Приглушений стиль, без рамки-акценту — зняття занепокоєння, не CalloutBlock (п.6) */}
+              <AccordionSection summary={<span className="text-base font-bold text-text-primary">Чого зазвичай не потрібно</span>}>
+                <p className="text-[15px] text-gray-600 leading-relaxed mb-4">
+                  Кожне обстеження у скринінгу має підставу: воно шукає конкретний стан у конкретній групі людей.
+                  За межами цієї групи воно дає більше уточнень і тривоги, ніж відповідей.
+                </p>
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-base font-bold text-[#0b1a24] mb-1.5">Скринінг колоректального раку до 50 років</h3>
+                    <p className="text-[14px] text-gray-600 leading-relaxed mb-2">
+                      Жінці до 50 років без симптомів і без обтяженої спадковості рутинний скринінг колоректального
+                      раку не показаний. Раніше його починають, якщо в родині був колоректальний рак або
+                      аденоматозні поліпи, є спадкові синдроми чи запальні захворювання кишківника.
+                    </p>
+                    <p className="text-[12px] text-gray-500">
+                      Джерела: наказ МОЗ України №1368 від 05.08.2024; настанова «Скринінг та профілактика
+                      колоректального раку», Реєстр медико-технологічних документів ДЕЦ МОЗ.
+                    </p>
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-[#0b1a24] mb-1.5">Самообстеження грудей замість мамографії</h3>
+                    <p className="text-[14px] text-gray-600 leading-relaxed mb-2">
+                      Регулярне самообстеження не замінює мамографію і не показало здатності знижувати смертність
+                      від раку молочної залози. Знати, як виглядають і відчуваються ваші груди в нормі, корисно –
+                      але це доповнення до скринінгу, а не його заміна.
+                    </p>
+                    <p className="text-[12px] text-gray-500">Джерело: Mayo Clinic Family Health Book, розділ «Breast Health».</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-base font-bold text-[#0b1a24] mb-1.5">Самообстеження грудей замість мамографії</h3>
-                  <p className="text-[14px] text-gray-600 leading-relaxed mb-2">
-                    Регулярне самообстеження не замінює мамографію і не показало здатності знижувати смертність
-                    від раку молочної залози. Знати, як виглядають і відчуваються ваші груди в нормі, корисно –
-                    але це доповнення до скринінгу, а не його заміна.
-                  </p>
-                  <p className="text-[12px] text-gray-400">Джерело: Mayo Clinic Family Health Book, розділ «Breast Health».</p>
-                </div>
-              </div>
+              </AccordionSection>
             </section>
 
             <section id="programa" className="scroll-mt-24 mb-10">
@@ -400,7 +424,7 @@ export default async function Page() {
               </p>
             </section>
 
-            <section id="dopovnennya" className="scroll-mt-24 mb-10">
+            <section id="dopovnennya" className="scroll-mt-24 mb-10 bg-gray-50 rounded-xl p-6">
               <h2 className="text-xl font-bold text-[#0b1a24] mb-3">Що варто знати про доповнення</h2>
               <p className="text-[15px] text-gray-600 leading-relaxed mb-5">
                 Для віку 40-50 років програма закриває більшість цілей. Окремо варто розібратися з обстеженням
@@ -470,7 +494,8 @@ export default async function Page() {
               </p>
             </InfoFrame>
 
-            <section className="mt-10 mb-10 bg-gray-50 border border-gray-200 rounded-[10px] p-4">
+            {/* Дисклеймер про роль лікаря — простий текст, без рамки й акценту, не CalloutBlock (п.6) */}
+            <section className="mt-10 mb-10">
               <p className="text-[13px] text-gray-600 leading-relaxed mb-2">
                 Перелічене вище – орієнтир, а не призначення. Повний перелік обстежень визначає лікар за
                 результатами огляду і розмови з вами: те, що потрібно одній жінці 45 років, може бути зайвим для
