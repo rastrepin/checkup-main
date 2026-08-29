@@ -91,10 +91,22 @@ export default function ProgramSidebar({
         </p>
       )}
 
-      {/* Що входить — лічильники завжди видимі; повний перелік розкривається кліком */}
+      {/* Що входить — лічильники завжди видимі; повний перелік розкривається кліком.
+          ОНОВЛЕНО (п.3, "UX-виправлення, ітерація 2", 29.08.2026): розкриття складу —
+          дія на сторінці, оформлена як кнопка-рядок (bg-pill, без вигляду посилання),
+          на відміну від переходу на сторінку програми нижче (справжній <a>, підкреслення,
+          іконка переходу). Раніше обидва елементи виглядали як звичайний текстовий лінк —
+          плутались. */}
       {countsLabel && (
         compositionSummary && compositionSummary.length > 0 ? (
-          <AccordionSection summary={<>Що входить · {countsLabel}</>} className="mb-4">
+          <AccordionSection
+            summary={
+              <span className="inline-flex items-center bg-gray-100 rounded-md px-2.5 py-1.5 -ml-0.5">
+                Що входить · {countsLabel}
+              </span>
+            }
+            className="mb-4"
+          >
             <ul className="space-y-2.5">
               {compositionSummary.map((group) => (
                 <li key={group.type}>
@@ -123,9 +135,12 @@ export default function ProgramSidebar({
 
       <a
         href={subdomainHref}
-        className="block text-center text-[13px] text-navy mb-4 hover:underline"
+        className="flex items-center justify-center gap-1.5 text-center text-[13px] text-navy underline decoration-navy/40 underline-offset-2 hover:decoration-navy mb-4"
       >
-        Що входить у програму →
+        Повний склад програми, лікарі та підготовка – на сторінці програми
+        <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M7 17L17 7M17 7H9M17 7V15" />
+        </svg>
       </a>
 
       {additionalServices.length > 0 && (

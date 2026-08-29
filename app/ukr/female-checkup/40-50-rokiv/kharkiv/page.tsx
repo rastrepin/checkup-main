@@ -368,12 +368,16 @@ export default async function Page() {
             </section>
 
             <section id="chogo-ne-potribno" className="scroll-mt-24 mb-10 bg-gray-50 rounded-xl p-6">
-              {/* Приглушений стиль, без рамки-акценту — зняття занепокоєння, не CalloutBlock (п.6) */}
-              <AccordionSection summary={<span className="text-base font-bold text-text-primary">Чого зазвичай не потрібно</span>}>
-                <p className="text-[15px] text-gray-600 leading-relaxed mb-4">
-                  Кожне обстеження у скринінгу має підставу: воно шукає конкретний стан у конкретній групі людей.
-                  За межами цієї групи воно дає більше уточнень і тривоги, ніж відповідей.
-                </p>
+              {/* Приглушений стиль, без рамки-акценту — зняття занепокоєння, не CalloutBlock (п.6).
+                  ОНОВЛЕНО (п.4, "UX-виправлення, ітерація 2", 29.08.2026): вступ тепер завжди видимий
+                  розгорнутим — раніше блок згортався цілком і поруч із іншим згорнутим блоком виглядав
+                  як два порожні місця підряд. Під розкриттям лишаються лише самі пункти. */}
+              <h3 className="text-base font-bold text-text-primary mb-3">Чого зазвичай не потрібно</h3>
+              <p className="text-[15px] text-gray-600 leading-relaxed mb-4">
+                Кожне обстеження у скринінгу має підставу: воно шукає конкретний стан у конкретній групі людей.
+                За межами цієї групи воно дає більше уточнень і тривоги, ніж відповідей.
+              </p>
+              <AccordionSection summary="Показати приклади">
                 <div className="space-y-4">
                   <div>
                     <h3 className="text-base font-bold text-[#0b1a24] mb-1.5">Скринінг колоректального раку до 50 років</h3>
@@ -400,21 +404,44 @@ export default async function Page() {
               </AccordionSection>
             </section>
 
+            {/* Блок 4 — головний на сторінці (п.1, "UX-виправлення, ітерація 2", 29.08.2026):
+                контрастний бокс (border-2 + shadow-md), більший внутрішній відступ, ключовий
+                склад показується РОЗГОРНУТО тут (не під розкриттям) — на відміну від сайдбара,
+                де той самий склад згорнутий для швидкого погляду. */}
             <section id="programa" className="scroll-mt-24 mb-10">
               <h2 className="text-xl font-bold text-[#0b1a24] mb-3">Готова програма для цього віку</h2>
-              <div className="border border-gray-200 rounded-[10px] p-5 mb-4">
-                <h3 className="text-base font-bold text-[#0b1a24] mb-1">{program.name_ua}</h3>
-                <div className="text-xl font-bold text-[#0b1a24] mb-1">{fmt(program.price_discount)} грн</div>
+              <div className="bg-white border-2 border-navy/15 shadow-md rounded-2xl p-6 sm:p-8 mb-4">
+                <h3 className="text-lg font-bold text-[#0b1a24] mb-1">{program.name_ua}</h3>
+                <div className="text-2xl font-bold text-[#0b1a24] mb-1">{fmt(program.price_discount)} грн</div>
                 {counts.length > 0 && (
-                  <p className="text-[13px] text-gray-500 mb-3">
+                  <p className="text-[13px] text-gray-500 mb-4">
                     {counts.map((c) => `${c.count} ${c.label}`).join(' · ')}
                   </p>
                 )}
+
+                {compositionSummary.length > 0 && (
+                  <div className="space-y-3 mb-4 pt-4 border-t border-gray-100">
+                    {compositionSummary.map((group) => (
+                      <div key={group.type}>
+                        <p className="text-xs font-semibold text-text-secondary mb-1">{group.type}</p>
+                        <ul className="text-[14px] text-gray-700 space-y-0.5 list-disc list-inside">
+                          {group.items.map((item) => (
+                            <li key={item}>{item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 <a
                   href={SUBDOMAIN_HREF}
-                  className="inline-block text-[13px] text-[#005485] hover:underline"
+                  className="inline-flex items-center gap-1.5 text-[13px] text-navy underline decoration-navy/40 underline-offset-2 hover:decoration-navy"
                 >
-                  Детальніше →
+                  Повний склад програми, лікарі та підготовка – на сторінці програми
+                  <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M7 17L17 7M17 7H9M17 7V15" />
+                  </svg>
                 </a>
               </div>
               <p className="text-[15px] text-gray-600 leading-relaxed">
