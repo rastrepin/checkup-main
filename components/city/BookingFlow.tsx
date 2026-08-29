@@ -57,12 +57,16 @@ export function BookCta({
   label,
   variant = 'primary',
   className = '',
+  selectedAdditionalServices,
 }: {
   programSlug?: string;
   sourceCta: string;
   label: string;
   variant?: 'primary' | 'hero';
   className?: string;
+  /** Резолвлені назви обраних доп. послуг (AdditionalServices) — опційно,
+   *  прокидається в open-booking-flow. Рішення Cowork 29.08.2026 п.2. */
+  selectedAdditionalServices?: string[];
 }) {
   const base =
     variant === 'hero'
@@ -74,7 +78,9 @@ export function BookCta({
       className={`${base} ${className}`}
       onClick={() =>
         window.dispatchEvent(
-          new CustomEvent('open-booking-flow', { detail: { programSlug: programSlug ?? null, sourceCta } })
+          new CustomEvent('open-booking-flow', {
+            detail: { programSlug: programSlug ?? null, sourceCta, selectedAdditionalServices },
+          })
         )
       }
     >
@@ -87,6 +93,7 @@ export default function BookingFlow({ programs, branches, clinicId, clinicSlug, 
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<1 | 2>(1);
   const [sourceCta, setSourceCta] = useState('');
+  const [selectedAdditionalServices, setSelectedAdditionalServices] = useState<string[]>([]);
   const [programSlug, setProgramSlug] = useState<string | null>(null);
   const [branchId, setBranchId] = useState<string>(branches[0]?.id ?? '');
   const [dateLabel, setDateLabel] = useState('');
@@ -101,9 +108,14 @@ export default function BookingFlow({ programs, branches, clinicId, clinicSlug, 
 
   useEffect(() => {
     const handler = (e: Event) => {
-      const detail = (e as CustomEvent).detail as { programSlug: string | null; sourceCta: string };
+      const detail = (e as CustomEvent).detail as {
+        programSlug: string | null;
+        sourceCta: string;
+        selectedAdditionalServices?: string[];
+      };
       setProgramSlug(detail.programSlug);
       setSourceCta(detail.sourceCta);
+      setSelectedAdditionalServices(detail.selectedAdditionalServices ?? []);
       setStep(1);
       setSubmitted(false);
       setError(null);
@@ -162,6 +174,13 @@ export default function BookingFlow({ programs, branches, clinicId, clinicSlug, 
           selected_date_label: dateLabel || null,
           source_page: window.location.pathname,
           source_cta: sourceCta,
+          // Обране в AdditionalServices — вираження інтересу, не замовлення (Р30).
+          // Колонки під структурований перелік немає (рішення Cowork 29.08.2026 п.3) —
+          // передається текстом у comment, той самий рядок іде в Telegram.
+          comment:
+            selectedAdditionalServices.length > 0
+              ? `Додатково цікавить: ${selectedAdditionalServices.join(', ')}`
+              : null,
           session_id: getSessionId(),
           utm_source: params.get('utm_source'),
           utm_medium: params.get('utm_medium'),
