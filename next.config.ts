@@ -1,7 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Fallback-проксі на старий Tilda-origin під час міграції. TILDA_ORIGIN
+  // раніше був заданий лише для Preview — у Production build падав з
+  // "Invalid rewrite found" (destination: 'undefined/:path*'). Тепер rewrite
+  // додається тільки якщо змінна реально задана в цьому environment.
   async rewrites() {
+    if (!process.env.TILDA_ORIGIN) return { fallback: [] };
     return {
       fallback: [
         { source: '/:path*', destination: `${process.env.TILDA_ORIGIN}/:path*` },
