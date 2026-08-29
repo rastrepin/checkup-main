@@ -1,6 +1,6 @@
 import type { HTMLAttributes } from 'react';
 
-type BadgeVariant = 'navy' | 'teal' | 'crimson' | 'gray' | 'navy-outline' | 'teal-outline';
+type BadgeVariant = 'navy' | 'teal' | 'crimson' | 'gray' | 'navy-outline' | 'teal-outline' | 'uspstf';
 type BadgeSize   = 'sm' | 'md';
 
 interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
@@ -15,6 +15,9 @@ const variants: Record<BadgeVariant, string> = {
   'gray':         'bg-gray-100 text-[var(--text-secondary)]',
   'navy-outline': 'border border-[var(--navy)] text-[var(--navy)] bg-transparent',
   'teal-outline': 'border border-[var(--teal)] text-[var(--teal)] bg-transparent',
+  // USPSTF-позначка ступеня доказовості (A/B). Новий колірний варіант — амбер,
+  // навмисно поза навігаційною палітрою (navy/teal/crimson), щоб не конкурувати з CTA.
+  'uspstf':       'bg-amber-50 text-amber-700 border border-amber-200',
 };
 
 const sizes: Record<BadgeSize, string> = {
