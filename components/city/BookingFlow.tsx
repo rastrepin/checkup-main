@@ -15,6 +15,12 @@ interface BookingFlowProps {
   clinicId: string;
   clinicSlug: string;
   city: string;
+  /** Живі лічильники складу за slug програми (lib/programs/composition.ts),
+   *  переважають застарілі checkup_programs.consultations_count/analyses_count/
+   *  diagnostics_count у картці підсумку. Опційно — сторінки без Type5a-складу
+   *  (каталог міста) не передають, картка лишається на старих полях програми.
+   *  Задача Cowork "Форма запису" (29.08.2026), п.2. */
+  programsComposition?: Record<string, { consultations: number; analyses: number; diagnostics: number }>;
 }
 
 type Contact = 'call' | 'telegram' | 'viber';
@@ -94,7 +100,7 @@ export function BookCta({
   );
 }
 
-export default function BookingFlow({ programs, branches, clinicId, clinicSlug, city }: BookingFlowProps) {
+export default function BookingFlow({ programs, branches, clinicId, clinicSlug, city, programsComposition }: BookingFlowProps) {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<1 | 2>(1);
   const [sourceCta, setSourceCta] = useState('');
@@ -223,7 +229,9 @@ export default function BookingFlow({ programs, branches, clinicId, clinicSlug, 
             <div className="text-2xl mb-3">✓</div>
             <h3 className="text-lg font-bold text-[#0b1a24] mb-2">ЗАЯВКУ НАДІСЛАНО</h3>
             <p className="text-sm text-gray-600">
-              Менеджер зв&apos;яжеться з вами найближчим часом, допоможе обрати програму та запише на зручний час.
+              {program
+                ? <>Менеджер зв&apos;яжеться з вами найближчим часом, підтвердить склад програми і запише на зручний час.</>
+                : <>Менеджер зв&apos;яжеться з вами найближчим часом, допоможе обрати програму та запише на зручний час.</>}
             </p>
             <button
               type="button"
@@ -247,14 +255,25 @@ export default function BookingFlow({ programs, branches, clinicId, clinicSlug, 
                     <span className="text-gray-400 line-through font-normal">{fmt(program.price_regular)} грн</span>
                   </div>
                   <div className="text-xs text-gray-500 mt-1">
-                    {[
-                      program.consultations_count ? `${program.consultations_count} консультацій` : null,
-                      program.analyses_count ? `${program.analyses_count} лабораторних` : null,
-                      program.diagnostics_count ? `${program.diagnostics_count} інструментальних` : null,
-                    ]
-                      .filter(Boolean)
-                      .join(' · ')}
+                    {(() => {
+                      const live = programsComposition?.[program.slug];
+                      const consultations = live ? live.consultations : program.consultations_count;
+                      const analyses = live ? live.analyses : program.analyses_count;
+                      const diagnostics = live ? live.diagnostics : program.diagnostics_count;
+                      return [
+                        consultations ? `${consultations} консультацій` : null,
+                        analyses ? `${analyses} аналізів` : null,
+                        diagnostics ? `${diagnostics} обстежень` : null,
+                      ]
+                        .filter(Boolean)
+                        .join(' · ');
+                    })()}
                   </div>
+                  {selectedAdditionalServices.length > 0 && (
+                    <div className="text-xs text-[#0b1a24] mt-2 pt-2 border-t border-[#d8e8f0]">
+                      <span className="font-semibold">Додатково обрано:</span> {selectedAdditionalServices.join(', ')}
+                    </div>
+                  )}
                 </>
               ) : (
                 <div className="text-sm text-gray-600">Адміністратор допоможе обрати програму під ваш вік і потреби.</div>

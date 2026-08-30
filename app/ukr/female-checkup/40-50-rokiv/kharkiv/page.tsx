@@ -638,6 +638,7 @@ export default async function Page() {
         clinicId={program.clinic_id}
         clinicSlug="onclinic-kharkiv"
         city="kharkiv"
+        programsComposition={{ [program.slug]: composition.counts }}
       />
       <StickyMobileCta
         programNameShort="Check-Up жіночий після 40"
