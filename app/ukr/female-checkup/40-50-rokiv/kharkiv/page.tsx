@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { fetchType5aData, priceDateNotice } from '@/lib/programs/type5a';
 import { fetchProgramComposition } from '@/lib/programs/composition';
 import ProgramSidebar from '@/components/program-page/ProgramSidebar';
+import CompositionSummaryText from '@/components/program-page/CompositionSummaryText';
 import StickyMobileCta from '@/components/program-page/StickyMobileCta';
 import AdditionalServices from '@/components/program-page/AdditionalServices';
 import InPageNav from '@/components/shared/InPageNav';
@@ -117,7 +118,11 @@ export default async function Page() {
   ].filter((c): c is { label: string; count: number } => c !== null);
 
   const sidebarBranches = branches.map((b) => ({ name: b.name_ua, address: b.address_ua }));
-  const compositionSummary = composition.summaryGroups;
+  const compositionText = {
+    consultationsSummary: composition.consultationsSummary,
+    instrumentalSummary: composition.instrumentalSummary,
+    labSummary: composition.labSummary,
+  };
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -203,7 +208,7 @@ export default async function Page() {
               official_name={program.name_ua}
               branches={sidebarBranches}
               counts={counts}
-              compositionSummary={compositionSummary}
+              compositionText={compositionText}
               subdomainHref={SUBDOMAIN_HREF}
               additionalServices={[]}
               programSlug={CHECKUP_PROGRAM_SLUG}
@@ -417,20 +422,13 @@ export default async function Page() {
                   </p>
                 )}
 
-                {compositionSummary.length > 0 && (
-                  <div className="space-y-3 mb-4 pt-4 border-t border-gray-100">
-                    {compositionSummary.map((group) => (
-                      <div key={group.type}>
-                        <p className="text-xs font-semibold text-text-secondary mb-1">{group.type}</p>
-                        <ul className="text-[14px] text-gray-700 space-y-0.5 list-disc list-inside">
-                          {group.items.map((item) => (
-                            <li key={item}>{item}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <div className="mb-4 pt-4 border-t border-gray-100">
+                  <CompositionSummaryText
+                    consultationsSummary={composition.consultationsSummary}
+                    instrumentalSummary={composition.instrumentalSummary}
+                    labSummary={composition.labSummary}
+                  />
+                </div>
 
                 <a
                   href={SUBDOMAIN_HREF}
@@ -547,23 +545,14 @@ export default async function Page() {
                 у контексті вашого віку, ваги, спадкової історії і того, що показав огляд.
               </p>
 
-              {composition.visit1Groups.length > 0 && (
-                <div className="bg-white border border-gray-200 rounded-[10px] p-5 mb-4">
-                  <p className="text-xs font-semibold text-text-secondary mb-3">Візит 1</p>
-                  <div className="space-y-3">
-                    {composition.visit1Groups.map((group) => (
-                      <div key={group.type}>
-                        <p className="text-[13px] font-semibold text-text-secondary mb-1">{group.type}</p>
-                        <ul className="text-[14px] text-gray-700 space-y-0.5 list-disc list-inside">
-                          {group.items.map((item) => (
-                            <li key={item}>{item}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <div className="bg-white border border-gray-200 rounded-[10px] p-5 mb-4">
+                <p className="text-xs font-semibold text-text-secondary mb-3">Візит 1</p>
+                <CompositionSummaryText
+                  consultationsSummary={composition.consultationsSummary}
+                  instrumentalSummary={composition.instrumentalSummary}
+                  labSummary={composition.labSummary}
+                />
+              </div>
 
               {composition.visit2Items.length > 0 && (
                 <div className="bg-white border border-gray-200 rounded-[10px] p-5 mb-4">
@@ -592,11 +581,17 @@ export default async function Page() {
 
         <FaqBlock items={FAQ} />
 
-        <CrossAgeNav currentHref={PAGE_PATH} />
+        {/* Додаткова частина сторінки — Блок 8а і далі (завдання "Скорочення складу
+            і розділення сторінки", п.2, 29.08.2026). Інший фон (bg-gray-50) і
+            заокруглений контейнер відділяють її від ключової частини вище. Контент
+            НЕ ховається: жодного accordion чи display:none, усе лишається в DOM і
+            індексованим — лише візуально й типографічно "тихіше". */}
+        <div className="mt-6 bg-gray-50 rounded-2xl px-4 sm:px-6">
+          <CrossAgeNav currentHref={PAGE_PATH} />
 
-        <section className="py-8 border-t border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-900 mb-3">Де пройти в Харкові</h2>
-          <p className="text-[14px] text-gray-600 leading-relaxed">
+          <section className="py-8 border-t border-gray-200">
+            <h2 className="text-base font-semibold text-gray-700 mb-3">Де пройти в Харкові</h2>
+            <p className="text-[13px] text-gray-600 leading-relaxed">
             Пройти чекап для жінок 40-50 років у Харкові можна в ОН Клінік – у трьох локаціях: на вулиці Ярослава
             Мудрого, 30а, на проспекті Героїв Харкова, 257 (біля станції метро «Палац Спорту») і на вулиці
             Молочній, 48 (Левада). Програму «Check-up жіночий після 40» проводять лікарі Check-Up Центру ОН Клінік
@@ -604,7 +599,7 @@ export default async function Page() {
           </p>
         </section>
 
-        <section className="py-8 border-t border-gray-100 text-[13px] text-gray-500 leading-relaxed">
+        <section className="py-8 border-t border-gray-200 text-[13px] text-gray-500 leading-relaxed">
           <p className="mb-1"><span className="font-semibold text-gray-700">Медичний редактор:</span> Ігор Растрепін, check-up.in.ua</p>
           <p className="mb-1">
             <span className="font-semibold text-gray-700">Рецензент:</span> Удовиченко Олена Олександрівна, лікар
@@ -634,6 +629,7 @@ export default async function Page() {
             програм партнерів.
           </p>
         </section>
+        </div>
       </main>
 
       <BookingFlow

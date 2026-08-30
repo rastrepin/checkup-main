@@ -15,6 +15,10 @@ const GENDER_LABEL: Record<AgeStepGender, string> = {
 // Блок 8а MD: статичний HTML, показує лише сторінки, що реально існують
 // (реєстр — lib/programs/age-pages.ts). Посилання на невидану сторінку заборонене.
 // Поточна сторінка позначена, але не є посиланням.
+// ОНОВЛЕНО 29.08.2026 (завдання "Скорочення складу і розділення сторінки", п.2):
+// заголовок полегшено (text-base замість text-lg, text-gray-700 замість -900) —
+// компонент відкриває "додаткову частину" сторінки, менша типографічна вага
+// сигналізує це без приховування контенту (він лишається повністю в DOM).
 export default function CrossAgeNav({ currentHref, className = '' }: CrossAgeNavProps) {
   const genders: AgeStepGender[] = ['female', 'male'];
   const groups = genders
@@ -28,7 +32,7 @@ export default function CrossAgeNav({ currentHref, className = '' }: CrossAgeNav
 
   return (
     <section className={`py-8 border-t border-gray-100 ${className}`} aria-label="Обстеження для інших вікових груп">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">Обстеження для інших вікових груп</h2>
+      <h2 className="text-base font-semibold text-gray-700 mb-4">Обстеження для інших вікових груп</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         {groups.map((group) => (
           <div key={group.gender}>

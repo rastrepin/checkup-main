@@ -1,5 +1,6 @@
 import { BookCta } from '@/components/city/BookingFlow';
 import AccordionSection from '@/components/shared/AccordionSection';
+import CompositionSummaryText from '@/components/program-page/CompositionSummaryText';
 
 // components-map-FIXED.md §3, mode="program" (платформа check-up.in.ua, checkup-main).
 // Еталон з'являється з першою живою сторінкою (це вона) — Program-варіант PriceSidebar.
@@ -9,12 +10,15 @@ import AccordionSection from '@/components/shared/AccordionSection';
 // реюз open-booking-flow + вже задеплойеного /api/leads, окремий BookingFlow-modal
 // не створюється — рендериться один раз на сторінці.
 //
-// ОНОВЛЕНО 29.08.2026 (завдання "UX-переробка", п.4): compositionSummary — новий
-// проп, скасовує попереднє "без композиції складу" (узгоджено з Норматив тим же
-// числом). Сайдбар відповідає на 4 питання без переходів: скільки коштує (ціна),
-// що входить (лічильники завжди + розкривний повний перелік), де пройти (branches).
-// Четверте питання, скільки візитів, СВІДОМО не показується — program_services
-// порожня, дані немає, не вигадувати (п.4 завдання).
+// ОНОВЛЕНО 29.08.2026 (завдання "UX-переробка", п.4): compositionText — новий
+// проп. Сайдбар відповідає на 4 питання без переходів: скільки коштує (ціна),
+// що входить (лічильники завжди + розкривний стислий опис), де пройти (branches).
+// Четверте питання, скільки візитів, СВІДОМО не показується — це відповідь блоку 7.
+//
+// ОНОВЛЕНО 29.08.2026 (завдання "Скорочення складу і розділення сторінки", п.1):
+// розкривний блок більше НЕ показує повний перелік показників — лише стислий
+// опис (CompositionSummaryText, той самий текст, що в блоці 4/7). Повний перелік
+// — тільки на сторінці програми на піддомені (посилання нижче).
 
 export interface ProgramSidebarBranch {
   name: string;
@@ -31,9 +35,10 @@ export interface ProgramSidebarAdditionalService {
   available: boolean;
 }
 
-export interface ProgramSidebarCompositionGroup {
-  type: string;
-  items: string[];
+export interface ProgramSidebarCompositionText {
+  consultationsSummary: string;
+  instrumentalSummary: string;
+  labSummary: string;
 }
 
 export interface ProgramSidebarProps {
@@ -47,8 +52,9 @@ export interface ProgramSidebarProps {
   counts: ProgramSidebarCount[];
   subdomainHref: string;
   additionalServices: ProgramSidebarAdditionalService[];
-  /** Розкривний повний склад програми, згорнутий за замовчуванням (п.4, 29.08.2026). */
-  compositionSummary?: ProgramSidebarCompositionGroup[];
+  /** Розкривний стислий опис складу, згорнутий за замовчуванням (п.4, 29.08.2026;
+   *  звужено до стислого опису — "Скорочення складу", п.1, 29.08.2026). */
+  compositionText?: ProgramSidebarCompositionText;
   /** Доповнення понад §3 — для BookCta (open-booking-flow), див. коментар вище файлу. */
   programSlug: string;
   sourceCta: string;
@@ -67,7 +73,7 @@ export default function ProgramSidebar({
   counts,
   subdomainHref,
   additionalServices,
-  compositionSummary,
+  compositionText,
   programSlug,
   sourceCta,
 }: ProgramSidebarProps) {
@@ -98,7 +104,7 @@ export default function ProgramSidebar({
           іконка переходу). Раніше обидва елементи виглядали як звичайний текстовий лінк —
           плутались. */}
       {countsLabel && (
-        compositionSummary && compositionSummary.length > 0 ? (
+        compositionText && (compositionText.consultationsSummary || compositionText.instrumentalSummary || compositionText.labSummary) ? (
           <AccordionSection
             summary={
               <span className="inline-flex items-center bg-gray-100 rounded-md px-2.5 py-1.5 -ml-0.5">
@@ -107,18 +113,12 @@ export default function ProgramSidebar({
             }
             className="mb-4"
           >
-            <ul className="space-y-2.5">
-              {compositionSummary.map((group) => (
-                <li key={group.type}>
-                  <p className="text-xs font-semibold text-text-secondary mb-1">{group.type}</p>
-                  <ul className="text-[13px] text-gray-600 space-y-0.5 list-disc list-inside">
-                    {group.items.map((item) => (
-                      <li key={item}>{item}</li>
-                    ))}
-                  </ul>
-                </li>
-              ))}
-            </ul>
+            <CompositionSummaryText
+              consultationsSummary={compositionText.consultationsSummary}
+              instrumentalSummary={compositionText.instrumentalSummary}
+              labSummary={compositionText.labSummary}
+              compact
+            />
           </AccordionSection>
         ) : (
           <p className="text-[13px] text-text-secondary mb-4">{countsLabel}</p>
