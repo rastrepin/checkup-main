@@ -6,6 +6,7 @@ import { fetchProgramComposition } from '@/lib/programs/composition';
 import ProgramSidebar from '@/components/program-page/ProgramSidebar';
 import CompositionSummaryText from '@/components/program-page/CompositionSummaryText';
 import StickyMobileCta from '@/components/program-page/StickyMobileCta';
+import AdditionalServices from '@/components/program-page/AdditionalServices';
 import InPageNav from '@/components/shared/InPageNav';
 import AccordionSection from '@/components/shared/AccordionSection';
 import CrossAgeNav from '@/components/shared/CrossAgeNav';
@@ -13,16 +14,24 @@ import BookingFlow from '@/components/city/BookingFlow';
 import FaqBlock from '@/components/city/FaqBlock';
 
 // Тип 5a — жіночий чекап до 30 років, Харків.
-// Джерело контенту: спека Cowork "Жіночий чекап до 30 років · Харків" (30.08.2026), дослівно,
-// адаптовано під живі дані program_services (задача "Склад zhinochyi-profilaktychnyi", 29.08.2026).
+// Джерело контенту: 5a-female-do-30-kharkiv.md (дата контенту 30.08.2026), дослівно.
+// Це ПЕРЕЗБІРКА за оновленим MD (задача Cowork "Сторінка female do-30-rokiv, Харків",
+// 30.08.2026) — попередня версія (без Блоку 5, зі спрощеним Блоком 2/7) замінена.
 //
-// СТАТУС: draft. Рецензента не узгоджено з клінікою (власник позначив [УТОЧНИТИ] у спеці) —
-// сторінка йде з robots noindex, поки рецензент не підтверджений. Індекс вмикається зміною
-// generateMetadata нижче, коли реальне ім'я з'явиться.
+// Компонентний контракт (рішення Cowork 30.08.2026, "GeoBlock/EEAT/FAQ" п.1, підтверджено
+// власником — варіант 1): GeoBlock/EeatBlock/LegalNote з переліку задачі — inline JSX, як
+// на 40-50/vid-50, а не components/hub/{GeoBlock,EEATBlock,FAQAccordion}.tsx. Ті компоненти
+// фізично існують, але хардкоджені під сторінку міоми (ON Clinic/Трохимович, фіброїди,
+// TODO-плейсхолдери) — жодних пропів для зміни контенту, і документований контракт
+// components-map-FIXED.md §11-13 (items[]/branch+focusText/author+reviewer+sources[]) НЕ
+// відповідає реальному коду. Технічний борг зафіксовано, рефакторинг hub-компонентів під
+// контракт — окреме завдання після виходу всіх вікових сторінок; живу сторінку міоми зараз
+// не чіпаємо. FAQ — через FaqBlock (components/city), він уже generic.
 //
-// Блок 5 "Доповнення" і Блок 5а (нацпрограма) на цій сторінці відсутні — рішення власника
-// (чат 29.08.2026): для віку до 30 років додавати нічого не потрібно, нацпрограма "Скринінг
-// здоров'я 40+" починається з 40 років.
+// СТАТУС: draft. Рецензента не узгоджено з клінікою — robots noindex, доки не з'явиться
+// реальне ім'я (generateMetadata нижче).
+//
+// Блок 5а (нацпрограма) відсутній — вік до 40, не застосовується (за MD).
 
 export const revalidate = 3600;
 
@@ -64,11 +73,11 @@ const FAQ = [
   },
   {
     q: 'Скільки часу займає чекап?',
-    a: 'Два візити. Перший – здача аналізів, інструментальні обстеження і огляд гінеколога. Другий – прийом терапевта з готовими результатами, за кілька днів.',
+    a: '[УТОЧНИТИ: DATA] Орієнтовно один візит: здача аналізів і консультація гінеколога.',
   },
   {
     q: 'Чи потрібна мамографія до 30 років?',
-    a: 'Зазвичай ні. Виняток – рак молочної залози у матері, сестри чи доньки: тоді скринінг починають за п’ять-десять років до віку, у якому їй поставили діагноз.',
+    a: 'Зазвичай ні. Виняток – рак молочної залози у матері, сестри чи доньки: тоді скринінг починають за 5-10 років до віку, у якому їй поставили діагноз.',
   },
   {
     q: 'З якого віку робити Пап-тест?',
@@ -78,13 +87,6 @@ const FAQ = [
     q: 'Чим ця програма відрізняється від програми для 30-40 років?',
     a: 'Основа та сама – базові показники і огляд гінеколога. Різниця в акцентах: після 30 зростає увага до обміну речовин і серцево-судинних факторів, які до 30 років ще рідко проявляються.',
   },
-];
-
-const SCREENING_ITEMS = [
-  'Артеріальний тиск',
-  'Загальні аналізи крові й сечі',
-  'Залізо і вітамін D',
-  'Скринінг шийки матки',
 ];
 
 const SOURCES = [
@@ -116,6 +118,12 @@ export default async function Page() {
     labSummary: composition.labSummary,
   };
 
+  // priceValidUntil (Schema ItemList/Offer): той самий поріг свіжості 2 місяці, що й
+  // priceDateNotice (Р27) — не довільна дата, обчислена від price_date з бази.
+  const priceValidUntilDate = new Date(program.price_date);
+  priceValidUntilDate.setMonth(priceValidUntilDate.getMonth() + 2);
+  const priceValidUntil = priceValidUntilDate.toISOString().slice(0, 10);
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@graph': [
@@ -126,9 +134,29 @@ export default async function Page() {
         author: { '@type': 'Organization', name: 'check-up.in.ua' },
       },
       {
+        // Offer вкладено всередину itemListElement (продукт-програма), НЕ на рівні
+        // сторінки/MedicalWebPage — SEO-STANDARD р.5.
         '@type': 'ItemList',
-        name: 'Обстеження для жінок до 30 років',
-        itemListElement: SCREENING_ITEMS.map((name, i) => ({ '@type': 'ListItem', position: i + 1, name })),
+        name: 'Програми чекапу для жінок до 30 років у Харкові',
+        itemListElement: [
+          {
+            '@type': 'ListItem',
+            position: 1,
+            item: {
+              '@type': 'Product',
+              name: program.name_ua,
+              url: SUBDOMAIN_HREF,
+              offers: {
+                '@type': 'Offer',
+                price: program.price_discount,
+                priceCurrency: 'UAH',
+                priceValidUntil,
+                url: SUBDOMAIN_HREF,
+                availability: 'https://schema.org/InStock',
+              },
+            },
+          },
+        ],
       },
       {
         '@type': 'BreadcrumbList',
@@ -210,16 +238,26 @@ export default async function Page() {
             <section id="shcho-pereviryaty" className="scroll-mt-24 mb-10">
               <h2 className="text-xl font-bold text-[#0b1a24] mb-3">Що перевіряти до 30</h2>
               <p className="text-[15px] text-gray-600 leading-relaxed mb-3">
-                До 30 років організм здебільшого ще не показує наслідків способу життя – вони накопичуються
-                повільно і стають вимірюваними пізніше. Тому мета обстежень у цьому віці інша, ніж після 40: не
-                знайти хворобу, а зафіксувати вихідні значення, з якими лікар зможе порівнювати результати через
-                п&apos;ять, десять і двадцять років. Виняток – скринінг шийки матки: це вже профілактика конкретного
-                захворювання, а не точка відліку.
+                У цьому віці до лікаря найчастіше приводить конкретний привід: планування вагітності, початок
+                статевого життя, зміна контрацепції. Ще частіше приводу немає взагалі, і тоді незрозуміло, з чого
+                починати і чи варто взагалі щось перевіряти без скарг.
+              </p>
+              <p className="text-[15px] text-gray-600 leading-relaxed mb-3">
+                Обстеження до 30 років вирішують два різні завдання.
+              </p>
+              <p className="text-[15px] text-gray-600 leading-relaxed mb-3">
+                Перше – скринінг раку шийки матки. Він починається саме в цьому віці, з 25 років, і це профілактика
+                конкретного захворювання, а не загальна перевірка.
+              </p>
+              <p className="text-[15px] text-gray-600 leading-relaxed mb-3">
+                Друге – зафіксувати вихідні значення. Тиск, показники крові, рівень заліза й вітаміну D зараз у
+                більшості жінок у нормі. Цінність не в самому результаті, а в тому, що через десять і двадцять
+                років лікар матиме з чим порівнювати. Одне значення поза контекстом говорить мало; два з інтервалом
+                у роки показують напрямок.
               </p>
               <p className="text-[15px] text-gray-600 leading-relaxed mb-6">
-                Єдиного українського стандарту профілактичного чекапу для цього віку не існує: диспансеризацію
-                скасовано 2018 року, а «Скринінг здоров&apos;я 40+» починається з 40 років. Нижче – рекомендації, що
-                спираються на міжнародні джерела там, де українського протоколу немає.
+                Якщо ви плануєте вагітність, перелік буде ширшим: до нього додають обстеження, які має сенс пройти
+                до зачаття, а не під час нього.
               </p>
 
               <div className="space-y-6">
@@ -246,6 +284,10 @@ export default async function Page() {
                     пошук конкретного захворювання, а базова точка відліку для показників, які лікар порівнюватиме в
                     майбутньому: гемоглобін, лейкоцити, показники нирок і сечовидільної системи.
                   </p>
+                  <p className="text-[13px] text-gray-500 leading-relaxed border-l-2 border-gray-200 pl-3">
+                    [УТОЧНИТИ: рецензент] Періодичність повторення для здорової жінки без скарг – джерело в
+                    screening-evidence-matrix.md відсутнє, потрібне підтвердження формулювання.
+                  </p>
                 </div>
 
                 <AccordionSection summary="Показати всі обстеження">
@@ -262,8 +304,9 @@ export default async function Page() {
                     Аналіз включають у профілактичні програми як зручний базовий маркер, а не як доказово
                     обґрунтований скринінг.
                   </p>
-                  <p className="text-[12px] text-gray-500">
-                    Джерело: U.S. Preventive Services Task Force, скринінг дефіциту вітаміну D у дорослих (2021).
+                  <p className="text-[13px] text-gray-500 leading-relaxed border-l-2 border-gray-200 pl-3">
+                    [УТОЧНИТИ: рецензент] Джерело для періодичності перевірки заліза окремо від вагітності в
+                    матриці відсутнє.
                   </p>
                 </div>
 
@@ -279,7 +322,8 @@ export default async function Page() {
                     зміни клітин задовго до того, як вони стають раком.
                   </p>
                   <p className="text-[12px] text-gray-500">
-                    Джерела: наказ МОЗ України №1368 від 05.08.2024; наказ МОЗ України №1057 від 18.06.2024.
+                    Джерело: Порядок скринінгу РШМ, наказ МОЗ України №1368 від 05.08.2024; Стандарт медичної
+                    допомоги «Скринінг раку шийки матки», наказ МОЗ України №1057 від 18.06.2024.
                   </p>
                 </div>
                 </div>
@@ -302,9 +346,6 @@ export default async function Page() {
                       спадковий ризик: якщо рак молочної залози діагностували матері, сестрі чи доньці, скринінг
                       починають за 5-10 років до віку, у якому їй поставили діагноз.
                     </p>
-                    <p className="text-[12px] text-gray-500">
-                      Джерело: Mayo Clinic Family Health Book, розділ «Breast Health».
-                    </p>
                   </div>
                   <div>
                     <h3 className="text-base font-bold text-[#0b1a24] mb-1.5">Колоноскопія і тест на приховану кров</h3>
@@ -320,10 +361,10 @@ export default async function Page() {
                       USPSTF оцінює доказову базу як недостатню (ступінь I). Перевірка виправдана за наявності
                       скарг, цукрового діабету 1 типу чи опромінення голови й шиї в анамнезі.
                     </p>
-                    <p className="text-[12px] text-gray-500">
-                      Джерело: U.S. Preventive Services Task Force, скринінг дисфункції щитоподібної залози (2021).
-                    </p>
                   </div>
+                  <p className="text-[12px] text-gray-500">
+                    Джерело: screening-evidence-matrix.md, розд. 2.2, 2.1, 2.7.
+                  </p>
                 </div>
               </AccordionSection>
             </section>
@@ -363,7 +404,40 @@ export default async function Page() {
               </p>
             </section>
 
-            {/* Дисклеймер про роль лікаря – простий текст, без рамки й акценту */}
+            <section id="dopovnennya" className="scroll-mt-24 mb-10 bg-gray-50 rounded-xl p-6">
+              <h2 className="text-xl font-bold text-[#0b1a24] mb-3">Доповнення</h2>
+              <p className="text-[15px] text-gray-600 leading-relaxed mb-5">
+                До 30 років у програму варто додати аналізи, які базова консультація не завжди включає, але які
+                дають повнішу вихідну картину.
+              </p>
+
+              <AdditionalServices
+                available={[
+                  {
+                    id: 'lipidogram-package-36',
+                    name: 'Пакет №36 Ліпідограма',
+                    priceVariants: [{ label: 'Пакет №36 Ліпідограма (код 10044-OH)', price: 655 }],
+                    priceType: 'exact',
+                    priceDate: '2026-08-09',
+                    explanation:
+                      'Розширений ліпідний профіль – холестерин, ліпопротеїни і тригліцериди разом, а не лише загальний показник. У базовій програмі до 30 років немає.',
+                  },
+                ]}
+                unavailable={[
+                  {
+                    name: 'Залізо (феритин)',
+                    why: 'Дефіцит заліза частіше зустрічається у жінок репродуктивного віку через менструальну крововтрату. У базовій програмі окремого аналізу феритину немає. В ОН Клінік не проводиться.',
+                    whereToGo:
+                      'Аналіз на феритин можна замовити самостійно в будь-якій лабораторії або за направленням сімейного лікаря.',
+                  },
+                ]}
+                programSlug={CHECKUP_PROGRAM_SLUG}
+                sourceCta={SOURCE_CTA}
+              />
+            </section>
+
+            {/* Дисклеймер про роль лікаря – простий текст, без рамки й акценту (LegalNote
+                не створювався, рішення Cowork 30.08.2026, "GeoBlock/EEAT/FAQ" п.1) */}
             <section className="mt-10 mb-10">
               <p className="text-[13px] text-gray-600 leading-relaxed mb-2">
                 Перелічене вище – орієнтир, а не призначення. Повний перелік обстежень визначає лікар за
@@ -378,14 +452,10 @@ export default async function Page() {
 
             <section id="yak-tse-prohodyt" className="scroll-mt-24 mb-10 bg-gray-50 rounded-xl p-6">
               <h2 className="text-xl font-bold text-[#0b1a24] mb-3">Як це проходить</h2>
-              <p className="text-[15px] text-gray-600 leading-relaxed mb-3">
-                Чекап проходить у два візити. На першому здають аналізи, проходять інструментальні обстеження і
-                огляд гінеколога, на другому лікар розбирає готові результати. Між візитами кілька днів – час,
-                потрібний лабораторії.
-              </p>
               <p className="text-[15px] text-gray-600 leading-relaxed mb-5">
-                Програма для цього віку простіша за пізніші вікові кроки: три спеціалісти на першому візиті замість
-                шести, менший обсяг лабораторних аналізів.
+                Чекап проходить у два візити. На першому – консультації терапевта, гінеколога та офтальмолога,
+                здача аналізів і інструментальні обстеження. На другому лікар-терапевт розбирає готові результати.
+                Між візитами кілька днів – час, потрібний лабораторії.
               </p>
 
               <div className="bg-white border border-gray-200 rounded-[10px] p-5 mb-4">
@@ -440,8 +510,8 @@ export default async function Page() {
           <section className="py-8 border-t border-gray-200 text-[13px] text-gray-500 leading-relaxed">
             <p className="mb-1"><span className="font-semibold text-gray-700">Медичний редактор:</span> Ігор Растрепін, check-up.in.ua</p>
             <p className="mb-1">
-              <span className="font-semibold text-gray-700">Рецензент:</span> [УТОЧНИТИ: ПІБ, посада – узгодити з
-              клінікою для профілактичної програми]
+              <span className="font-semibold text-gray-700">Рецензент:</span> [УТОЧНИТИ: ПІБ, посада, стаж – узгодити з
+              клінікою]
             </p>
             <p className="mb-1">Дата публікації: 30.08.2026</p>
             <p className="mb-4">Дата оновлення: 30.08.2026</p>
