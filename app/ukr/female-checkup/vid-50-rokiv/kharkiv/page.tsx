@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { fetchType5aData, priceDateNotice } from '@/lib/programs/type5a';
+import { fetchProgramComposition } from '@/lib/programs/composition';
 import ProgramSidebar from '@/components/program-page/ProgramSidebar';
 import StickyMobileCta from '@/components/program-page/StickyMobileCta';
 import AdditionalServices from '@/components/program-page/AdditionalServices';
@@ -17,7 +18,10 @@ import { Badge } from '@/components/ui';
 // Блокер даних, зазначений у MD (platform_program_offers zhinochyi-pislya-40 →
 // female-checkup-vid-50), закрито попередньою міграцією — підтверджено прямим SQL
 // власником і Cowork незалежно 29.08.2026 (task-cowork-01-migration.md, Частина 5).
-// Блок 7 «Як це проходить» СВІДОМО ВІДСУТНІЙ у v1 (те саме рішення, що на 40-50).
+// ОНОВЛЕНО (завдання "Наповнення складу програми", 29.08.2026): Блок 7 «Як це
+// проходить» і лічильники сайдбара тепер рахуються з program_services через
+// lib/programs/composition.ts (Частина 3/4 завдання), не з застарілих
+// checkup_programs.consultations_count/analyses_count/diagnostics_count.
 
 export const revalidate = 3600;
 
@@ -105,23 +109,19 @@ export default async function Page() {
   }
 
   const notice = priceDateNotice(program.price_date);
+  const composition = await fetchProgramComposition(program.id);
+  // Лічильники — з реального складу (program_services), не з застарілих полів
+  // checkup_programs (Частина 3 завдання "Наповнення складу програми"). Консультації
+  // рахують лише візит 1 — повторний прийом терапевта на другому візиті не є новим
+  // спеціалістом і в лічильник не входить (показується в блоці 7).
   const counts = [
-    program.consultations_count ? { label: 'консультацій', count: program.consultations_count } : null,
-    program.analyses_count ? { label: 'аналізів', count: program.analyses_count } : null,
-    program.diagnostics_count ? { label: 'обстежень', count: program.diagnostics_count } : null,
+    composition.counts.consultations ? { label: 'консультацій', count: composition.counts.consultations } : null,
+    composition.counts.analyses ? { label: 'аналізів', count: composition.counts.analyses } : null,
+    composition.counts.diagnostics ? { label: 'обстежень', count: composition.counts.diagnostics } : null,
   ].filter((c): c is { label: string; count: number } => c !== null);
 
   const sidebarBranches = branches.map((b) => ({ name: b.name_ua, address: b.address_ua }));
-
-  // Розкривний повний склад (п.4, 29.08.2026) — лише групи, для яких є реальні дані
-  // в checkup_programs.composition. Візити не показуємо: program_services порожня.
-  const composition = (program.composition ?? {}) as { consultations?: string[]; analyses_extra?: string[] };
-  const compositionSummary = [
-    composition.consultations?.length ? { type: 'Консультації', items: composition.consultations } : null,
-    composition.analyses_extra?.length
-      ? { type: 'Аналізи — додатково до профілактичного набору', items: composition.analyses_extra }
-      : null,
-  ].filter((g): g is { type: string; items: string[] } => g !== null);
+  const compositionSummary = composition.summaryGroups;
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -191,6 +191,7 @@ export default async function Page() {
             { id: 'shcho-pereviryaty', label: 'Що перевіряти' },
             { id: 'chogo-ne-potribno', label: 'Чого не потрібно' },
             { id: 'programa', label: 'Програма' },
+            { id: 'yak-tse-prohodyt', label: 'Як це проходить' },
             { id: 'faq', label: 'Питання і відповіді' },
           ]}
         />
@@ -617,6 +618,62 @@ export default async function Page() {
                 Програма чекапу дає лікарю ширшу картину, ніж окремий аналіз. Саме на підставі сукупності
                 показників він робить висновок, а не на підставі одного значення поза контекстом.
               </p>
+            </section>
+
+            {/* Блок 7 "Як це проходить" (завдання "Наповнення складу програми", 29.08.2026,
+                Частина 4). Склад за візитами і підготовка виводяться зі складу програми —
+                правило рахується один раз у lib/programs/composition.ts, не дублюється тут. */}
+            <section id="yak-tse-prohodyt" className="scroll-mt-24 mb-10 bg-gray-50 rounded-xl p-6">
+              <h2 className="text-xl font-bold text-[#0b1a24] mb-3">Як це проходить</h2>
+              <p className="text-[15px] text-gray-600 leading-relaxed mb-3">
+                Чекап проходить у два візити. На першому здають аналізи і проходять інструментальні
+                обстеження, на другому лікар розбирає готові результати. Між візитами кілька днів –
+                час, потрібний лабораторії.
+              </p>
+              <p className="text-[15px] text-gray-600 leading-relaxed mb-5">
+                Висновок формується саме на другому візиті: окремі показники інтерпретуються разом,
+                у контексті вашого віку, ваги, спадкової історії і того, що показав огляд.
+              </p>
+
+              {composition.visit1Groups.length > 0 && (
+                <div className="bg-white border border-gray-200 rounded-[10px] p-5 mb-4">
+                  <p className="text-xs font-semibold text-text-secondary mb-3">Візит 1</p>
+                  <div className="space-y-3">
+                    {composition.visit1Groups.map((group) => (
+                      <div key={group.type}>
+                        <p className="text-[13px] font-semibold text-text-secondary mb-1">{group.type}</p>
+                        <ul className="text-[14px] text-gray-700 space-y-0.5 list-disc list-inside">
+                          {group.items.map((item) => (
+                            <li key={item}>{item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {composition.visit2Items.length > 0 && (
+                <div className="bg-white border border-gray-200 rounded-[10px] p-5 mb-4">
+                  <p className="text-xs font-semibold text-text-secondary mb-2">Візит 2</p>
+                  <ul className="text-[14px] text-gray-700 space-y-0.5 list-disc list-inside">
+                    {composition.visit2Items.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {composition.preparationNotes.length > 0 && (
+                <div>
+                  <p className="text-[13px] font-semibold text-text-secondary mb-1.5">Підготовка</p>
+                  <ul className="text-[14px] text-gray-600 space-y-1 list-disc list-inside">
+                    {composition.preparationNotes.map((note) => (
+                      <li key={note}>{note}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </section>
           </div>
         </div>
