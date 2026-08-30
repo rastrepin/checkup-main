@@ -15,6 +15,7 @@ export interface AgeStepPage {
 }
 
 export const AGE_STEP_PAGES: AgeStepPage[] = [
+  { gender: 'female', ageStepLabel: 'До 30 років', href: '/ukr/female-checkup/do-30-rokiv/kharkiv' },
   { gender: 'female', ageStepLabel: '40-50 років', href: '/ukr/female-checkup/40-50-rokiv/kharkiv' },
   { gender: 'female', ageStepLabel: 'Після 50', href: '/ukr/female-checkup/vid-50-rokiv/kharkiv' },
 ];
