@@ -18,6 +18,9 @@ interface LeadPayload {
   selected_date_label?: string | null;
   source_page: string;
   source_cta?: string | null;
+  /** Текстове поле — напр. "Додатково цікавить: ..." з AdditionalServices.
+   *  Рішення Cowork 29.08.2026 п.3: без окремої колонки на цю ітерацію. */
+  comment?: string | null;
   session_id?: string | null;
   utm_source?: string | null;
   utm_medium?: string | null;
@@ -42,6 +45,7 @@ function notifyTelegram(lead: LeadPayload) {
     lead.price ? `Ціна: ${lead.price} грн` : null,
     lead.branch_address ? `Філія: ${lead.branch_address}` : null,
     lead.selected_date_label ? `Бажаний день: ${lead.selected_date_label}` : null,
+    lead.comment ? lead.comment : null,
     `Сторінка: ${lead.source_page}`,
     lead.source_cta ? `CTA: ${lead.source_cta}` : null,
   ].filter(Boolean);
@@ -91,6 +95,7 @@ export async function POST(req: NextRequest) {
       selected_date_label: body.selected_date_label ?? null,
       source_page: body.source_page,
       source_cta: body.source_cta ?? null,
+      comment: body.comment ?? null,
       session_id: body.session_id ?? null,
       utm_source: body.utm_source ?? null,
       utm_medium: body.utm_medium ?? null,

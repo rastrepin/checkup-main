@@ -15,6 +15,12 @@ interface BookingFlowProps {
   clinicId: string;
   clinicSlug: string;
   city: string;
+  /** Живі лічильники складу за slug програми (lib/programs/composition.ts),
+   *  переважають застарілі checkup_programs.consultations_count/analyses_count/
+   *  diagnostics_count у картці підсумку. Опційно — сторінки без Type5a-складу
+   *  (каталог міста) не передають, картка лишається на старих полях програми.
+   *  Задача Cowork "Форма запису" (29.08.2026), п.2. */
+  programsComposition?: Record<string, { consultations: number; analyses: number; diagnostics: number }>;
 }
 
 type Contact = 'call' | 'telegram' | 'viber';
@@ -57,24 +63,35 @@ export function BookCta({
   label,
   variant = 'primary',
   className = '',
+  selectedAdditionalServices,
 }: {
   programSlug?: string;
   sourceCta: string;
   label: string;
-  variant?: 'primary' | 'hero';
+  variant?: 'primary' | 'hero' | 'crimson';
   className?: string;
+  /** Резолвлені назви обраних доп. послуг (AdditionalServices) — опційно,
+   *  прокидається в open-booking-flow. Рішення Cowork 29.08.2026 п.2. */
+  selectedAdditionalServices?: string[];
 }) {
+  // 'crimson' — accent-exclusivity (brand-tokens-v3 / checkup-design §Кольори):
+  // crimson лише на CTA сайдбара і StickyMobileCta на сторінках Типу 5a
+  // (завдання Cowork 29.08.2026, "UX-переробка"), ніде більше на сторінці.
   const base =
     variant === 'hero'
-      ? 'inline-flex items-center justify-center min-h-12 px-7 rounded-[10px] bg-[#005485] text-white font-semibold text-base hover:bg-[#004470] transition-colors'
-      : 'w-full inline-flex items-center justify-center min-h-12 px-5 rounded-[10px] bg-[#005485] text-white font-semibold text-sm hover:bg-[#004470] transition-colors';
+      ? 'inline-flex items-center justify-center min-h-12 px-7 rounded-[10px] bg-navy text-white font-semibold text-base hover:bg-navy-dark transition-colors'
+      : variant === 'crimson'
+      ? 'w-full inline-flex items-center justify-center min-h-12 px-5 rounded-[10px] bg-crimson text-white font-semibold text-sm hover:bg-crimson-hover transition-colors'
+      : 'w-full inline-flex items-center justify-center min-h-12 px-5 rounded-[10px] bg-navy text-white font-semibold text-sm hover:bg-navy-dark transition-colors';
   return (
     <button
       type="button"
       className={`${base} ${className}`}
       onClick={() =>
         window.dispatchEvent(
-          new CustomEvent('open-booking-flow', { detail: { programSlug: programSlug ?? null, sourceCta } })
+          new CustomEvent('open-booking-flow', {
+            detail: { programSlug: programSlug ?? null, sourceCta, selectedAdditionalServices },
+          })
         )
       }
     >
@@ -83,10 +100,11 @@ export function BookCta({
   );
 }
 
-export default function BookingFlow({ programs, branches, clinicId, clinicSlug, city }: BookingFlowProps) {
+export default function BookingFlow({ programs, branches, clinicId, clinicSlug, city, programsComposition }: BookingFlowProps) {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<1 | 2>(1);
   const [sourceCta, setSourceCta] = useState('');
+  const [selectedAdditionalServices, setSelectedAdditionalServices] = useState<string[]>([]);
   const [programSlug, setProgramSlug] = useState<string | null>(null);
   const [branchId, setBranchId] = useState<string>(branches[0]?.id ?? '');
   const [dateLabel, setDateLabel] = useState('');
@@ -101,9 +119,14 @@ export default function BookingFlow({ programs, branches, clinicId, clinicSlug, 
 
   useEffect(() => {
     const handler = (e: Event) => {
-      const detail = (e as CustomEvent).detail as { programSlug: string | null; sourceCta: string };
+      const detail = (e as CustomEvent).detail as {
+        programSlug: string | null;
+        sourceCta: string;
+        selectedAdditionalServices?: string[];
+      };
       setProgramSlug(detail.programSlug);
       setSourceCta(detail.sourceCta);
+      setSelectedAdditionalServices(detail.selectedAdditionalServices ?? []);
       setStep(1);
       setSubmitted(false);
       setError(null);
@@ -162,6 +185,13 @@ export default function BookingFlow({ programs, branches, clinicId, clinicSlug, 
           selected_date_label: dateLabel || null,
           source_page: window.location.pathname,
           source_cta: sourceCta,
+          // Обране в AdditionalServices — вираження інтересу, не замовлення (Р30).
+          // Колонки під структурований перелік немає (рішення Cowork 29.08.2026 п.3) —
+          // передається текстом у comment, той самий рядок іде в Telegram.
+          comment:
+            selectedAdditionalServices.length > 0
+              ? `Додатково цікавить: ${selectedAdditionalServices.join(', ')}`
+              : null,
           session_id: getSessionId(),
           utm_source: params.get('utm_source'),
           utm_medium: params.get('utm_medium'),
@@ -199,7 +229,9 @@ export default function BookingFlow({ programs, branches, clinicId, clinicSlug, 
             <div className="text-2xl mb-3">✓</div>
             <h3 className="text-lg font-bold text-[#0b1a24] mb-2">ЗАЯВКУ НАДІСЛАНО</h3>
             <p className="text-sm text-gray-600">
-              Менеджер зв&apos;яжеться з вами найближчим часом, допоможе обрати програму та запише на зручний час.
+              {program
+                ? <>Менеджер зв&apos;яжеться з вами найближчим часом, підтвердить склад програми і запише на зручний час.</>
+                : <>Менеджер зв&apos;яжеться з вами найближчим часом, допоможе обрати програму та запише на зручний час.</>}
             </p>
             <button
               type="button"
@@ -223,14 +255,25 @@ export default function BookingFlow({ programs, branches, clinicId, clinicSlug, 
                     <span className="text-gray-400 line-through font-normal">{fmt(program.price_regular)} грн</span>
                   </div>
                   <div className="text-xs text-gray-500 mt-1">
-                    {[
-                      program.consultations_count ? `${program.consultations_count} консультацій` : null,
-                      program.analyses_count ? `${program.analyses_count} лабораторних` : null,
-                      program.diagnostics_count ? `${program.diagnostics_count} інструментальних` : null,
-                    ]
-                      .filter(Boolean)
-                      .join(' · ')}
+                    {(() => {
+                      const live = programsComposition?.[program.slug];
+                      const consultations = live ? live.consultations : program.consultations_count;
+                      const analyses = live ? live.analyses : program.analyses_count;
+                      const diagnostics = live ? live.diagnostics : program.diagnostics_count;
+                      return [
+                        consultations ? `${consultations} консультацій` : null,
+                        analyses ? `${analyses} аналізів` : null,
+                        diagnostics ? `${diagnostics} обстежень` : null,
+                      ]
+                        .filter(Boolean)
+                        .join(' · ');
+                    })()}
                   </div>
+                  {selectedAdditionalServices.length > 0 && (
+                    <div className="text-xs text-[#0b1a24] mt-2 pt-2 border-t border-[#d8e8f0]">
+                      <span className="font-semibold">Додатково обрано:</span> {selectedAdditionalServices.join(', ')}
+                    </div>
+                  )}
                 </>
               ) : (
                 <div className="text-sm text-gray-600">Адміністратор допоможе обрати програму під ваш вік і потреби.</div>
