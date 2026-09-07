@@ -1,10 +1,10 @@
-import { SITE_URL } from '@/lib/seo/sitemap-urls';
+import { SITE_URL } from '@/lib/seo/approved-routes';
 import { XML_HEADERS } from '@/lib/seo/xml';
 
 // /sitemap.xml – індекс. Під час міграції сайт живе на двох origin
-// (Next.js і Tilda через fallback-проксі), тому індекс посилається на два
+// (Next.js і Tilda через проксі в middleware), тому індекс посилається на два
 // sitemap: власний /sitemap-next.xml і /sitemap-tilda.xml (Tilda-sitemap без
-// URL, які вже обслуговує Next.js). Адреса /sitemap.xml не змінюється –
+// погоджених сторінок Next.js). Адреса /sitemap.xml не змінюється –
 // Search Console і robots.txt продовжують працювати з нею.
 
 export const dynamic = 'force-static';

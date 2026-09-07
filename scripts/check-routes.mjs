@@ -1,103 +1,94 @@
 #!/usr/bin/env node
-// Prebuild-перевірка маршрутів для проксі-схеми Tilda → Next.js.
+// Prebuild-перевірка проксі-схеми Tilda → Next.js (рішення Р42).
 //
-// Проксі на Tilda реалізовано через fallback rewrite у next.config.ts (рішення
-// Р42, скасовує Р41). Fallback спрацьовує тільки коли роутер Next.js не знайшов
-// жодного збігу. Динамічний сегмент ([city], [...slug]) збігається з будь-яким
-// шляхом своєї глибини і ламає проксі для всіх немігрованих сторінок цієї
-// глибини – саме через це Р41 свого часу відхилило fallback. Тому:
+// Правило: усі URL, яких немає в lib/seo/approved-routes.json, відкриває
+// Tilda (middleware.ts). Тут перевіряється, що перелік узгоджений з кодом
+// і оточенням:
 //
-// 1. Білд падає, якщо в app/ з'явився хоч один динамічний сегмент.
-// 2. Генерується lib/seo/next-routes.generated.json – повний перелік шляхів,
-//    які реально обслуговує Next.js (кожна папка з page.tsx). Це інвентар
-//    "що перекриває Tilda": sitemap-tilda.xml виключає ці шляхи з Tilda-sitemap,
-//    а звіт нижче показує, які Tilda-URL з трафіком тепер віддає Next.js.
-//
-// Правило проєкту: page.tsx у гілці = сторінка жива на цьому оточенні.
-// Заглушки (stub) заборонені – вони перекривають робочу сторінку Tilda.
+// 1. Кожен погоджений шлях має page.tsx у app/ – інакше білд падає
+//    (одруківка в переліку дала б 404 Next.js замість сторінки).
+// 2. Production-білд без TILDA_ORIGIN падає – без змінної middleware
+//    пропускав би всі запити в Next.js, і чернетки стали б видимими.
+// 3. У лог деплою друкується інвентар: погоджені сторінки, чернетки
+//    (є в app/, немає в переліку) і які Tilda-URL перекриваються.
 
-import { readdirSync, statSync, writeFileSync, readFileSync, mkdirSync, existsSync } from 'node:fs';
-import { join, relative, sep } from 'node:path';
+import { readdirSync, statSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 const APP_DIR = 'app';
-const OUT_FILE = join('lib', 'seo', 'next-routes.generated.json');
+const APPROVED_FILE = join('lib', 'seo', 'approved-routes.json');
 const PAGE_FILES = new Set(['page.tsx', 'page.ts', 'page.jsx', 'page.js']);
 
-const dynamicSegments = [];
 const routes = [];
-
 function walk(dir, segments) {
   for (const entry of readdirSync(dir)) {
     const full = join(dir, entry);
     if (!statSync(full).isDirectory()) {
-      if (PAGE_FILES.has(entry)) {
-        routes.push('/' + segments.join('/'));
-      }
+      if (PAGE_FILES.has(entry)) routes.push('/' + segments.join('/'));
       continue;
     }
-    if (entry.startsWith('[')) {
-      dynamicSegments.push(relative('.', full).split(sep).join('/'));
-      continue;
-    }
-    // Route groups (group) і паралельні слоти @slot не є сегментами URL.
     if (entry.startsWith('(') || entry.startsWith('@')) {
       walk(full, segments);
       continue;
     }
-    // Приватні папки _name ігноруються роутером.
     if (entry.startsWith('_')) continue;
     walk(full, [...segments, entry]);
   }
 }
-
 walk(APP_DIR, []);
+routes.sort();
 
-if (dynamicSegments.length > 0) {
-  console.error('\n[check-routes] БІЛД ЗУПИНЕНО: знайдено динамічні сегменти в app/:');
-  for (const d of dynamicSegments) console.error('  - ' + d);
-  console.error(
-    '\nДинамічний сегмент перехоплює всі шляхи своєї глибини і вимикає fallback-проксі на Tilda ' +
-      'для немігрованих сторінок (Р41 → Р42). Замініть на буквальні папки або погодьте ' +
-      'зміну схеми проксі окремим рішенням.\n',
-  );
+const normalize = (p) => (p.replace(/\/+$/, '') || '/');
+const approvedRaw = JSON.parse(readFileSync(APPROVED_FILE, 'utf8'));
+if (!Array.isArray(approvedRaw) || approvedRaw.some((p) => typeof p !== 'string' || !p.startsWith('/'))) {
+  console.error(`\n[check-routes] БІЛД ЗУПИНЕНО: ${APPROVED_FILE} має бути масивом шляхів, що починаються з "/".\n`);
+  process.exit(1);
+}
+const approved = [...new Set(approvedRaw.map(normalize))].sort();
+
+// Погоджений шлях без сторінки в app/ – помилка переліку.
+// Динамічні сегменти ([slug]) тут не резолвляться навмисно: у переліку
+// мають бути буквальні адреси, а буквальна адреса має мати буквальну папку.
+const routeSet = new Set(routes);
+const missing = approved.filter((p) => !routeSet.has(p));
+if (missing.length > 0) {
+  console.error('\n[check-routes] БІЛД ЗУПИНЕНО: у approved-routes.json є шляхи без page.tsx у app/:');
+  for (const m of missing) console.error('  - ' + m);
+  console.error('');
   process.exit(1);
 }
 
-routes.sort();
-mkdirSync(join('lib', 'seo'), { recursive: true });
-const next = JSON.stringify(routes, null, 2) + '\n';
-const prev = existsSync(OUT_FILE) ? readFileSync(OUT_FILE, 'utf8') : null;
-if (prev !== next) {
-  writeFileSync(OUT_FILE, next);
-  console.log(`[check-routes] ${OUT_FILE} оновлено (${routes.length} маршрутів).`);
-} else {
-  console.log(`[check-routes] ${routes.length} маршрутів, динамічних сегментів немає.`);
+// Production без origin – чернетки стали б видимими.
+const origin = process.env.TILDA_ORIGIN?.replace(/\/$/, '');
+if (process.env.VERCEL_ENV === 'production' && !origin) {
+  console.error('\n[check-routes] БІЛД ЗУПИНЕНО: TILDA_ORIGIN не задана для Production. Без неї middleware не проксіює на Tilda.\n');
+  process.exit(1);
 }
 
-// Інформаційний звіт: які шляхи Next.js збігаються з URL у Tilda-sitemap.
-// Не валить білд – лише робить перекриття видимим у логах деплою.
-const origin = process.env.TILDA_ORIGIN;
-if (origin) {
+const drafts = routes.filter((r) => !approved.includes(r));
+console.log(`[check-routes] погоджених сторінок: ${approved.length}, чернеток у app/ (віддаються з Tilda): ${drafts.length}.`);
+for (const a of approved) console.log('  approved: ' + a);
+
+// Інформаційно: які погоджені сторінки перекривають URL з Tilda-sitemap.
+if (origin && approved.length > 0) {
   try {
-    const res = await fetch(`${origin.replace(/\/$/, '')}/sitemap.xml`, { signal: AbortSignal.timeout(10_000) });
+    const res = await fetch(`${origin}/sitemap.xml`, { signal: AbortSignal.timeout(10_000) });
     if (res.ok) {
       const xml = await res.text();
       const tildaPaths = new Set(
         [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => {
           try {
-            return new URL(m[1].trim()).pathname.replace(/\/$/, '') || '/';
+            return normalize(new URL(m[1].trim()).pathname);
           } catch {
             return null;
           }
         }),
       );
-      const overlap = routes.filter((r) => tildaPaths.has(r));
-      if (overlap.length > 0) {
-        console.log(`[check-routes] Next.js перекриває ${overlap.length} URL з Tilda-sitemap (це очікувано для мігрованих сторінок):`);
-        for (const r of overlap) console.log('  - ' + r);
-      }
+      const overlap = approved.filter((r) => tildaPaths.has(r));
+      console.log(`[check-routes] погоджені сторінки, що замінюють Tilda-URL: ${overlap.length}`);
+      for (const r of overlap) console.log('  replaces: ' + r);
     }
   } catch (err) {
-    console.log('[check-routes] Tilda-sitemap недоступний для звіту про перекриття: ' + (err?.message ?? err));
+    console.log('[check-routes] Tilda-sitemap недоступний для звіту: ' + (err?.message ?? err));
   }
 }

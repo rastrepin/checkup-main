@@ -1,26 +1,27 @@
 import type { NextConfig } from "next";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
+// Погоджені сторінки Next.js (Р42). Читається напряму з JSON, бо
+// next.config.ts виконується поза бандлером застосунку.
+const APPROVED: string[] = JSON.parse(
+  readFileSync(join(process.cwd(), "lib/seo/approved-routes.json"), "utf8"),
+);
+const isApproved = (path: string) => APPROVED.includes(path.replace(/\/+$/, "") || "/");
 
 const nextConfig: NextConfig = {
-  // Проксі на Tilda під час міграції – ЄДИНИЙ механізм (рішення Р42, скасовує Р41).
-  // Fallback rewrite спрацьовує лише коли роутер Next.js не знайшов жодного
-  // збігу: жодна жива сторінка Next.js не може випадково піти на Tilda, а
-  // "мігрована сторінка" = "page.tsx існує в гілці". Умова дії: в app/ немає
-  // динамічних сегментів – це перевіряє scripts/check-routes.mjs на prebuild.
-  // TILDA_ORIGIN (Р15) має бути задана в КОЖНОМУ оточенні Vercel, де проксі
-  // потрібен (Preview і Production); без змінної rewrite не додається, і
-  // немігровані шляхи віддають 404 Next.js.
-  async rewrites() {
-    if (!process.env.TILDA_ORIGIN) return { fallback: [] };
-    return {
-      fallback: [
-        { source: '/:path*', destination: `${process.env.TILDA_ORIGIN}/:path*` },
-      ],
-    };
-  },
+  // Проксі на Tilda під час міграції живе в middleware.ts (allow-list
+  // lib/seo/approved-routes.json, рішення Р42). Fallback rewrites тут свідомо
+  // немає: він віддавав би з Next.js будь-яку сторінку, що є в репо,
+  // включно з чернетками.
+  // Редиректи вмикаються лише коли їхня ціль – погоджена сторінка Next.js.
+  // Поки ціль не погоджена, джерело (жива сторінка Tilda) віддається з Tilda
+  // без змін – за правилом "усе, чого нема в переліку, відкриває Tilda".
+  // Виняток – корінь: Tilda сама віддає / як 301 → /ukr (production,
+  // перевірено 06.09.2026), Next.js повторює це, щоб прев'ю не стрибало
+  // на production-домен.
   async redirects() {
-    return [
-      // Корінь: Tilda віддає / як 301 → /ukr (production, перевірено 06.09.2026).
-      // Next.js повторює це сам, щоб поведінка головної не залежала від origin.
+    const rules = [
       { source: '/', destination: '/ukr', permanent: true },
 
       // === Пріоритет 1: сторінки з трафіком ===
@@ -80,6 +81,7 @@ const nextConfig: NextConfig = {
       { source: '/ukr/kolonoskopiya/kharkiv', destination: '/ukr/kharkiv', permanent: true },
       { source: '/ukr/kolonoskopiya/kharkiv/:path*', destination: '/ukr/kharkiv', permanent: true },
     ];
+    return rules.filter((r) => r.destination === '/ukr' || isApproved(r.destination));
   },
 };
 

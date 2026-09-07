@@ -1,14 +1,13 @@
-import nextRoutes from '@/lib/seo/next-routes.generated.json';
+import { isApprovedRoute } from '@/lib/seo/approved-routes';
 import { XML_HEADERS, emptyUrlset } from '@/lib/seo/xml';
 
-// /sitemap-tilda.xml – Tilda-sitemap за мінусом шляхів, які вже обслуговує
-// Next.js (перелік генерує scripts/check-routes.mjs на prebuild).
+// /sitemap-tilda.xml – Tilda-sitemap за мінусом погоджених сторінок Next.js
+// (approved-routes.json). Чернетки Next.js тут не віднімаються: на домені
+// їх віддає Tilda.
 // Origin – TILDA_ORIGIN (Р15); без змінної віддається порожній urlset,
 // щоб індекс лишався валідним.
 
 export const revalidate = 3600;
-
-const NEXT_PATHS = new Set<string>(nextRoutes as string[]);
 
 function pathOf(loc: string): string | null {
   try {
@@ -42,7 +41,7 @@ export async function GET() {
   const filtered = xml.replace(/<url>[\s\S]*?<\/url>\s*/g, (block) => {
     const loc = block.match(/<loc>([^<]+)<\/loc>/)?.[1];
     const path = loc ? pathOf(loc) : null;
-    return path && NEXT_PATHS.has(path) ? '' : block;
+    return path && isApprovedRoute(path) ? '' : block;
   });
 
   return new Response(filtered, { headers: XML_HEADERS });
