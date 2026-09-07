@@ -1,10 +1,14 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Fallback-проксі на старий Tilda-origin під час міграції. TILDA_ORIGIN
-  // раніше був заданий лише для Preview — у Production build падав з
-  // "Invalid rewrite found" (destination: 'undefined/:path*'). Тепер rewrite
-  // додається тільки якщо змінна реально задана в цьому environment.
+  // Проксі на Tilda під час міграції – ЄДИНИЙ механізм (рішення Р42, скасовує Р41).
+  // Fallback rewrite спрацьовує лише коли роутер Next.js не знайшов жодного
+  // збігу: жодна жива сторінка Next.js не може випадково піти на Tilda, а
+  // "мігрована сторінка" = "page.tsx існує в гілці". Умова дії: в app/ немає
+  // динамічних сегментів – це перевіряє scripts/check-routes.mjs на prebuild.
+  // TILDA_ORIGIN (Р15) має бути задана в КОЖНОМУ оточенні Vercel, де проксі
+  // потрібен (Preview і Production); без змінної rewrite не додається, і
+  // немігровані шляхи віддають 404 Next.js.
   async rewrites() {
     if (!process.env.TILDA_ORIGIN) return { fallback: [] };
     return {
@@ -15,6 +19,10 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
+      // Корінь: Tilda віддає / як 301 → /ukr (production, перевірено 06.09.2026).
+      // Next.js повторює це сам, щоб поведінка головної не залежала від origin.
+      { source: '/', destination: '/ukr', permanent: true },
+
       // === Пріоритет 1: сторінки з трафіком ===
 
       // /onclinic/kharkov (257 кліків) → тимчасово на /ukr/kharkiv
