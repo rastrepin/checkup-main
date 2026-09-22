@@ -9,15 +9,38 @@
 |---|---|---|---|---|---|---|
 | /ukr/screening/mamografiia | content/screening/mamografiia.md (v3.1, з PR #3, без змін) | app/ukr/screening/mamografiia/page.tsx (з PR #3, без змін) | див. розділ «Збірка» | з PR #3: рецензент; ознаки в грудях; канцер-реєстр; доза; рік Mayo; URL наказів | немає | з PR #3 (H2/Eyebrow-тексти, meta description, breadcrumb 2 рівні) |
 | /ukr/screening/pap-test | content/screening/pap-test.md (v0) | app/ukr/screening/pap-test/page.tsx (новий маршрут) | див. розділ «Збірка» | рецензент національної сторінки; Порядок №1368 не прочитаний напряму; Стандарт №1057 прочитаний за публікацією health-ua.com, не з PDF МОЗ; підготовка для жінки; число ризику / канцер-реєстр; фактори ризику з Панелі 1 не винесені; скринінг після гістеректомії; URL наказів | немає | назва «ПАП-тест» (не «Пап-тест»); джерела – тільки три з матриці 2.3 (USPSTF і Mayo для РШМ у матриці не названі); рецензент не рендериться, як на мамографії (Удовиченко – з ОН Клінік, сторінка національна); Schema: `dateModified` замість `lastReviewed`, поки рецензента немає; Eyebrow «Вік і графік», «Точність мазка» |
+| /ukr/female-checkup/do-30-rokiv/kharkiv | content/kharkiv/female-do-30-rokiv.md (v0) | app/ukr/female-checkup/do-30-rokiv/kharkiv/page.tsx (переписано на місці, каркас 5.2) | див. «Збірка» | телефон клініки (порожній у базі); інтервал між візитами; чи візит 2 онлайн; дія блоку 6 (лише текст); стаж і категорія рецензента, рецензія v0 фактично не проведена; згода ОН Клінік на доповнення при записі (§9.4.1 п.3); навіщо кожна консультація – з рецензентом; блок 5 не показується – у матриці розділ 3 немає списку для цієї групи | немає (див. «Нові і змінені компоненти, lib») | програма через platform_program_offers (female-checkup-do-30 → zhinochyi-profilaktychnyi); міст блоку 4 рахується кодом: ключові слова цілей блоку 2 проти назв позицій складу; «Що ще входить у програму» – назви позицій з composition у згортці `<details>` (раніше повний склад на сторінці не показувався, але сторінок програм на субдомені немає); FAQ на AccordionSection, а не FaqBlock (див. «Наявні дефекти»); рецензент Удовиченко О. О. у блоці і в Schema reviewedBy з формулюванням «Медичний рецензент», а не «перевірила» |
+| /ukr/female-checkup/30-40-rokiv/kharkiv | content/kharkiv/female-30-40-rokiv.md (v0) | app/ukr/female-checkup/30-40-rokiv/kharkiv/page.tsx (новий маршрут) | див. «Збірка» | телефон клініки (порожній у базі); інтервал між візитами; чи візит 2 онлайн; дія блоку 6 (лише текст); стаж і категорія рецензента, рецензія v0 фактично не проведена; згода ОН Клінік на доповнення при записі (§9.4.1 п.3); навіщо кожна консультація – з рецензентом; блок 5 не показується – у матриці розділ 3 немає списку для цієї групи; відкрите рішення 1 PLATFORM-LINE §9.2 (do-40 чи 30-40) формально не закрите в документі | немає | слаг 30-40-rokiv за рішенням спринту; до реєстру `lib/programs/age-pages.ts` додано 30–40 (CrossAgeNav на всіх жіночих вікових); програма через platform_program_offers (female-checkup-30-40 → zhinochyi-profilaktychnyi) – та сама, що до 30; решта рішень – як на сторінці 3 |
 
 ## Збірка
 
 | Коли | Коміт | Статус Vercel preview | Метод перевірки |
 |---|---|---|---|
+| після сторінки 2 | 5472ec2 (pap-test) | READY, dpl_CXcKyaMWGeWDYy9vH6ibNpGckipE | Vercel API list_deployments за githubCommitSha |
+| після сторінки 3 | 97412da (спільні lib і компоненти), 0ca27b7 (composition.ts, MD), 0936d2a (page.tsx) | усі три READY: dpl_4Gv4mcQjwWpFxFfgtPg16dsvFEwY, dpl_9eiEoj2nFqSY7ymJR13nzCwhYmDi, dpl_BmPiqYrBirTFqxrPhPVvJMuP12K6 | Vercel API list_deployments за githubCommitSha; коміти сторінки 3 розбиті помилково (у 97412da і 0ca27b7 не потрапили page.tsx і звіт), стан після 0936d2a повний |
+| перед комітом сторінок 3–6 | локальне дерево гілки + зміни сторінок 3–6 | `tsc --noEmit` без помилок; `next build` успішний, усі 4 вікові сторінки пререндерились з живими даними Supabase (anon-ключ) | локальна збірка в пісочниці, лише для перевірки; у репо не комітилась |
 
 ## Наявні дефекти (не виправлялись у спринті, якщо не сказано інше)
 
+| Дефект | Де | Що зроблено |
+|---|---|---|
+| Посилання «Детальніше» на сторінку програми на субдомені веде на 404: `onclinic.check-up.in.ua/kharkiv/<slug>` (так у старих сторінках 40-50 і vid-50) і `…/kharkiv/checkup/<slug>` (так у `components/city/ProgramCatalog.tsx`, `ProgramCatalogRu.tsx`) – обидва шаблони 404, перевірено curl 23.09.2026 | старі вікові сторінки; ProgramCatalog/ProgramCatalogRu | на вікових сторінках спринту «Детальніше» веде на clinics.website (головна субдомену); ProgramCatalog не чіпався |
+| `FaqBlock` рендерить відповідь тільки для відкритого питання – закриті відповіді відсутні в DOM (суперечить правилу «контент у DOM») | components/city/FaqBlock.tsx | на сторінках спринту FAQ зроблено на `AccordionSection` (`<details>`); FaqBlock не змінювався |
+| `InfoFrame` без `linkHref` рендерить на сторінці текст «[УТОЧНИТИ: посилання]» | components/shared/InfoFrame.tsx | на сторінках спринту InfoFrame використовується без linkLabel; компонент не змінювався |
+| Довге тире в текстах, які будує `composition.ts` («Натще — …», «Лабораторна частина складу — …») | lib/programs/composition.ts | виправлено на коротке; «Натще» переписано без «або» (див. нижче) |
+| Телефон клініки: `clinics.phone` і `clinic_branches.tracking_phone` порожні для onclinic-kharkiv | Supabase | блок «Двері» без телефону; код покаже телефон, щойно він з'явиться в базі |
+
 ## Нові і змінені компоненти, lib
+
+Нових компонентів немає. Hero, «Двері», GEO, автор і рецензент зверстані в сторінках.
+
+| Файл | Зміна | Поведінка за замовчуванням |
+|---|---|---|
+| lib/programs/clinic-offer.ts (новий, не компонент) | `fetchClinicOffers(platformProgramSlugs, clinicSlug)`: platform_programs → platform_program_offers → checkup_programs з `program_type = 'clinic'`, `is_active`, клініка за slug; повертає клініку, філії (з графіком і tracking_phone), назви активних clinic_services, програми зі складом (fetchProgramComposition). UUID не хардкодяться | – (новий); `fetchType5aData` не змінювався |
+| components/program-page/AdditionalServices.tsx | проп `showPrices` (false – без цін і приміток до ціни); проп `clinicName` для заголовка «не проводиться» замість вшитої назви; поля ціни в `AvailableAdditionalService` стали необов'язковими; секція unavailable не рендериться при порожньому переліку | `showPrices` = true – як раніше; без `clinicName` заголовок «у цій клініці» (раніше «в ОН Клінік»); старі виклики компілюються |
+| components/program-page/StickyMobileCta.tsx | `price` необов'язковий; без нього рядок ціни не рендериться | з `price` – як раніше |
+| lib/programs/composition.ts | коротке тире замість довгого в `preparationNotes` і `labSummary`; нотатка «Натще» будується без «або» («у складі є аналіз глюкози і ліпідограма») | структура даних без змін |
+| lib/programs/age-pages.ts | додано 30–40 років (`/ukr/female-checkup/30-40-rokiv/kharkiv`) | – |
 
 ## Розбіжності двох копій screening-evidence-matrix.md
 
