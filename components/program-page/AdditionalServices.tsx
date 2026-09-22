@@ -8,7 +8,8 @@ import { useState } from 'react';
 // available[]: id, name, priceVariants[{label,price}], priceType 'exact'|'from',
 //   priceNote?, priceDate, explanation
 // unavailable[]: name, why, whereToGo — без ціни, без чекбокса, без CTA
-// Секція unavailable ОБОВ'ЯЗКОВА, не опційна. Неактивні чекбокси заборонені —
+// Секція unavailable ОБОВ'ЯЗКОВА, не опційна (з SPRINT-KHARKIV-v0: при порожньому
+// unavailable[] секція не рендериться, щоб не було заголовка без переліку). Неактивні чекбокси заборонені —
 // недоступна позиція йде лише в unavailable. Доступність по клініці, не по філії.
 // null-стан за принципом AdditionalCosts: лейбл завжди видимий, статус-текст
 // замінює відсутнє значення, не порожній рядок. Витримує порожню available[]
@@ -31,10 +32,12 @@ export interface AdditionalServicePriceVariant {
 export interface AvailableAdditionalService {
   id: string;
   name: string;
-  priceVariants: AdditionalServicePriceVariant[];
-  priceType: 'exact' | 'from';
+  /** Обов'язкові в режимі з цінами (showPrices = true, за замовчуванням).
+   *  У режимі без цін (SPRINT-KHARKIV-v0) можуть бути відсутні. */
+  priceVariants?: AdditionalServicePriceVariant[];
+  priceType?: 'exact' | 'from';
   priceNote?: string;
-  priceDate: string;
+  priceDate?: string;
   explanation: string;
 }
 
@@ -49,13 +52,27 @@ export interface AdditionalServicesProps {
   unavailable: UnavailableAdditionalService[];
   programSlug: string;
   sourceCta: string;
+  /** Назва клініки з даних (clinics.name) для заголовка секції unavailable.
+   *  Раніше назва була вшита в код (SPRINT-KHARKIV-v0: «з даних, не з коду»).
+   *  Без clinicName заголовок нейтральний: «у цій клініці». */
+  clinicName?: string;
+  /** false – режим без цін: чекбокси і пояснення, без суми і приміток до ціни.
+   *  За замовчуванням true – поведінка як раніше. */
+  showPrices?: boolean;
 }
 
 function fmt(n: number) {
   return n.toLocaleString('uk-UA');
 }
 
-export default function AdditionalServices({ available, unavailable, programSlug, sourceCta }: AdditionalServicesProps) {
+export default function AdditionalServices({
+  available,
+  unavailable,
+  programSlug,
+  sourceCta,
+  clinicName,
+  showPrices = true,
+}: AdditionalServicesProps) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const toggle = (id: string) => {
@@ -87,8 +104,9 @@ export default function AdditionalServices({ available, unavailable, programSlug
           <p className="text-sm font-semibold text-gray-500 mb-3">Можна додати до запису</p>
           <div className="space-y-3">
             {available.map((item) => {
-              const total = item.priceVariants.reduce((sum, v) => sum + v.price, 0);
-              const mainVariant = item.priceVariants[0];
+              const variants = item.priceVariants ?? [];
+              const total = variants.reduce((sum, v) => sum + v.price, 0);
+              const mainVariant = variants[0];
               return (
                 <label
                   key={item.id}
@@ -103,13 +121,15 @@ export default function AdditionalServices({ available, unavailable, programSlug
                   <span className="flex-1">
                     <span className="flex items-baseline justify-between gap-3">
                       <span className="text-sm font-semibold text-[#0b1a24]">{item.name}</span>
-                      <span className="text-sm font-bold text-[#0b1a24] whitespace-nowrap">
-                        {item.priceType === 'from' ? 'від ' : ''}
-                        {fmt(mainVariant?.price ?? total)} грн
-                      </span>
+                      {showPrices && (
+                        <span className="text-sm font-bold text-[#0b1a24] whitespace-nowrap">
+                          {item.priceType === 'from' ? 'від ' : ''}
+                          {fmt(mainVariant?.price ?? total)} грн
+                        </span>
+                      )}
                     </span>
                     <span className="block text-[13px] text-gray-500 mt-1">{item.explanation}</span>
-                    {item.priceNote && (
+                    {showPrices && item.priceNote && (
                       <span className="block text-[12px] text-gray-400 mt-1">{item.priceNote}</span>
                     )}
                   </span>
@@ -129,8 +149,9 @@ export default function AdditionalServices({ available, unavailable, programSlug
 
       {/* Секція unavailable — обов'язкова, без чекбоксів/цін/CTA.
           Стиль: gray-100 + border-warm — "довідкові й опорні блоки" (UX-переробка 29.08.2026, п.2/п.6) */}
+      {unavailable.length > 0 && (
       <div>
-        <p className="text-sm font-semibold text-gray-500 mb-3">Що варто пройти, але в ОН Клінік не проводиться</p>
+        <p className="text-sm font-semibold text-gray-500 mb-3">Що варто пройти, але {clinicName ? `в ${clinicName}` : 'у цій клініці'} не проводиться</p>
         <div className="space-y-3">
           {unavailable.map((item) => (
             <div key={item.name} className="border border-border-warm rounded-[10px] px-4 py-3 bg-gray-100">
@@ -141,6 +162,7 @@ export default function AdditionalServices({ available, unavailable, programSlug
           ))}
         </div>
       </div>
+      )}
     </div>
   );
 }

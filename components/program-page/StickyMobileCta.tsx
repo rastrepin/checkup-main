@@ -11,7 +11,9 @@ import { BookCta } from '@/components/city/BookingFlow';
 export interface StickyMobileCtaProps {
   /** Скорочена назва програми, напр. "Check-Up жіночий після 40" */
   programNameShort: string;
-  price: number;
+  /** Необов'язкова (SPRINT-KHARKIV-v0): без price рядок ціни не рендериться.
+   *  Якщо price передано – поведінка як раніше. */
+  price?: number;
   programSlug: string;
   sourceCta: string;
 }
@@ -39,7 +41,9 @@ export default function StickyMobileCta({ programNameShort, price, programSlug, 
     >
       <div className="min-w-0 flex-1">
         <p className="text-[11px] text-gray-500 truncate leading-tight">{programNameShort}</p>
-        <p className="text-sm font-bold text-[#0b1a24] leading-tight">{fmt(price)} грн</p>
+        {typeof price === 'number' && (
+          <p className="text-sm font-bold text-[#0b1a24] leading-tight">{fmt(price)} грн</p>
+        )}
       </div>
       <BookCta
         programSlug={programSlug}
