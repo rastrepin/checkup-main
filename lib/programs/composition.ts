@@ -72,14 +72,17 @@ function derivePreparationNotes(items: CompositionServiceItem[]): string[] {
   const names = items.map((i) => i.name.toLowerCase());
   const has = (needle: string) => names.some((n) => n.includes(needle));
   const notes: string[] = [];
-  if (has('глюкоза') || has('ліпідограма')) {
-    notes.push('Натще — у складі є аналіз глюкози або ліпідограма.');
+  // SPRINT-KHARKIV-v0: коротке тире замість довгого (TOV-STANDARD 2.6) і одне
+  // формулювання без «або» (підготовка одним варіантом).
+  const fasting = [has('глюкоза') ? 'аналіз глюкози' : '', has('ліпідограма') ? 'ліпідограма' : ''].filter(Boolean);
+  if (fasting.length > 0) {
+    notes.push(`Натще – у складі є ${joinWithAnd(fasting)}.`);
   }
   if (has('пап-тест')) {
-    notes.push('Урахуйте день циклу — у складі є ПАП-тест.');
+    notes.push('Урахуйте день циклу – у складі є ПАП-тест.');
   }
   if (has('урогенітал')) {
-    notes.push('Статевий спокій напередодні — у складі є урогенітальні дослідження.');
+    notes.push('Статевий спокій напередодні – у складі є урогенітальні дослідження.');
   }
   return notes;
 }
@@ -222,7 +225,7 @@ function buildLabSummary(items: CompositionServiceItem[]): string {
   const ordered = LAB_CATEGORY_ORDER.filter((c) => present.has(c));
   const extra = [...present].filter((c) => !(LAB_CATEGORY_ORDER as readonly string[]).includes(c));
   const categories = [...ordered, ...extra];
-  return `Лабораторна частина складу — ${lab.length} аналізів. Напрямки: ${joinWithAnd(categories)}.`;
+  return `Лабораторна частина складу – ${lab.length} аналізів. Напрямки: ${joinWithAnd(categories)}.`;
 }
 
 // -----------------------------------------------------------------------------
