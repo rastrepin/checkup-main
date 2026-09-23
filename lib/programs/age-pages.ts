@@ -22,4 +22,5 @@ export const AGE_STEP_PAGES: AgeStepPage[] = [
   { gender: 'female', ageStepLabel: '40-50 років', href: '/ukr/female-checkup/40-50-rokiv/kharkiv' },
   { gender: 'female', ageStepLabel: 'Після 50', href: '/ukr/female-checkup/vid-50-rokiv/kharkiv' },
   { gender: 'male', ageStepLabel: 'До 30 років', href: '/ukr/male-checkup/do-30-rokiv/kharkiv' },
+  { gender: 'male', ageStepLabel: '30-40 років', href: '/ukr/male-checkup/30-40-rokiv/kharkiv' },
 ];
