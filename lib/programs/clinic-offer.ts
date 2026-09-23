@@ -37,6 +37,9 @@ export interface OfferProgram extends CheckupProgram {
 export interface ClinicOffer {
   program: OfferProgram;
   composition: ProgramComposition;
+  /** Слаги платформних програм із запиту, яким відповідає ця програма клініки
+   *  (одна програма клініки може покривати кілька вікових кроків). */
+  platformSlugs: string[];
 }
 
 export interface ClinicOffersData {
@@ -91,9 +94,10 @@ export async function fetchClinicOffers(
       .from('platform_programs')
       .select('id, slug')
       .in('slug', platformProgramSlugs);
-    const orderedIds: string[] = platformProgramSlugs
-      .map((slug) => (platformPrograms ?? []).find((p: any) => p.slug === slug)?.id)
-      .filter(Boolean);
+    const ordered: { id: string; slug: string }[] = platformProgramSlugs
+      .map((slug) => ({ id: (platformPrograms ?? []).find((p: any) => p.slug === slug)?.id as string, slug }))
+      .filter((x) => Boolean(x.id));
+    const orderedIds = ordered.map((x) => x.id);
     if (orderedIds.length === 0) return { clinic, branches, clinicServiceNames, offers: [] };
 
     const { data: offerRows } = await sb
@@ -103,12 +107,16 @@ export async function fetchClinicOffers(
       .order('sort_order', { ascending: true });
 
     const programs: OfferProgram[] = [];
-    for (const ppId of orderedIds) {
+    const slugsByProgram = new Map<string, string[]>();
+    for (const pp of ordered) {
       for (const row of offerRows ?? []) {
-        if (row.platform_program_id !== ppId) continue;
+        if (row.platform_program_id !== pp.id) continue;
         const p = row.checkup_programs as OfferProgram | null;
         if (!p) continue;
         if (p.program_type !== 'clinic' || !p.is_active || p.clinic_id !== clinic.id) continue;
+        const slugs = slugsByProgram.get(p.id) ?? [];
+        if (!slugs.includes(pp.slug)) slugs.push(pp.slug);
+        slugsByProgram.set(p.id, slugs);
         if (programs.some((x) => x.id === p.id)) continue;
         programs.push(p);
       }
@@ -119,7 +127,11 @@ export async function fetchClinicOffers(
       clinic,
       branches,
       clinicServiceNames,
-      offers: programs.map((program, i) => ({ program, composition: compositions[i] })),
+      offers: programs.map((program, i) => ({
+        program,
+        composition: compositions[i],
+        platformSlugs: slugsByProgram.get(program.id) ?? [],
+      })),
     };
   } catch {
     return EMPTY;
