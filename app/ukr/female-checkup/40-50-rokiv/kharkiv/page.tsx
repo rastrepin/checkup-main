@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
+import { cache } from 'react';
 import Link from 'next/link';
-import { fetchClinicOffers, type OfferBranch } from '@/lib/programs/clinic-offer';
+import { fetchClinicOffers, type ClinicOffer, type OfferBranch } from '@/lib/programs/clinic-offer';
 import { priceDateNotice } from '@/lib/programs/type5a';
 import CompositionSummaryText from '@/components/program-page/CompositionSummaryText';
 import StickyMobileCta from '@/components/program-page/StickyMobileCta';
@@ -23,8 +24,9 @@ const PAGE_URL = `https://check-up.in.ua${PAGE_PATH}`;
 const PLATFORM_PROGRAM = 'female-checkup-40-50';
 const CLINIC_SLUG = 'onclinic-kharkiv';
 const SOURCE_CTA = 'age_page_female_40_50_kharkiv';
-const TITLE = "Чекап для жінок 40–50 років у Харкові: що перевіряти | check-up.in.ua";
-const DESCRIPTION = "Що перевіряти жінці 40–50 років за клінічними настановами: тиск щороку, холестерин, діабет 2 типу, ПАП-тест, мамографія за факторами ризику. Готова програма клініки в Харкові.";
+// SEO-STANDARD р.4, Тип 5a. X (мінімальна ціна програм клініки для сторінки) – з Supabase у generateMetadata.
+const TITLE = "Чекап для жінок 40–50 років: які обстеження проходити, програми в Харкові | check-up.in.ua";
+const DESCRIPTION_BASE = "Які обстеження потрібні жінкам 40–50 років. 6 цілей скринінгу.";
 const UPDATED_ISO = '2026-09-23';
 const UPDATED_LABEL = '23.09.2026';
 const REVIEWER = { name: 'Удовиченко Олена Олександрівна', jobTitle: 'лікар акушер-гінеколог', org: 'ОН Клінік Харків' };
@@ -34,13 +36,26 @@ const BG_GRAY = '#f8fafc';
 const BG_WHITE = '#ffffff';
 const P = 'text-gray-700 leading-relaxed mt-4';
 
-export const metadata: Metadata = {
-  title: { absolute: TITLE },
-  description: DESCRIPTION,
-  robots: { index: true, follow: true },
-  alternates: { canonical: PAGE_URL },
-  openGraph: { title: TITLE, description: DESCRIPTION, url: PAGE_URL, type: 'website' },
-};
+const getOffers = cache(() => fetchClinicOffers([PLATFORM_PROGRAM], CLINIC_SLUG));
+
+/** Мінімальна ціна (price_discount) програм клініки для сторінки; null – даних немає. */
+function minPrice(offers: ClinicOffer[]): number | null {
+  const prices = offers.map((o) => o.program.price_discount).filter((p) => typeof p === 'number' && p > 0);
+  return prices.length > 0 ? Math.min(...prices) : null;
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const { offers } = await getOffers();
+  const x = minPrice(offers);
+  const description = x ? `${DESCRIPTION_BASE} Програми в Харкові від ${fmt(x)} грн.` : DESCRIPTION_BASE;
+  return {
+    title: { absolute: TITLE },
+    description,
+    robots: { index: true, follow: true },
+    alternates: { canonical: PAGE_URL },
+    openGraph: { title: TITLE, description, url: PAGE_URL, type: 'website' },
+  };
+}
 
 /* Джерела: [n] у тексті → пункт n */
 const SOURCES: string[] = [
@@ -156,7 +171,7 @@ function Section({ bg, eyebrow, children }: { bg: string; eyebrow: string; child
 }
 
 export default async function FemaleAge4050KharkivPage() {
-  const { clinic, branches, clinicServiceNames, offers } = await fetchClinicOffers([PLATFORM_PROGRAM], CLINIC_SLUG);
+  const { clinic, branches, clinicServiceNames, offers } = await getOffers();
   const offer = offers[0] ?? null;
   const program = offer?.program ?? null;
   const composition = offer?.composition ?? null;
@@ -184,7 +199,7 @@ export default async function FemaleAge4050KharkivPage() {
     {
       '@context': 'https://schema.org',
       '@type': 'MedicalWebPage',
-      name: "Чекап для жінок 40–50 років у Харкові",
+      name: "Чекап для жінок 40–50 років – що перевіряти і де пройти в Харкові",
       url: PAGE_URL,
       dateModified: UPDATED_ISO,
       reviewedBy: {
@@ -246,7 +261,7 @@ export default async function FemaleAge4050KharkivPage() {
                 className="font-bold leading-tight mb-6"
                 style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: 'clamp(32px, 5.5vw, 56px)' }}
               >
-                Чекап для жінок 40–50 років у Харкові
+                Чекап для жінок 40–50 років – що перевіряти і де пройти в Харкові
               </h1>
               <p className="text-lg text-gray-700 leading-relaxed mt-2">Сторінка для жінок 40–50 років без скарг. Спочатку перелік за клінічними настановами, потім готова програма клініки в Харкові і що до неї додати.</p>
             </div>

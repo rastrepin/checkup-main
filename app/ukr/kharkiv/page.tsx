@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
+import { cache } from 'react';
 import Link from 'next/link';
-import { fetchClinicOffers, type OfferBranch } from '@/lib/programs/clinic-offer';
+import { fetchClinicOffers, type ClinicOffer, type OfferBranch } from '@/lib/programs/clinic-offer';
 import { AGE_STEP_PAGES, type AgeStepGender } from '@/lib/programs/age-pages';
 import AccordionSection from '@/components/shared/AccordionSection';
 import BookingFlow, { BookCta } from '@/components/city/BookingFlow';
@@ -20,9 +21,9 @@ const PAGE_PATH = '/ukr/kharkiv';
 const PAGE_URL = `https://check-up.in.ua${PAGE_PATH}`;
 const CLINIC_SLUG = 'onclinic-kharkiv';
 const SOURCE_CTA = 'city_hub_kharkiv';
-const TITLE = 'Чекап у Харкові: що перевіряти жінкам і чоловікам за віком | check-up.in.ua';
-const DESCRIPTION =
-  'Чекап у Харкові для жінок і чоловіків: перелік обстежень за віком за клінічними настановами, окремі скринінги і клініка-партнер з філіями біля метро.';
+// SEO-STANDARD р.4, Тип 5 (сесія 3). Опис (meta description) – у generateMetadata з даних.
+const TITLE = 'Чекап в Харкові: програми, ціни, клініки | check-up.in.ua';
+const H1 = 'Чекап в Харкові';
 const UPDATED_ISO = '2026-09-23';
 const UPDATED_LABEL = '23.09.2026';
 
@@ -30,17 +31,6 @@ const BORDER = '1px solid #e8edf3';
 const BG_GRAY = '#f8fafc';
 const BG_WHITE = '#ffffff';
 const P = 'text-gray-700 leading-relaxed mt-4';
-
-export const metadata: Metadata = {
-  title: { absolute: TITLE },
-  description: DESCRIPTION,
-  robots: { index: true, follow: true },
-  alternates: {
-    canonical: PAGE_URL,
-    languages: { uk: PAGE_PATH, ru: '/kharkov' },
-  },
-  openGraph: { title: TITLE, description: DESCRIPTION, url: PAGE_URL, type: 'website' },
-};
 
 /* Картки статі. Вікові посилання під карткою – з реєстру AGE_STEP_PAGES. */
 const GENDER_CARDS: { gender: AgeStepGender; title: string; line: string; href: string; linkLabel: string }[] = [
@@ -184,8 +174,37 @@ function Section({ bg, eyebrow, children }: { bg: string; eyebrow: string; child
   );
 }
 
+const getOffers = cache(() => fetchClinicOffers(PLATFORM_PROGRAMS, CLINIC_SLUG));
+
+/** SEO-STANDARD р.4, Тип 5: X – мінімальна ціна (price_discount) програм клініки для сторінки,
+ *  N – кількість клінік-партнерів у даних. Обидва – з Supabase, не з коду. */
+function metaDescription(offers: ClinicOffer[]): string {
+  const prices = offers.map((o) => o.program.price_discount).filter((p) => typeof p === 'number' && p > 0);
+  const x = prices.length > 0 ? Math.min(...prices) : null;
+  const n = new Set(offers.map((o) => o.program.clinic_id)).size;
+  const parts = [`Програми чекапу в Харкові${x ? ` – ціни від ${x.toLocaleString('uk-UA')} грн` : ''}.`];
+  if (n > 0) parts.push(`Клініки-партнери: ${n}.`);
+  parts.push('Підберіть програму під вік і ризики.');
+  return parts.join(' ');
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const { offers } = await getOffers();
+  const description = metaDescription(offers);
+  return {
+    title: { absolute: TITLE },
+    description,
+    robots: { index: true, follow: true },
+    alternates: {
+      canonical: PAGE_URL,
+      languages: { uk: PAGE_PATH, ru: '/kharkov' },
+    },
+    openGraph: { title: TITLE, description, url: PAGE_URL, type: 'website' },
+  };
+}
+
 export default async function KharkivCityHubPage() {
-  const { clinic, branches, offers } = await fetchClinicOffers(PLATFORM_PROGRAMS, CLINIC_SLUG);
+  const { clinic, branches, offers } = await getOffers();
   const programs = offers.map((o) => o.program);
 
   const cards = GENDER_CARDS.map((c) => ({
@@ -197,7 +216,7 @@ export default async function KharkivCityHubPage() {
     {
       '@context': 'https://schema.org',
       '@type': 'MedicalWebPage',
-      name: 'Чекап у Харкові',
+      name: H1,
       url: PAGE_URL,
       dateModified: UPDATED_ISO,
     },
@@ -235,7 +254,7 @@ export default async function KharkivCityHubPage() {
                 className="font-bold leading-tight mb-6"
                 style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: 'clamp(32px, 5.5vw, 56px)' }}
               >
-                Чекап у Харкові
+                {H1}
               </h1>
               <p className="text-lg text-gray-700 leading-relaxed mt-2">
                 Що перевіряти без скарг, залежить від статі і віку. Оберіть свою сторінку: на ній – перелік за клінічними
