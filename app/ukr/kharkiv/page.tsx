@@ -62,10 +62,11 @@ const PLATFORM_PROGRAMS = [
   'male-checkup-vid-50',
 ];
 
-/* Скринінгові сторінки. PSA додасться в сесії 3. */
+/* Скринінгові сторінки. */
 const SCREENINGS: { href: string; label: string; line: string }[] = [
   { href: '/ukr/screening/mamografiia', label: 'Мамографія', line: 'скринінг раку молочної залози.' },
   { href: '/ukr/screening/pap-test', label: 'ПАП-тест', line: 'скринінг раку шийки матки.' },
+  { href: '/ukr/screening/psa', label: 'Аналіз PSA', line: 'скринінг раку передміхурової залози, за спільним рішенням з лікарем.' },
 ];
 
 /* Джерела: [n] у тексті → пункт n */
