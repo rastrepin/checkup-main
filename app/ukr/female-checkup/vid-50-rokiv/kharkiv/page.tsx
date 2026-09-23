@@ -16,6 +16,9 @@ import BookingFlow, { BookCta } from '@/components/city/BookingFlow';
 // Програма, ціна, дата ціни, склад, філії – тільки з Supabase (fetchClinicOffers):
 // platform_program_offers → checkup_programs (program_type = 'clinic') → onclinic-kharkiv.
 // Hero, «Двері», GEO, автор і рецензент – верстка в сторінці (рішення спринту, без нових спільних компонентів).
+// Задача Cowork «Оновлення текстів сторінки після 50» (v1, 23.09.2026): тексти за редакторським аудитом і рецензентом.
+// Опис складу, підготовка і перший візит будуються тут, у сторінці, з тих самих позицій composition
+// (lib/programs/composition.ts не змінювався – його тексти лишаються на інших вікових сторінках).
 
 export const revalidate = 3600;
 
@@ -78,21 +81,162 @@ const TARGETS: { label: string; keywords: string[]; missing: string | null }[] =
   { label: "Денситометрія (DXA)", keywords: ["денситометр", "dxa", "абсорбціометр"], missing: null },
 ];
 
-/* Кандидати в доповнення (screening-evidence-matrix.md, розділ 3). */
-const ADDITIONS: { id: string; name: string; keywords: string[]; explanation: string; why: string }[] = [
-  { id: "dxa", name: "Денситометрія (DXA)", keywords: ["денситометр", "dxa", "абсорбціометр"], explanation: "З 65 років, а до 65 – у постменопаузі за факторів ризику перелому.", why: "З 65 років рекомендована, до 65 – за факторів ризику перелому." },
-  { id: "mammo", name: "Мамографія", keywords: ["мамограф"], explanation: "У 50–69 років кожні 2 роки для всіх жінок.", why: "У 50–69 років її роблять кожні 2 роки всім жінкам." },
-  { id: "fit", name: "Тест калу на приховану кров", keywords: ["прихован", "імунохімічн"], explanation: "З 50 років раз на 2 роки, за факторами ризику – щороку з 40.", why: "З 50 років його роблять раз на 2 роки." },
+/* Кандидати в доповнення (screening-evidence-matrix.md, розділ 3).
+ * missingName – назва для {missingTests} (Hero, картка програми, GEO); null – не входить
+ * (денситометрія для 50+ не обовʼязкова для всіх: лише з 65 або за факторів ризику). */
+const ADDITIONS: { id: string; name: string; keywords: string[]; explanation: string; why: string; missingName: string | null }[] = [
+  { id: "dxa", name: "Денситометрія (DXA)", keywords: ["денситометр", "dxa", "абсорбціометр"], explanation: "З 65 років, а до 65 – у постменопаузі за факторів ризику перелому.", why: "З 65 років рекомендована, до 65 – за факторів ризику перелому.", missingName: null },
+  { id: "mammo", name: "Мамографія", keywords: ["мамограф"], explanation: "У 50–69 років кожні 2 роки для всіх жінок.", why: "У 50–69 років її роблять кожні 2 роки всім жінкам. УЗД молочних залоз не замінює мамографію: для скринінгу раку молочної залози після 50 років використовують саме мамографію [1].", missingName: "мамографія" },
+  { id: "fit", name: "Тест калу на приховану кров", keywords: ["прихован", "імунохімічн"], explanation: "З 50 до 75 років раз на 2 роки, за факторів ризику щороку.", why: "З 50 років його роблять раз на 2 роки.", missingName: "аналіз калу на приховану кров" },
 ];
 const WHERE_TO_GO = 'Можна пройти в іншому закладі і принести результат на другий візит.';
 
-const FAQ: { q: string; a: string }[] = [
-  { q: "Менопауза вже настала. Що змінюється в переліку?", a: "Після 50 мамографію кожні 2 роки рекомендують усім жінкам, додається скринінг колоректального раку, а з 65 – денситометрія. Якщо менопауза настала раніше і є фактори ризику перелому, денситометрію обговорюють з лікарем і до 65." },
-  { q: "Чи потрібна колоноскопія, якщо нічого не турбує?", a: "Для скринінгу після 50 спочатку роблять тест калу на приховану кров раз на 2 роки. Колоноскопію призначають, якщо тест позитивний, протягом 1–2 місяців." },
-  { q: "Чи потрібен ПАП-тест після 65?", a: "Якщо попередні результати були нормальними – два негативні тести на ВПЛ або три нормальні мазки за останні 10 років, – скринінг припиняють. Якщо результатів ви не знаєте, його продовжують." },
-  { q: "Чи можна пройти перелік не в цій клініці?", a: "Так. Перелік складений за клінічними настановами, а не за прайсом клініки, і його можна пройти в будь-якому закладі. Запис до клініки-партнера на цій сторінці – зручність, а не умова." },
-  { q: "Що робити, якщо потрібного обстеження немає в готовій програмі?", a: "Його можна пройти окремо в іншому закладі і принести результат на другий візит: лікар врахує його разом з рештою показників. Що з переліку є в програмі, а чого немає, показано в блоці «Готовий варіант»." },
+/** FAQ: видимий текст і FAQPage Schema будуються з одного масиву. */
+function buildFaq(programName: string | null): { q: string; a: string }[] {
+  const inProgram = programName ? `програмі «${programName}»` : 'програмі клініки';
+  const inProgramAcc = programName ? `програму «${programName}»` : 'програму клініки';
+  return [
+    { q: "Менопауза вже настала. Що змінюється в переліку?", a: "У переліку за віком менопауза впливає лише на денситометрію. Якщо менопауза вже настала і є фактори ризику перелому, її рекомендують і до 65 років. Фактори ризику перелічені в розділі «Що залежить від вашої історії»." },
+    { q: "Чи потрібна колоноскопія, якщо нічого не турбує?", a: "Для скринінгу після 50 спочатку роблять тест калу на приховану кров раз на 2 роки. Колоноскопію призначають, якщо тест позитивний, протягом 1–2 місяців." },
+    { q: "Чи потрібен ПАП-тест після 65?", a: "Якщо попередні результати були нормальними – два негативні тести на ВПЛ або три нормальні мазки за останні 10 років, – скринінг припиняють. Якщо результатів ви не знаєте, його продовжують." },
+    { q: "Чи можна пройти перелік не в цій клініці?", a: "Так. Перелік складено за клінічними настановами, тому його можна пройти в будь-якому закладі. Записуватися до клініки-партнера через цю сторінку не обовʼязково." },
+    { q: `Що робити, якщо потрібного обстеження немає в ${inProgram}?`, a: `Його можна пройти окремо в іншому закладі і принести результат на другий візит: лікар врахує його разом з рештою показників. Що з переліку входить у ${inProgramAcc}, вказано в її описі.` },
+  ];
+}
+
+/* {missingTests}: «A і B», «A, B і C». */
+function joinWithAnd(items: string[]): string {
+  if (items.length <= 1) return items.join('');
+  return `${items.slice(0, -1).join(', ')} і ${items[items.length - 1]}`;
+}
+
+/** Речення про відсутні обстеження (Hero, картка програми, GEO); null – відсутніх немає. */
+function missingSentence(names: string[]): string | null {
+  if (names.length === 0) return null;
+  if (names.length === 1) {
+    return `До програми не входить ${names[0]}: це обстеження варто пройти додатково або обговорити з лікарем на консультації.`;
+  }
+  return `До програми не входять ${joinWithAnd(names)}: їх варто пройти додатково або обговорити з лікарем на консультації.`;
+}
+
+/* Опис складу (розділ 5.3 задачі): будується з назв позицій composition. */
+const UZD_AREA_GENITIVE: [string, string][] = [
+  ['органів черевної порожнини', 'органів черевної порожнини'],
+  ['органів малого тазу', 'малого таза'],
+  ['органів сечовидільної системи', 'нирок і сечового міхура'],
+  ['молочних залоз', 'молочних залоз'],
+  ['щитоподібної залози', 'щитоподібної залози'],
 ];
+const AREAS_GENITIVE: Record<number, string> = {
+  1: 'однієї ділянки', 2: 'двох ділянок', 3: 'трьох ділянок', 4: 'чотирьох ділянок', 5: 'пʼяти ділянок',
+  6: 'шести ділянок', 7: 'семи ділянок', 8: 'восьми ділянок', 9: 'девʼяти ділянок', 10: 'десяти ділянок',
+};
+
+function uzdAreaGenitive(rest: string): string {
+  const lower = rest.toLowerCase();
+  for (const [key, label] of UZD_AREA_GENITIVE) {
+    if (lower.startsWith(key)) return label;
+  }
+  return rest.replace(/\([^)]*\)/g, '').trim().toLowerCase();
+}
+
+function otherInstrumental(name: string): string {
+  if (/^Електрокардіографія/i.test(name)) return 'електрокардіографія (ЕКГ, запис роботи серця)';
+  if (/^Відеокольпоскопія/i.test(name)) return 'відеокольпоскопія (огляд шийки матки під збільшенням)';
+  if (/^Рентгенографія органів грудної клітини/i.test(name)) return 'рентген органів грудної клітини';
+  return name.toLowerCase();
+}
+
+function instrumentalText(items: { name: string; serviceType: string }[]): string {
+  const areas: string[] = [];
+  const other: string[] = [];
+  for (const i of items.filter((x) => x.serviceType === 'instrumental')) {
+    const m = i.name.match(/^УЗД\s+(.*)$/i);
+    if (m) areas.push(uzdAreaGenitive(m[1]));
+    else other.push(otherInstrumental(i.name));
+  }
+  const parts: string[] = [];
+  if (areas.length > 0) {
+    parts.push(`Ультразвукове дослідження (УЗД) ${AREAS_GENITIVE[areas.length] ?? `${areas.length} ділянок`}: ${areas.join(', ')}.`);
+  }
+  if (other.length > 0) {
+    const joined = joinWithAnd(other);
+    parts.push(areas.length > 0 ? `Також ${joined}.` : `${joined.charAt(0).toUpperCase()}${joined.slice(1)}.`);
+  }
+  return parts.join(' ');
+}
+
+const LAB_CATEGORY_ORDER = [
+  'загальні аналізи крові й сечі',
+  'показники роботи печінки і нирок',
+  'холестерин і глюкоза',
+  'гормони щитоподібної залози',
+  'вітамін D',
+  'гінекологічні мазки',
+];
+
+function labCategory(name: string): string {
+  const n = name.toLowerCase();
+  if (n.includes('клінічний аналіз крові') || n.includes('загальний аналіз сечі')) return 'загальні аналізи крові й сечі';
+  if (n.includes('ліпідограма') || n.includes('глюкоза')) return 'холестерин і глюкоза';
+  if (n.includes('тиреоїдний')) return 'гормони щитоподібної залози';
+  if (n.includes('вітамін d') || n.includes('25-он')) return 'вітамін D';
+  if (n.includes('урогенітал') || n.includes('пап-тест')) return 'гінекологічні мазки';
+  if (
+    n.includes('алат') || n.includes('асат') || n.includes('гамма-глутамілтрансфераза') ||
+    n.includes('білірубін') || n.includes('загальний білок') || n.includes('лужна фосфатаза') ||
+    n.includes('альбумін') || n.includes('креатинін') || n.includes('сечовина') ||
+    n.includes('коагулограма') || n.includes('helicobacter')
+  ) {
+    return 'показники роботи печінки і нирок';
+  }
+  return 'інші показники';
+}
+
+function analysesWord(n: number) {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return 'аналіз';
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return 'аналізи';
+  return 'аналізів';
+}
+
+function labText(items: { name: string; serviceType: string }[]): string {
+  const lab = items.filter((i) => i.serviceType === 'lab');
+  if (lab.length === 0) return '';
+  const present = new Set(lab.map((i) => labCategory(i.name)));
+  const categories = [...LAB_CATEGORY_ORDER.filter((c) => present.has(c)), ...[...present].filter((c) => !LAB_CATEGORY_ORDER.includes(c))];
+  return `${lab.length} ${analysesWord(lab.length)} крові, сечі та мазків: ${categories.join(', ')}.`;
+}
+
+/** Підготовка (розділ 8.2 задачі): пункт показується, якщо в складі є відповідна позиція. */
+function preparationItems(items: { name: string }[]): string[] {
+  const names = items.map((i) => i.name.toLowerCase());
+  const hasAny = (needle: string) => names.some((n) => n.includes(needle));
+  const out: string[] = [];
+  if (hasAny('глюкоза') || hasAny('ліпідограма')) {
+    out.push('натще: 8–12 годин без їжі перед аналізом крові, пити можна чисту воду без газу');
+  }
+  if (hasAny('пап-тест') || hasAny('урогенітал')) {
+    out.push('ПАП-тест і гінекологічні мазки не здають під час менструації: якщо цикл ще є, плануйте візит на перші дні після її завершення, у менопаузі підійде будь-який день');
+  }
+  if (hasAny('урогенітал') || hasAny('пап-тест')) {
+    out.push('за 24–48 годин до візиту: без статевих контактів, спринцювань, вагінальних свічок, таблеток і кремів');
+  }
+  return out;
+}
+
+/** Кількість філій словом, узгоджена з «філія / філії / філій». */
+const BRANCH_COUNT_WORDS: Record<number, string> = {
+  1: 'одна', 2: 'дві', 3: 'три', 4: 'чотири', 5: 'пʼять', 6: 'шість', 7: 'сім', 8: 'вісім', 9: 'девʼять', 10: 'десять',
+};
+
+/** Вік із назви програми («… після 40» → 40); null – у назві віку немає. */
+function programAge(name: string): number | null {
+  const m = name.match(/(\d{2})/);
+  return m ? Number(m[1]) : null;
+}
+const PAGE_AGE = 50;
 
 const SCHEDULE_LABELS: [string, string][] = [
   ['mon_fri', 'пн–пт'],
@@ -197,6 +341,16 @@ export default async function FemaleAgeVid50KharkivPage() {
   const additionsUnavailable = additions.filter((a) => !additionsAvailable.includes(a));
   const showAdditions = Boolean(program) && additions.length > 0;
 
+  // {missingTests}: з того самого зіставлення, що й блок «Що варто додати»; денситометрія не входить.
+  const missingNames = additions.map((a) => a.missingName).filter((n): n is string => Boolean(n));
+  const missingText = program ? missingSentence(missingNames) : null;
+  const ageOfProgram = program ? programAge(program.name_ua) : null;
+  const programNameQ = program ? `«${program.name_ua}»` : null;
+  const FAQ = buildFaq(program?.name_ua ?? null);
+  const instrumentalSummary = instrumentalText(items);
+  const labSummary = labText(items);
+  const preparation = preparationItems(items);
+
   const notice = program?.price_date ? priceDateNotice(program.price_date) : undefined;
 
   const jsonLd: object[] = [
@@ -267,32 +421,39 @@ export default async function FemaleAgeVid50KharkivPage() {
               >
                 Чекап для жінок після 50 років – що перевіряти і де пройти в Харкові
               </h1>
-              <p className="text-lg text-gray-700 leading-relaxed mt-2">Сторінка для жінок після 50 років без скарг. Спочатку перелік за клінічними настановами, потім готова програма клініки в Харкові і що до неї додати.</p>
+              <p className="text-lg text-gray-700 leading-relaxed mt-2">
+                Якщо вам після 50 і нічого не турбує, ось що варто перевірити за клінічними настановами.
+                {program && ` Комплексне обстеження організму в Харкові можна пройти за програмою ${programNameQ}.`}
+                {program && ageOfProgram !== null && ageOfProgram !== PAGE_AGE &&
+                  ` Програма розрахована на жінок від ${ageOfProgram} років, і її склад підходить також після ${PAGE_AGE}.`}
+                {missingText && ` ${missingText}`}
+              </p>
             </div>
           </div>
         </section>
 
         {/* 2. Що вам потрібно в цьому віці – не залежить від партнера */}
         <Section bg={BG_WHITE} eyebrow="За клінічними настановами">
-          <H2 id="shcho-potribno">Що вам потрібно в цьому віці</H2>
-          <p className={P}>Після 50 до переліку додаються обстеження, які до цього віку роблять лише за підстав: мамографія для всіх жінок і скринінг колоректального раку<S n={[1]} />. З 65 років – перевірка щільності кісток<S n={[2]} />.</p>
-          <p className={P}>З 1 січня 2026 року в Україні діє державна програма «Скринінг здоров&apos;я 40+»: серцево-судинні захворювання, цукровий діабет 2 типу і ментальне здоров&apos;я<S n={[3]} />.</p>
+          <H2 id="shcho-potribno">Які обстеження потрібні жінці після 50</H2>
+          <p className={P}>Після 50 два обстеження рекомендують усім жінкам: мамографію і скринінг колоректального раку, тобто раку товстої кишки<S n={[1]} />. До цього віку їх роблять за скаргами або за підвищеного ризику. З 65 років до них додається перевірка щільності кісток<S n={[2]} />.</p>
           <h3 className="text-lg font-semibold text-[#0b1a24] mt-8">Молочні залози</h3>
-          <p className={P}>У 50–69 років мамографію кожні 2 роки рекомендують усім жінкам, незалежно від скарг і факторів ризику<S n={[1]} />. Що робити після 69, описано на сторінці про мамографію.</p>
-          <p className="mt-3 text-sm"><Link href="/ukr/screening/mamografiia" className="font-semibold text-[#005485] hover:underline">Докладніше про мамографію →</Link></p>
+          <p className={P}>У 50–69 років мамографію роблять кожні 2 роки всім жінкам, навіть якщо факторів ризику немає<S n={[1]} />. Якщо зʼявилося ущільнення в грудях чи під пахвою, зміни шкіри, втягнення соска або виділення із соска, до лікаря звертаються одразу, не чекаючи планової мамографії<S n={[1]} />. Що робити після 69, описано на сторінці «<Link href="/ukr/screening/mamografiia" className="text-[#005485] underline hover:no-underline">Мамографія: що показує і коли потрібна</Link>».</p>
           <h3 className="text-lg font-semibold text-[#0b1a24] mt-8">Колоректальний рак</h3>
-          <p className={P}>З 50 років тест калу на приховану кров роблять раз на 2 роки<S n={[1]} />. Позитивний результат означає колоноскопію протягом 1–2 місяців і консультацію проктолога або онколога<S n={[1]} />.</p>
-          <h3 className="text-lg font-semibold text-[#0b1a24] mt-8">Рак шийки матки: ПАП-тест або тест на ВПЛ</h3>
-          <p className={P}>До 65 років – за тим самим графіком: мазок на клітини раз на 3 роки або тест на вірус папіломи людини (ВПЛ) раз на 10 років<S n={[4]} />. Після 65 скринінг припиняють, якщо попередні результати були нормальними<S n={[4]} />.</p>
-          <p className="mt-3 text-sm"><Link href="/ukr/screening/pap-test" className="font-semibold text-[#005485] hover:underline">Докладніше про ПАП-тест →</Link></p>
+          <p className={P}>З 50 до 75 років раз на 2 роки роблять аналіз калу на приховану кров або фекальний імунохімічний тест (ФІТ)<S n={[1]} />. Якщо цикл ще є, тест не здають під час менструації: краще зачекати кілька днів після її завершення, інакше аналіз може показати кров, якої в кишці немає.</p>
+          <p className={P}>Якщо кров знайшли, протягом 1–2 місяців потрібні колоноскопія (огляд кишки зсередини тонкою гнучкою трубкою з камерою) і консультація проктолога або онколога<S n={[1]} />. Кров у калі не обовʼязково означає рак: частіше її причиною бувають поліпи, геморой або тріщина заднього проходу. Колоноскопія показує точну причину.</p>
+          <p className={P}>Після 75 років планову перевірку припиняють. Чи потрібне обстеження далі, ви вирішуєте разом із лікарем, з огляду на стан здоровʼя і фактори ризику<S n={[1]} />.</p>
+          <h3 className="text-lg font-semibold text-[#0b1a24] mt-8">Рак шийки матки</h3>
+          <p className={P}>До 65 років роблять мазок на клітини шийки матки (ПАП-тест) раз на 3 роки або тест на вірус папіломи людини (ВПЛ) раз на 10 років<S n={[4]} />. Після 65 скринінг припиняють, якщо попередні результати були нормальними<S n={[4]} />. Детальніше на сторінці «<Link href="/ukr/screening/pap-test" className="text-[#005485] underline hover:no-underline">ПАП-тест: що показує і коли потрібен</Link>».</p>
           <h3 className="text-lg font-semibold text-[#0b1a24] mt-8">Щільність кісток</h3>
-          <p className={P}>З 65 років рекомендують денситометрію – вимірювання щільності кісток методом DXA<S n={[2]} />. Серед жінок 65 років і старше остеопороз мають 27,1 відсотка<S n={[2]} />. До 65 денситометрію роблять, якщо є фактори ризику перелому: про них у наступному блоці.</p>
+          <p className={P}>З 65 років рекомендують денситометрію: вимірювання щільності кісток на рентгенівському апараті з низькою дозою опромінення (метод DXA)<S n={[2]} />. Остеопороз, тобто підвищену крихкість кісток, має приблизно кожна четверта жінка 65 років і старше<S n={[2]} />. До 65 денситометрію роблять за факторів ризику перелому: вони перелічені в розділі «Що залежить від вашої історії».</p>
           <h3 className="text-lg font-semibold text-[#0b1a24] mt-8">Артеріальний тиск</h3>
-          <p className={P}>Від 40 років тиск вимірюють щороку<S n={[5]} />. Це вимірювання на прийомі, окремого аналізу для нього не потрібно.</p>
+          <p className={P}>Після 50 тиск вимірюють щороку<S n={[5]} />. Для цього достатньо вимірювання на прийомі, окремий аналіз не потрібен.</p>
           <h3 className="text-lg font-semibold text-[#0b1a24] mt-8">Холестерин</h3>
-          <p className={P}>Якщо показники в нормі, холестерин повторюють раз на 4–6 років від першого вимірювання у 20 років<S n={[5]} />.</p>
+          <p className={P}>Ліпідограма, тобто аналіз крові на холестерин і його фракції, показує, чи не підвищений ризик для серця і судин. Якщо попередній результат був у нормі, аналіз повторюють раз на 4–6 років<S n={[5]} />. Якщо ліпідограму ви ще не здавали, її варто зробити зараз. Якщо результат відхиляється від норми, коли повторювати аналіз і що робити далі, ви визначаєте разом із лікарем, з огляду на загальний ризик для серця і судин.</p>
           <h3 className="text-lg font-semibold text-[#0b1a24] mt-8">Цукровий діабет 2 типу</h3>
-          <p className={P}>До 70 років жінкам із надлишковою вагою або ожирінням, тобто з індексом маси тіла 25 і більше, скринінг переддіабету і діабету 2 типу роблять раз на 3 роки<S n={[6]} />.</p>
+          <p className={P}>Державна програма «Скринінг здоровʼя 40+» передбачає перевірку рівня цукру в крові для всіх від 40 років, незалежно від маси тіла<S n={[3]} />.</p>
+          <p className={P}>Якщо індекс маси тіла 25 або більше, тобто є надлишкова вага чи ожиріння, раз на 3 роки роблять аналіз крові на глюкозу натще або на глікований гемоглобін (HbA1c, середній рівень цукру за останні 2–3 місяці)<S n={[6]} />. Аналіз показує діабет 2 типу і переддіабет: стан, коли рівень цукру вже вищий за норму, але ще не досягає рівня діабету. Так перевіряють до 70 років<S n={[6]} />.</p>
+          <p className={P}>Якщо індекс маси тіла менше 25, цей аналіз особливо важливий за таких умов: діабет 2 типу був у батьків, братів чи сестер, під час вагітності був гестаційний діабет або є синдром полікістозних яєчників<S n={[6]} />.</p>
         </Section>
 
         {/* 3. Що залежить від вашої історії */}
@@ -300,11 +461,24 @@ export default async function FemaleAgeVid50KharkivPage() {
           <H2 id="istoriia">Що залежить від вашої історії</H2>
           <p className={P}>Перелік вище розрахований на жінку без скарг і без особливої історії. Він змінюється, якщо:</p>
           <h3 className="text-lg font-semibold text-[#0b1a24] mt-8">Підтверджена мутація BRCA1 або BRCA2</h3>
-          <p className={P}>Українські документи дають два режими: мамографія кожні 2 роки<S n={[1]} /> або щороку МРТ разом із мамографією<S n={[7]} />. Який підходить вам, обговоріть з лікарем, який веде спадковий ризик.</p>
+          <p className={P}>Якщо у вас підтверджено мутацію в генах BRCA1 або BRCA2 (спадкова зміна, що підвищує ризик раку молочної залози), основним стандартом обстеження в Україні є щорічна МРТ молочних залоз із контрастною речовиною разом із мамографією<S n={[7]} />. Індивідуальну програму спостереження і профілактики ви узгоджуєте з онкологом-мамологом і лікарем-генетиком.</p>
           <h3 className="text-lg font-semibold text-[#0b1a24] mt-8">Фактори ризику колоректального раку</h3>
-          <p className={P}>Скринінг починають з 40 років і роблять щороку, а не раз на 2 роки<S n={[1]} />. Які фактори ризику є саме у вас, оцінює лікар.</p>
+          <p className={P}>Якщо є фактори ризику колоректального раку, аналіз калу на приховану кров або ФІТ роблять щороку<S n={[1]} />. До факторів ризику належать<S n={[1]} />:</p>
+          <ul className="mt-3 list-disc pl-5 space-y-1 text-gray-700 leading-relaxed">
+            <li>колоректальний рак або поліпи кишечника в близьких родичів;</li>
+            <li>поліпи кишечника, знайдені у вас раніше;</li>
+            <li>запальні захворювання кишечника: хвороба Крона або виразковий коліт;</li>
+            <li>спадкові синдроми, зокрема сімейний аденоматозний поліпоз.</li>
+          </ul>
+          <p className={P}>Чи є у вас інші фактори ризику, ви оцінюєте разом із лікарем.</p>
           <h3 className="text-lg font-semibold text-[#0b1a24] mt-8">Менопауза і фактори ризику перелому</h3>
-          <p className={P}>Якщо менопауза вже настала і є фактори ризику перелому – низька маса тіла, перелом стегна в батьків, куріння, надмірне вживання алкоголю, – денситометрію рекомендують і до 65 років<S n={[2]} />. Денситометрія – вимірювання щільності кісток методом DXA.</p>
+          <p className={P}>Якщо менопауза вже настала, денситометрію рекомендують і до 65 років за таких факторів ризику перелому<S n={[2]} />:</p>
+          <ul className="mt-3 list-disc pl-5 space-y-1 text-gray-700 leading-relaxed">
+            <li>низька маса тіла;</li>
+            <li>перелом стегна в батька чи матері;</li>
+            <li>куріння;</li>
+            <li>надмірне вживання алкоголю.</li>
+          </ul>
           <h3 className="text-lg font-semibold text-[#0b1a24] mt-8">Невідомі результати попередніх ПАП-тестів</h3>
           <p className={P}>Якщо вам більше 65 і ви не знаєте результатів попередніх мазків, скринінг продовжують, доки не буде двох негативних тестів на ВПЛ або трьох нормальних мазків за останні 10 років<S n={[4]} />.</p>
           <h3 className="text-lg font-semibold text-[#0b1a24] mt-8">ВІЛ або інший стан, що пригнічує імунітет</h3>
@@ -313,7 +487,7 @@ export default async function FemaleAgeVid50KharkivPage() {
 
         {/* 4. Готовий варіант – програма клініки з даних */}
         <Section bg={BG_WHITE} eyebrow="Програма клініки">
-          <H2 id="gotovyi-variant">Готовий варіант у Харкові</H2>
+          <H2 id="gotovyi-variant">{program && clinic ? `Програма ${programNameQ} в ${clinic.name}` : 'Програма клініки в Харкові'}</H2>
           {program && clinic && composition ? (
             <>
               <div className="mt-6 border border-[#e8edf3] rounded-[14px] p-6 bg-white">
@@ -324,11 +498,12 @@ export default async function FemaleAgeVid50KharkivPage() {
                   <p className="text-xs text-gray-500 mt-1">Ціна клініки станом на {fmtDate(program.price_date)}</p>
                 )}
                 {notice && <p className="text-xs text-gray-500 mt-1">{notice}</p>}
+                {missingText && <p className="text-[14px] text-gray-700 leading-relaxed mt-4">{missingText}</p>}
                 <div className="mt-5">
                   <CompositionSummaryText
                     consultationsSummary={composition.consultationsSummary}
-                    instrumentalSummary={composition.instrumentalSummary}
-                    labSummary={composition.labSummary}
+                    instrumentalSummary={instrumentalSummary}
+                    labSummary={labSummary}
                   />
                 </div>
                 <div className="mt-6 flex flex-col sm:flex-row gap-3">
@@ -390,7 +565,7 @@ export default async function FemaleAgeVid50KharkivPage() {
                   <p className={P}>На першому візиті: {composition.consultationsSummary}.</p>
                   {composition.visit2Items.length > 0 && (
                     <p className={P}>
-                      Другий візит – {composition.visit2Items.map(lcFirst).join(', ')}: лікар розбирає результати разом.
+                      Другий візит: {composition.visit2Items.map(lcFirst).join(', ')}. Лікар разом з вами розбирає результати.
                     </p>
                   )}
                 </div>
@@ -419,7 +594,7 @@ export default async function FemaleAgeVid50KharkivPage() {
         {showAdditions && program && (
           <Section bg={BG_GRAY} eyebrow="Доповнення">
             <H2 id="dodaty">Що варто додати</H2>
-            <p className={P}>Позиції з переліку за віком, яких немає в готовій програмі.</p>
+            <p className={P}>Цих обстежень із переліку в програмі {programNameQ} немає.</p>
             <div className="mt-6">
               <AdditionalServices
                 available={additionsAvailable.map((a) => ({ id: a.id, name: a.name, explanation: a.explanation }))}
@@ -435,10 +610,10 @@ export default async function FemaleAgeVid50KharkivPage() {
 
         {/* 6. Якщо готова не підходить */}
         <Section bg={showAdditions ? BG_WHITE : BG_GRAY} eyebrow="Інший шлях">
-          <H2 id="inshyi-shliakh">Якщо готова програма не підходить</H2>
+          <H2 id="inshyi-shliakh">{program ? `Якщо програма ${programNameQ} не підходить` : 'Якщо програма клініки не підходить'}</H2>
           <div className="mt-6">
             <InfoFrame>
-              <p>Перелік з блоку «Що вам потрібно в цьому віці» можна пройти в будь-якій клініці. Він складений за клінічними настановами, а не за прайсом, тому придатний як основа: з його результатами лікар робить висновок і, якщо потрібно, призначає персональні обстеження.</p>
+              <p>Перелік із розділу «Які обстеження потрібні жінці після 50» можна пройти в будь-якій клініці. З його результатами лікар робить висновок і, якщо потрібно, призначає додаткові обстеження.</p>
             </InfoFrame>
           </div>
         </Section>
@@ -501,25 +676,22 @@ export default async function FemaleAgeVid50KharkivPage() {
               Програма проходить за {composition.visitCount} {composition.visitCount === 1 ? 'візит' : 'візити'}.
             </p>
             <h3 className="text-lg font-semibold text-[#0b1a24] mt-8">Перший візит</h3>
-            <div className="mt-3">
-              <CompositionSummaryText
-                consultationsSummary={composition.consultationsSummary}
-                instrumentalSummary={composition.instrumentalSummary}
-                labSummary={composition.labSummary}
-              />
-            </div>
+            <p className={P}>Консультації лікарів, обстеження й аналізи з опису програми вище.</p>
             {composition.visit2Items.length > 0 && (
               <>
                 <h3 className="text-lg font-semibold text-[#0b1a24] mt-8">Другий візит</h3>
                 <p className={P}>{composition.visit2Items.join(', ')}.</p>
               </>
             )}
-            {composition.preparationNotes.length > 0 && (
+            {preparation.length > 0 && (
               <>
                 <h3 className="text-lg font-semibold text-[#0b1a24] mt-8">Підготовка</h3>
                 <ul className="mt-3 list-disc pl-5 space-y-1 text-[14px] text-gray-700 leading-relaxed">
-                  {composition.preparationNotes.map((n) => (
-                    <li key={n}>{n}</li>
+                  {preparation.map((n, i) => (
+                    <li key={n}>
+                      {n}
+                      {i < preparation.length - 1 ? ';' : '.'}
+                    </li>
                   ))}
                 </ul>
               </>
@@ -564,10 +736,11 @@ export default async function FemaleAgeVid50KharkivPage() {
             <div className="max-w-[1200px] mx-auto px-6 lg:px-14 py-10">
               <div className="max-w-3xl text-[14px] text-gray-600 leading-relaxed">
                 <p>
-                  Чекап для жінок після 50 років у Харкові можна пройти в {clinic.name}: {branches.length}{' '}
-                  {branchesWord(branches.length)} –{' '}
+                  Чекап для жінок після 50 років у Харкові можна пройти в {clinic.name}:{' '}
+                  {BRANCH_COUNT_WORDS[branches.length] ?? branches.length} {branchesWord(branches.length)},{' '}
                   {branches.map((b) => `${b.address_ua}${b.metro_ua ? ` (${b.metro_ua})` : ''}`).join('; ')}.
-                  {program ? ` Програма клініки для цього віку – «${program.name_ua}».` : ''}
+                  {program ? ` Програма клініки: ${programNameQ}.` : ''}
+                  {missingText ? ` ${missingText}` : ''}
                 </p>
               </div>
             </div>
@@ -579,8 +752,8 @@ export default async function FemaleAgeVid50KharkivPage() {
           <div className="max-w-[1200px] mx-auto px-6 lg:px-14 py-12">
             <div className="max-w-3xl text-xs text-gray-500 leading-relaxed space-y-2">
               <p>
-                Текст підготувала редакція check-up.in.ua; ми не лікарі. Ми знаємо, як складають чекапи зсередини: сервіси
-                для пацієнтів з 2014 року, чекапи з 2019 року.
+                Текст підготувала редакція check-up.in.ua. Ми не лікарі, тому медичний зміст перевіряє рецензент, вказаний
+                нижче. Сервіси для пацієнтів робимо з 2014 року, чекапи з 2019 року.
               </p>
               <p>
                 Медичний рецензент: <strong className="text-gray-700">{REVIEWER.name}</strong>, {REVIEWER.jobTitle},{' '}
