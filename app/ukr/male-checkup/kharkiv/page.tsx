@@ -1,151 +1,462 @@
 import type { Metadata } from 'next';
+import { cache } from 'react';
 import Link from 'next/link';
-import { db } from '@/lib/supabase';
-import type { CheckupProgram } from '@/lib/types';
-import ProgramCatalog from '@/components/city/ProgramCatalog';
-import FaqBlock from '@/components/city/FaqBlock';
+import { fetchClinicOffers, type ClinicOffer, type OfferBranch } from '@/lib/programs/clinic-offer';
+import { AGE_STEP_PAGES } from '@/lib/programs/age-pages';
+import AccordionSection from '@/components/shared/AccordionSection';
+import BookingFlow, { BookCta } from '@/components/city/BookingFlow';
+
+// Сторінка статі в місті – чернетка SPRINT-KHARKIV-v0, розділ 5.3 (сесія 3, сторінка 14, переписано на місці):
+// Hero · картки вікових сторінок · що змінюється з віком · двері клініки · FAQ · GEO · автор.
+// Без квізу і без каталогу програм. Рецензента чоловічих сторінок немає – блок рецензента і reviewedBy не рендеряться.
+// Контент: content/kharkiv/male-checkup.md (v0) дослівно. Що зникло зі старої сторінки – docs/sprint-kharkiv-v0-report-s3.md.
+// Програми, філії – тільки з Supabase (fetchClinicOffers з усіма чоловічими платформними програмами):
+// platform_program_offers → checkup_programs (program_type = 'clinic') → onclinic-kharkiv.
+// Hero, «Двері», GEO, автор – верстка в сторінці (рішення спринту, без нових спільних компонентів).
 
 export const revalidate = 3600;
 
-export const metadata: Metadata = {
-  title: 'Чекап для чоловіків у Харкові — Програми за віком від 7 722 грн',
-  description: 'Чоловічий чекап у Харкові — програми для кожного віку. Урологія, гормони, серце. Від 7 722 грн в ОН Клінік. Запис онлайн.',
-  alternates: {
-    canonical: 'https://check-up.in.ua/ukr/male-checkup/kharkiv',
-    languages: { uk: '/ukr/male-checkup/kharkiv', ru: '/male-checkup/kharkov' },
+const PAGE_PATH = '/ukr/male-checkup/kharkiv';
+const PAGE_URL = `https://check-up.in.ua${PAGE_PATH}`;
+const CLINIC_SLUG = 'onclinic-kharkiv';
+const SOURCE_CTA = 'gender_hub_male_kharkiv';
+// SEO-STANDARD р.4, Тип 5 (сесія 3). Опис (meta description) – у generateMetadata з даних.
+const TITLE = 'Чоловічий чекап в Харкові: програми, ціни, клініки | check-up.in.ua';
+const H1 = 'Чоловічий чекап в Харкові';
+const UPDATED_ISO = '2026-09-23';
+const UPDATED_LABEL = '23.09.2026';
+
+const BORDER = '1px solid #e8edf3';
+const BG_GRAY = '#f8fafc';
+const BG_WHITE = '#ffffff';
+const P = 'text-gray-700 leading-relaxed mt-4';
+
+/* Картки віку: підпис і посилання – з реєстру lib/programs/age-pages.ts; тут – рядок і платформна програма. */
+const AGE_CARD_EXTRA: Record<string, { line: string; platformSlug: string }> = {
+  '/ukr/male-checkup/do-30-rokiv/kharkiv': {
+    line: 'Тиск і перше вимірювання холестерину.',
+    platformSlug: 'male-checkup-do-30',
+  },
+  '/ukr/male-checkup/30-40-rokiv/kharkiv': {
+    line: 'Додається, за надлишкової ваги, перевірка на діабет 2 типу.',
+    platformSlug: 'male-checkup-30-40',
+  },
+  '/ukr/male-checkup/40-50-rokiv/kharkiv': {
+    line: 'Тиск щороку і скринінг раку кишки за факторами ризику.',
+    platformSlug: 'male-checkup-40-50',
+  },
+  '/ukr/male-checkup/vid-50-rokiv/kharkiv': {
+    line: 'Тест калу на приховану кров і розмова з лікарем про аналіз PSA.',
+    platformSlug: 'male-checkup-vid-50',
   },
 };
+const PLATFORM_PROGRAMS = Object.values(AGE_CARD_EXTRA).map((x) => x.platformSlug);
 
-const CITY_SLUG = 'kharkiv';
-
-async function fetchClinicId(): Promise<string | null> {
-  try {
-    const sb = db() as any;
-    const { data: clinic } = await sb
-      .from('clinics')
-      .select('id')
-      .eq('city', CITY_SLUG)
-      .eq('is_active', true)
-      .single();
-    return clinic?.id ?? null;
-  } catch { return null; }
-}
-
-async function fetchPrograms() {
-  try {
-    const clinicId = await fetchClinicId();
-    if (!clinicId) return [];
-    const { data } = await (db() as any)
-      .from('checkup_programs')
-      .select('*')
-      .eq('clinic_id', clinicId)
-      .eq('gender', 'male')
-      .eq('is_active', true)
-      .eq('is_specialized', false)
-      .eq('program_type', 'clinic') // freeze 09.08.2026 (Ihor) — не показувати заморожені 'standard' програми
-      .order('price_discount', { ascending: true });
-    return (data ?? []) as CheckupProgram[];
-  } catch { return []; }
-}
-
-const AGE_LINKS = [
-  { label: 'До 30 років', sub: 'від 7 722 грн', href: '/ukr/male-checkup/do-30-rokiv/kharkiv' },
-  { label: '30–40 років', sub: 'від 7 722 грн', href: '/ukr/male-checkup/30-40-rokiv/kharkiv' },
-  { label: '40–50 років', sub: 'від 15 386 грн', href: '/ukr/male-checkup/40-50-rokiv/kharkiv' },
-  { label: 'Від 50 років', sub: 'від 15 386 грн', href: '/ukr/male-checkup/vid-50-rokiv/kharkiv' },
+/* Джерела: [n] у тексті → пункт n */
+const SOURCES: string[] = [
+  'МОЗ України. Наказ №504 (2018), яким скасовано диспансеризацію; замінив наказ №728.',
+  'Mayo Clinic Family Health Book, 5th Edition.',
+  'USPSTF. Prediabetes and Type 2 Diabetes: Screening, 2021. Дорослі 35–70 років з надлишковою вагою або ожирінням, кожні 3 роки.',
+  "Кабінет Міністрів України. Постанова №1652 (2025) «Скринінг здоров'я 40+», діє з 01.01.2026: серцево-судинні захворювання, цукровий діабет 2 типу, ментальне здоров'я.",
+  'МОЗ України. Наказ №1368 від 05.08.2024: порядки скринінгу і ранньої діагностики раку молочної залози, раку шийки матки і колоректального раку.',
+  'USPSTF. Prostate Cancer: Screening.',
 ];
 
-const FAQ = [
+const FAQ: { q: string; a: string }[] = [
   {
-    q: 'Чим відрізняється чоловічий чекап від загального?',
-    a: 'Чоловічий чекап включає консультацію уролога з доплерографією, УЗД простати та калитки, дослідження секрету простати, гормональний профіль (тестостерон, ДГЕА-С, ГСПГ) та бакпосів з уретри. Програма після 40 додатково включає ПСА та ПЛР-діагностику.',
+    q: 'Як обрати сторінку свого віку?',
+    a: 'За віком на момент обстеження. Якщо вам 39 або 49 і ви плануєте обстеження на найближчий рік, перегляньте і наступну сторінку: частина перевірок починається саме з 40 або 50 років.',
   },
   {
-    q: 'Навіщо чоловікам чекап якщо нічого не турбує?',
-    a: 'Більшість чоловічих захворювань (гіпертонія, діабет, простатит, серцево-судинні) розвиваються безсимптомно. Чекап виявляє їх на стадії, коли лікування найпростіше. Після 40 — щорічно, до 40 — раз на 2-3 роки.',
+    q: "Чи є в Україні обов'язковий щорічний огляд для чоловіків?",
+    a: "Диспансеризацію скасовано 2018 року. З 1 січня 2026 року діє державна програма «Скринінг здоров'я 40+» для людей від 40: серцево-судинні захворювання, діабет 2 типу, ментальне здоров'я. Скринінг колоректального раку описує окремий порядок МОЗ. Державного скринінгу раку передміхурової залози немає.",
+  },
+  {
+    q: 'Чи потрібен аналіз PSA?',
+    a: 'Автоматично – ні. USPSTF пропонує вирішувати щодо нього у 55–69 років разом з лікарем, урологи Mayo Clinic підтримують щорічний аналіз з 50, визнаючи недосконалість тесту. Молодшим чоловікам без скарг рутинно його не пропонують. Докладніше – на сторінці про аналіз PSA.',
+  },
+  {
+    q: 'Чим перелік на сторінці віку відрізняється від програми клініки?',
+    a: 'Перелік складений за клінічними настановами і не залежить від клініки. Програма клініки – готовий набір обстежень, її склад визначає клініка. Чи входять у програму обстеження з переліку, уточніть у клініці під час запису.',
+  },
+  {
+    q: 'Чи можна пройти перелік не в цій клініці?',
+    a: 'Так. Перелік складений за клінічними настановами, а не за прайсом клініки, і його можна пройти в будь-якому закладі. Запис до клініки-партнера на цій сторінці – зручність, а не умова.',
   },
 ];
 
-export default async function MaleCheckupKharkivPage() {
-  const programs = await fetchPrograms();
+const SCHEDULE_LABELS: [string, string][] = [
+  ['mon_fri', 'пн–пт'],
+  ['sat', 'сб'],
+  ['sun', 'нд'],
+];
+
+function scheduleText(b: OfferBranch): string | null {
+  if (!b.schedule) return null;
+  const parts = SCHEDULE_LABELS.filter(([k]) => b.schedule?.[k]).map(([k, label]) => `${label} ${b.schedule?.[k]}`);
+  return parts.length ? parts.join(', ') : null;
+}
+
+function branchesWord(n: number) {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return 'філія';
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return 'філії';
+  return 'філій';
+}
+
+function quoted(names: string[]) {
+  const q = names.map((n) => `«${n}»`);
+  if (q.length <= 1) return q.join('');
+  return `${q.slice(0, -1).join(', ')} і ${q[q.length - 1]}`;
+}
+
+function S({ n }: { n: number[] }) {
+  return (
+    <sup className="text-[#005485] whitespace-nowrap">
+      {' '}
+      [
+      {n.map((i, idx) => (
+        <span key={i}>
+          {idx > 0 && ', '}
+          <a href={`#source-${i}`} className="hover:underline">
+            {i}
+          </a>
+        </span>
+      ))}
+      ]
+    </sup>
+  );
+}
+
+function Eyebrow({ children }: { children: string }) {
+  return <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#005485] mb-6">{children}</p>;
+}
+
+function H2({ children, id }: { children: React.ReactNode; id?: string }) {
+  return (
+    <h2 id={id} className="font-bold text-[#0b1a24] scroll-mt-24" style={{ fontSize: 'clamp(22px, 3vw, 30px)', lineHeight: 1.25 }}>
+      {children}
+    </h2>
+  );
+}
+
+function Section({ bg, eyebrow, children }: { bg: string; eyebrow: string; children: React.ReactNode }) {
+  return (
+    <section style={{ backgroundColor: bg, borderTop: BORDER }}>
+      <div className="max-w-[1200px] mx-auto px-6 lg:px-14 py-14">
+        <div className="max-w-3xl">
+          <Eyebrow>{eyebrow}</Eyebrow>
+          {children}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function AgeLinks({ links }: { links: { href: string; label: string }[] }) {
+  return (
+    <p className="mt-3 text-sm flex flex-wrap gap-x-4 gap-y-1">
+      {links.map((l) => (
+        <Link key={l.href} href={l.href} className="font-semibold text-[#005485] hover:underline">
+          {l.label} →
+        </Link>
+      ))}
+    </p>
+  );
+}
+
+const getOffers = cache(() => fetchClinicOffers(PLATFORM_PROGRAMS, CLINIC_SLUG));
+
+/** SEO-STANDARD р.4, Тип 5: X – мінімальна ціна (price_discount) програм клініки для сторінки,
+ *  N – кількість клінік-партнерів у даних. Обидва – з Supabase, не з коду. */
+function metaDescription(offers: ClinicOffer[]): string {
+  const prices = offers.map((o) => o.program.price_discount).filter((p) => typeof p === 'number' && p > 0);
+  const x = prices.length > 0 ? Math.min(...prices) : null;
+  const n = new Set(offers.map((o) => o.program.clinic_id)).size;
+  const parts = [`Програми чоловічого чекапу в Харкові${x ? ` – ціни від ${x.toLocaleString('uk-UA')} грн` : ''}.`];
+  if (n > 0) parts.push(`Клініки-партнери: ${n}.`);
+  parts.push('Підберіть програму під вік і ризики.');
+  return parts.join(' ');
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const { offers } = await getOffers();
+  const description = metaDescription(offers);
+  return {
+    title: { absolute: TITLE },
+    description,
+    robots: { index: true, follow: true },
+    alternates: {
+      canonical: PAGE_URL,
+      languages: { uk: PAGE_PATH, ru: '/male-checkup/kharkov' },
+    },
+    openGraph: { title: TITLE, description, url: PAGE_URL, type: 'website' },
+  };
+}
+
+export default async function MaleHubKharkivPage() {
+  const { clinic, branches, offers } = await getOffers();
+  const programs = offers.map((o) => o.program);
+
+  const cards = AGE_STEP_PAGES.filter((p) => p.gender === 'male' && AGE_CARD_EXTRA[p.href]).map((p) => {
+    const extra = AGE_CARD_EXTRA[p.href];
+    const offer = offers.find((o) => o.platformSlugs.includes(extra.platformSlug)) ?? null;
+    return { ...p, line: extra.line, program: offer?.program ?? null };
+  });
+
+  const jsonLd: object[] = [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'MedicalWebPage',
+      name: H1,
+      url: PAGE_URL,
+      dateModified: UPDATED_ISO,
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'check-up.in.ua', item: 'https://check-up.in.ua' },
+        { '@type': 'ListItem', position: 2, name: 'Харків', item: 'https://check-up.in.ua/ukr/kharkiv' },
+        { '@type': 'ListItem', position: 3, name: 'Чоловікам', item: PAGE_URL },
+      ],
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: FAQ.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })),
+    },
+  ];
 
   return (
-    <main className="max-w-3xl mx-auto px-4 pt-6 pb-24">
-      <nav className="text-xs text-gray-500 mb-4">
-        <Link href="/">Головна</Link>{' → '}
-        <Link href="/ukr/male-checkup">Чекап для чоловіків</Link>{' → '}
-        <span className="text-gray-800">Харків</span>
-      </nav>
+    <>
+      <main className="text-[#0b1a24]">
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
-      <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">
-        Чекап для чоловіків у Харкові
-      </h1>
-      <div className="h-0.5 w-16 bg-teal-400 mb-4" />
-
-      <p className="text-gray-600 mb-6">
-        Програми обстеження для кожного віку — від базового урологічного скринінгу до розширеної діагностики після 40.
-      </p>
-
-      <div className="flex flex-wrap gap-2 text-sm text-gray-500 mb-8">
-        <span>від 7 722 грн</span>
-        <span>·</span>
-        <span>2 візити</span>
-        <span>·</span>
-        <span>ОН Клінік Харків</span>
-      </div>
-
-      <section className="mb-10">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Оберіть вік</h2>
-        <div className="grid grid-cols-2 gap-3">
-          {AGE_LINKS.map(ag => (
-            <Link key={ag.href} href={ag.href}
-              className="block p-4 border border-gray-200 rounded-xl hover:border-teal-400 transition-colors">
-              <p className="font-semibold text-gray-900">{ag.label}</p>
-              <p className="text-sm text-gray-500">{ag.sub}</p>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      <section className="mb-10 bg-gray-50 rounded-xl p-5">
-        <h2 className="text-lg font-semibold text-gray-900 mb-3">Як змінюється програма з віком</h2>
-        <div className="space-y-3 text-sm text-gray-700">
-          <p><strong>До 30 років:</strong> акцент на урологічному здоров'ї та гормональному статусі. Тестостерон, ДГЕА-С, ГСПГ, бакпосів, УЗД простати.</p>
-          <p><strong>30–40 років:</strong> додається контроль серцево-судинних ризиків. Ліпідограма, розширена біохімія, щитоподібна залоза.</p>
-          <p><strong>40–50 років:</strong> повний урологічний скринінг з ПСА, коагулограма, 6 консультацій, розширена ПЛР-діагностика.</p>
-          <p><strong>Після 50:</strong> максимальна програма. Посилений контроль простати та серцево-судинної системи.</p>
-        </div>
-      </section>
-
-      <section className="mb-10">
-        <h2 className="text-lg font-semibold text-gray-900 mb-3">Що забезпечує клініка</h2>
-        <p className="text-sm text-gray-600">
-          ОН Клінік Харків: консультація уролога з доплерографією, УЗД простати та калитки, дослідження секрету простати, повний гормональний профіль та лабораторна ПЛР-діагностика у власній лабораторії «ОН Лаб».
-        </p>
-      </section>
-
-      {programs.length > 0 && (
-        <section className="mb-10">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Програми чоловічого чекапу</h2>
-          <ProgramCatalog programs={programs} />
+        {/* 1. Hero – без ціни */}
+        <section style={{ backgroundColor: BG_GRAY }}>
+          <div className="max-w-[1200px] mx-auto px-6 lg:px-14 py-14">
+            <div className="max-w-3xl">
+              <nav aria-label="Breadcrumb" className="text-xs text-gray-500 mb-8">
+                <Link href="/" className="hover:underline">check-up.in.ua</Link>
+                <span className="mx-1.5">/</span>
+                <Link href="/ukr/kharkiv" className="hover:underline">Харків</Link>
+                <span className="mx-1.5">/</span>
+                <span className="text-gray-700">Чоловікам</span>
+              </nav>
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#005485] mb-6">Чоловічий чекап · Харків</p>
+              <h1
+                className="font-bold leading-tight mb-6"
+                style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: 'clamp(32px, 5.5vw, 56px)' }}
+              >
+                {H1}
+              </h1>
+              <p className="text-lg text-gray-700 leading-relaxed mt-2">
+                Що перевіряти чоловікові без скарг, залежить від віку. Оберіть свій вік: на сторінці – перелік за клінічними
+                настановами, готова програма клініки в Харкові і що до неї додати.
+              </p>
+            </div>
+          </div>
         </section>
+
+        {/* 2. Картки вікових сторінок */}
+        <section style={{ backgroundColor: BG_WHITE, borderTop: BORDER }}>
+          <div className="max-w-[1200px] mx-auto px-6 lg:px-14 py-14">
+            <Eyebrow>Ваш вік</Eyebrow>
+            <H2 id="vik">Оберіть свій вік</H2>
+            <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-5">
+              {cards.map((c) => (
+                <div key={c.href} className="border border-[#e8edf3] rounded-[14px] p-6 bg-white flex flex-col">
+                  <Link href={c.href} className="group">
+                    <p className="text-xl font-bold text-[#0b1a24] group-hover:text-[#005485]">{c.ageStepLabel.replace('-', '–')}</p>
+                    <p className="text-[14px] text-gray-700 leading-relaxed mt-2">{c.line}</p>
+                    <p className="text-sm font-semibold text-[#005485] mt-3 group-hover:underline">Що перевіряти в цьому віці →</p>
+                  </Link>
+                  {c.program && (
+                    <div className="mt-5 pt-4 border-t border-[#e8edf3]">
+                      <p className="text-xs text-gray-500">Програма клініки: «{c.program.name_ua}»</p>
+                      <div className="mt-3">
+                        <BookCta programSlug={c.program.slug} sourceCta={`${SOURCE_CTA}_card`} label="Записатися" />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            <p className="text-sm mt-6">
+              <Link href="/ukr/female-checkup/kharkiv" className="text-[#005485] hover:underline">
+                Чекап для жінок у Харкові →
+              </Link>
+            </p>
+          </div>
+        </section>
+
+        {/* 3. Що змінюється з віком – коротко, з посиланнями */}
+        <Section bg={BG_GRAY} eyebrow="За клінічними настановами">
+          <H2 id="shcho-zminiuietsia">Що змінюється з віком</H2>
+          <p className={P}>
+            Єдиного українського протоколу профілактичного обстеження немає: диспансеризацію скасовано 2018 року
+            <S n={[1]} />. Тому на сторінках віку перелік складений за українськими порядками скринінгу окремих хвороб
+            і за міжнародними рекомендаціями.
+          </p>
+          <h3 className="text-lg font-semibold text-[#0b1a24] mt-8">До 30 років</h3>
+          <p className={P}>
+            Тиск вимірюють раз на 3–5 років, а холестерин уперше – у 20 років; якщо показники в нормі, його повторюють
+            раз на 4–6 років<S n={[2]} />.
+          </p>
+          <AgeLinks links={[{ href: '/ukr/male-checkup/do-30-rokiv/kharkiv', label: 'Чекап для чоловіків до 30 років' }]} />
+          <h3 className="text-lg font-semibold text-[#0b1a24] mt-8">30–40 років</h3>
+          <p className={P}>
+            Людям із надлишковою вагою з 35 років рекомендують скринінг переддіабету і діабету 2 типу раз на 3 роки
+            <S n={[3]} />. За нормальної ваги рутинна перевірка не потрібна, якщо лікар не бачить інших підстав.
+          </p>
+          <AgeLinks links={[{ href: '/ukr/male-checkup/30-40-rokiv/kharkiv', label: 'Чекап для чоловіків 30–40 років' }]} />
+          <h3 className="text-lg font-semibold text-[#0b1a24] mt-8">40–50 років</h3>
+          <p className={P}>
+            Від 40 років тиск вимірюють щороку<S n={[2]} />. З 1 січня 2026 року діє державна програма «Скринінг
+            здоров&apos;я 40+»<S n={[4]} />. Скринінг колоректального раку в цьому віці роблять, якщо є фактори ризику:
+            тест калу на приховану кров щороку з 40 років<S n={[5]} />.
+          </p>
+          <AgeLinks links={[{ href: '/ukr/male-checkup/40-50-rokiv/kharkiv', label: 'Чекап для чоловіків 40–50 років' }]} />
+          <h3 className="text-lg font-semibold text-[#0b1a24] mt-8">Після 50 років</h3>
+          <p className={P}>
+            З 50 років тест калу на приховану кров або фекальний імунохімічний тест роблять раз на 2 роки<S n={[5]} />.
+            Аналіз PSA – не автоматичний пункт, а спільне рішення з лікарем: USPSTF пропонує його у 55–69 років
+            <S n={[6]} />, урологи Mayo Clinic – щороку з 50 років<S n={[2]} />.
+          </p>
+          <AgeLinks
+            links={[
+              { href: '/ukr/male-checkup/vid-50-rokiv/kharkiv', label: 'Чекап для чоловіків після 50 років' },
+              { href: '/ukr/screening/psa', label: 'Докладніше про аналіз PSA' },
+            ]}
+          />
+        </Section>
+
+        {/* 4. Двері до клініки */}
+        {clinic && (
+          <Section bg={BG_WHITE} eyebrow="Контакти">
+            <H2 id="kontakty">Контакти клініки</H2>
+            <p className={P}>
+              {clinic.name}
+              {branches.length > 0 ? ` – ${branches.length} ${branchesWord(branches.length)} у Харкові.` : '.'}
+              {programs.length > 0 &&
+                ` Програми клініки для чоловіків: ${quoted(programs.map((p) => p.name_ua))}. Яка програма відповідає вашому віку, показано на сторінці віку.`}
+            </p>
+            {branches.length > 0 && (
+              <ul className="mt-4 space-y-3">
+                {branches.map((b) => {
+                  const sch = scheduleText(b);
+                  return (
+                    <li key={b.id} className="border border-[#e8edf3] rounded-[10px] px-4 py-3 bg-white">
+                      <p className="text-sm font-semibold text-[#0b1a24]">{b.name_ua}</p>
+                      <p className="text-[14px] text-gray-700 mt-1">
+                        {b.address_ua}
+                        {b.metro_ua ? `, ${b.metro_ua}` : ''}
+                      </p>
+                      {sch && <p className="text-[13px] text-gray-500 mt-1">{sch}</p>}
+                      {b.tracking_phone && (
+                        <p className="text-[14px] mt-1">
+                          <a href={`tel:${b.tracking_phone.replace(/\s/g, '')}`} className="text-[#005485] hover:underline">
+                            {b.tracking_phone}
+                          </a>
+                        </p>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            {clinic.phone && (
+              <p className={P}>
+                Телефон:{' '}
+                <a href={`tel:${clinic.phone.replace(/\s/g, '')}`} className="text-[#005485] hover:underline">
+                  {clinic.phone}
+                </a>
+              </p>
+            )}
+            <div className="mt-6 flex flex-col sm:flex-row gap-3">
+              {programs.length > 0 && (
+                <BookCta sourceCta={`${SOURCE_CTA}_doors`} label="Записатися" className="sm:!w-auto sm:px-8" />
+              )}
+              {clinic.website && (
+                <a
+                  href={clinic.website}
+                  className="inline-flex items-center justify-center min-h-12 px-6 rounded-[10px] border border-[#005485] text-[#005485] font-semibold text-sm hover:bg-[#f0f7fb]"
+                >
+                  Сторінка клініки на check-up.in.ua
+                </a>
+              )}
+            </div>
+          </Section>
+        )}
+
+        {/* 5. FAQ – нативний <details>, відповіді в DOM */}
+        <Section bg={clinic ? BG_GRAY : BG_WHITE} eyebrow="Питання">
+          <H2 id="faq">Часті запитання</H2>
+          <div className="mt-6 space-y-3">
+            {FAQ.map((f) => (
+              <div key={f.q} className="border border-[#e8edf3] rounded-[10px] px-5 py-3 bg-white">
+                <AccordionSection summary={f.q}>
+                  <p className="text-[14px] text-gray-700 leading-relaxed">{f.a}</p>
+                </AccordionSection>
+              </div>
+            ))}
+          </div>
+        </Section>
+
+        {/* 6. GEO – статичний текст з даних */}
+        {clinic && branches.length > 0 && (
+          <section style={{ backgroundColor: BG_WHITE, borderTop: BORDER }}>
+            <div className="max-w-[1200px] mx-auto px-6 lg:px-14 py-10">
+              <div className="max-w-3xl text-[14px] text-gray-600 leading-relaxed">
+                <p>
+                  Чоловічий чекап у Харкові можна пройти в {clinic.name}: {branches.length} {branchesWord(branches.length)} –{' '}
+                  {branches.map((b) => `${b.address_ua}${b.metro_ua ? ` (${b.metro_ua})` : ''}`).join('; ')}.
+                  {programs.length > 0 ? ` Програми клініки для чоловіків – ${quoted(programs.map((p) => p.name_ua))}.` : ''}
+                </p>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* 7. Автор – спершу «ми не лікарі»; рецензента чоловічих сторінок немає */}
+        <section style={{ backgroundColor: BG_GRAY, borderTop: BORDER }}>
+          <div className="max-w-[1200px] mx-auto px-6 lg:px-14 py-12">
+            <div className="max-w-3xl text-xs text-gray-500 leading-relaxed space-y-2">
+              <p>
+                Текст підготувала редакція check-up.in.ua; ми не лікарі. Ми знаємо, як складають чекапи зсередини: сервіси
+                для пацієнтів з 2014 року, чекапи з 2019 року.
+              </p>
+              <p>
+                Розкриття: check-up.in.ua отримує комісію від клінік-партнерів за факт запису. Перелік обстежень на
+                сторінках віку складений за клінічними настановами, а не за складом програм партнерів.
+              </p>
+              <p className="font-semibold text-gray-600 pt-2">Джерела</p>
+              <ol className="space-y-1.5 list-none">
+                {SOURCES.map((s, i) => (
+                  <li key={i} id={`source-${i + 1}`} className="flex gap-2 scroll-mt-24">
+                    <span className="font-semibold text-gray-700 shrink-0">{i + 1}.</span>
+                    <span>{s}</span>
+                  </li>
+                ))}
+              </ol>
+              <p className="pt-2">Оновлено: {UPDATED_LABEL}</p>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      {clinic && programs.length > 0 && (
+        <BookingFlow
+          programs={programs}
+          branches={branches}
+          clinicId={clinic.id}
+          clinicSlug={clinic.slug}
+          city="kharkiv"
+          programsComposition={Object.fromEntries(offers.map((o) => [o.program.slug, o.composition.counts]))}
+        />
       )}
-
-      <FaqBlock items={FAQ} />
-
-      <section className="mb-8">
-        <p className="text-sm text-gray-600">
-          Чекап для чоловіків у Харкові доступний в мережі «ОН Клінік Харків»: вул. Ярослава Мудрого, 30а; пр. Героїв Харкова, 257; вул. Молочна, 48.
-          Вартість профілактичного чекапу — від 7 722 грн, розширеної програми після 40 — від 15 386 грн.
-        </p>
-      </section>
-
-      <section className="mb-8">
-        <Link href="/ukr/female-checkup/kharkiv"
-          className="inline-block text-sm text-teal-600 hover:underline">
-          → Чекап для жінок у Харкові
-        </Link>
-      </section>
-    </main>
+    </>
   );
 }
