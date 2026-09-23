@@ -78,7 +78,7 @@
 | Schema `MedicalBusiness` з `aggregateRating` 5.0 / 88 і адресою однієї філії | JSON-LD | немає; MedicalWebPage, BreadcrumbList, FAQPage |
 | Title/description з ціною «від 6 110 грн» | metadata | без ціни |
 
-Після сесії 2 `QuizHeroWidget` і `QuizOpenBtn` не використовуються жодною сторінкою в app/; `ProgramCatalog` і `FaqBlock` лишаються на /kharkov (ru) і старій /ukr/male-checkup/kharkiv. Компоненти не видалялись.
+Після сесії 2 `QuizHeroWidget` і `QuizOpenBtn` не використовуються жодною сторінкою в app/; `ProgramCatalog` і `FaqBlock` лишаються на /kharkov (ru); зі старої /ukr/male-checkup/kharkiv прибрані в сесії 3 (сторінка 14). Компоненти не видалялись.
 
 ## Нові і змінені компоненти, lib
 
@@ -131,3 +131,9 @@
 ## Відкладено поза спринт
 
 - Порядок карток варіантів з конфігурації (PLATFORM-LINE §2.2) не реалізовано: у ОН Клінік зараз є тільки варіант 3, варіант 2 заблокований прайсом окремих послуг (PLATFORM-LINE §9.4.1). На вікових сторінках одна картка.
+
+## Сесія 3, частина Б і підсумок спринту
+
+Сторінки 10–14, зміни lib, що зникло зі старої /ukr/male-checkup/kharkiv, підсумок спринту (14 URL зі статусами) і зведений перелік [УТОЧНИТИ] за власником (Ігор, рецензент, дані Supabase, норматив) – у `docs/sprint-kharkiv-v0-report-s3.md`. Винесено окремо, бо цей файл разом із файлами сторінки перестав вміщатися в один push через GitHub MCP.
+
+Фінальна перевірка Vercel preview (сесія 3): 5fa0c9b (сторінка 14: page.tsx, MD) – READY, dpl_FumLrSU6Xrtv71P9Nqo1ZtMUzCwE; 396d62a (звіт s3 з підсумком, city.md) – READY, dpl_5szx1CK9nwiDb5TvNdQN88J6T65e. Метод – Vercel API list_deployments за гілкою.
