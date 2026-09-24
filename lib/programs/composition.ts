@@ -46,10 +46,12 @@ export interface ProgramComposition {
   /** Стислі описи складу (Частина 1, "Скорочення складу") — те, що сторінки
    *  реально показують у Блоці 4/7 і сайдбарі замість переліку. */
   consultationsSummary: string;
+  /** Спеціальності прийомів другого візиту («терапевт») – для повного складу програми. */
+  visit2ConsultationsSummary: string;
   instrumentalSummary: string;
   labSummary: string;
   /** Лабораторні позиції без категорії опису (LAB_CATEGORY_BY_CODE): у labSummary не
-   *  виводяться, лише рахуються в N. Для звіту і перевірки даних. */
+   *  виводяться. Для звіту і перевірки даних. */
   labUncategorized: string[];
   /** Для Блоку 7 "Як це проходить". */
   visitCount: number;
@@ -152,16 +154,21 @@ function otherInstrumental(name: string): string {
   return name.replace(/\s*\([^)]*\)/g, '').trim().toLowerCase();
 }
 
-/** «N ділянок» у родовому відмінку після «дослідження (УЗД)». */
-const AREAS_GENITIVE: Record<number, string> = {
-  1: 'однієї ділянки', 2: 'двох ділянок', 3: 'трьох ділянок', 4: 'чотирьох ділянок', 5: "п'яти ділянок",
-  6: 'шести ділянок', 7: 'семи ділянок', 8: 'восьми ділянок', 9: "дев'яти ділянок", 10: 'десяти ділянок',
-};
-
 /** "A, B і C" замість "A, B, C" — природніше для переліку 2+ елементів. */
 function joinWithAnd(items: string[]): string {
   if (items.length <= 1) return items.join('');
   return `${items.slice(0, -1).join(', ')} і ${items[items.length - 1]}`;
+}
+
+/** «молочних залоз» + «щитоподібної залози» → «молочних і щитоподібної залоз» (на місці першої з двох). */
+function mergeGlandAreas(areas: string[]): string[] {
+  const breast = areas.indexOf('молочних залоз');
+  const thyroid = areas.indexOf('щитоподібної залози');
+  if (breast === -1 || thyroid === -1) return areas;
+  const first = Math.min(breast, thyroid);
+  return areas
+    .map((a, i) => (i === first ? 'молочних і щитоподібної залоз' : a))
+    .filter((_, i) => i !== Math.max(breast, thyroid));
 }
 
 function buildInstrumentalSummary(items: CompositionServiceItem[]): string {
@@ -178,8 +185,8 @@ function buildInstrumentalSummary(items: CompositionServiceItem[]): string {
   }
   const parts: string[] = [];
   if (uzdAreas.length > 0) {
-    const areas = AREAS_GENITIVE[uzdAreas.length] ?? `${uzdAreas.length} ділянок`;
-    parts.push(`Ультразвукове дослідження (УЗД) ${areas}: ${uzdAreas.join(', ')}.`);
+    // Задача v2 (24.09.2026), розділ 16.2: без числа ділянок; молочні і щитоподібна залози – одним пунктом.
+    parts.push(`Ультразвукове дослідження (УЗД) ${mergeGlandAreas(uzdAreas).join(', ')}.`);
   }
   if (other.length > 0) {
     const joined = joinWithAnd(other);
@@ -252,21 +259,16 @@ function labCategory(item: CompositionServiceItem): LabCategory | null {
   return item.code ? LAB_CATEGORY_BY_CODE[item.code] ?? null : null;
 }
 
-function analysesWord(n: number): string {
-  const mod10 = n % 10;
-  const mod100 = n % 100;
-  if (mod10 === 1 && mod100 !== 11) return 'аналіз';
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return 'аналізи';
-  return 'аналізів';
-}
-
+/** Задача v2 (24.09.2026), розділ 16.2: без «{N} аналізів:» – текст одразу з категорій, з великої літери.
+ *  Позиції без категорії в опис не виводяться (як і раніше); немає жодної категорії – рядок порожній. */
 function buildLabSummary(items: CompositionServiceItem[]): string {
   const lab = items.filter((i) => i.serviceType === 'lab');
   if (lab.length === 0) return '';
   const present = new Set(lab.map(labCategory).filter((c): c is LabCategory => c !== null));
   const categories = labCategoryTexts(present);
-  const intro = `${lab.length} ${analysesWord(lab.length)}`;
-  return categories.length > 0 ? `${intro}: ${categories.join(', ')}.` : `${intro}.`;
+  if (categories.length === 0) return '';
+  const text = categories.join(', ');
+  return `${text.charAt(0).toUpperCase()}${text.slice(1)}.`;
 }
 
 function uncategorizedLab(items: CompositionServiceItem[]): string[] {
@@ -284,7 +286,7 @@ export interface CompositionLogContext {
 const warnedUncategorized = new Set<string>();
 
 /** Попередження в лог білду про лабораторні позиції без категорії опису.
- *  Опис на сторінці при цьому будується як завжди (позиція лише рахується в N). */
+ *  Опис на сторінці при цьому будується як завжди, без цієї позиції. */
 function warnUncategorizedLab(items: CompositionServiceItem[], context?: CompositionLogContext): void {
   const program = context?.programName || 'невідома програма';
   const clinic = context?.clinicName || 'невідома клініка';
@@ -295,7 +297,7 @@ function warnUncategorizedLab(items: CompositionServiceItem[], context?: Composi
     warnedUncategorized.add(key);
     console.warn(
       `[composition] Позиція без категорії опису аналізів: програма «${program}», клініка «${clinic}», ` +
-        `позиція «${item.name}» (код ${item.code ?? 'відсутній'}). В опис не виводиться, рахується в кількості аналізів.`,
+        `позиція «${item.name}» (код ${item.code ?? 'відсутній'}). В опис аналізів не виводиться.`,
     );
   }
 }
@@ -307,6 +309,7 @@ const EMPTY: ProgramComposition = {
   counts: { consultations: 0, analyses: 0, diagnostics: 0 },
   summaryGroups: [],
   consultationsSummary: '',
+  visit2ConsultationsSummary: '',
   instrumentalSummary: '',
   labSummary: '',
   labUncategorized: [],
@@ -362,6 +365,7 @@ export async function fetchProgramComposition(
       counts,
       summaryGroups: groupByType(summaryItems),
       consultationsSummary: buildConsultationsSummary(summaryItems),
+      visit2ConsultationsSummary: buildConsultationsSummary(items.filter((i) => i.visitNumber === 2)),
       instrumentalSummary: buildInstrumentalSummary(summaryItems),
       labSummary: buildLabSummary(summaryItems),
       labUncategorized: uncategorizedLab(summaryItems),

@@ -37,14 +37,15 @@ export interface AgeAddition {
   missingName?: string;
 }
 
-/** Речення {missingTests} (Hero, картка програми, GEO) з доповнень, яких немає в програмі; null – не виводиться. */
+/** Речення {missingTests} (Hero, картка програми, GEO) з доповнень, яких немає в програмі; null – не виводиться.
+ *  Конструкція Б – задача v2 (24.09.2026), розділ 16.1, діє на всіх сторінках. */
 export function missingTestsSentence(missingAdditions: AgeAddition[]): string | null {
   const names = missingAdditions.filter((a) => a.forAll && a.missingName).map((a) => a.missingName as string);
   if (names.length === 0) return null;
   if (names.length === 1) {
-    return `До програми не входить ${names[0]}: це обстеження варто пройти додатково або обговорити з лікарем на консультації.`;
+    return `До програми не входить ${names[0]}. Запитайте про це обстеження лікаря на консультації або додайте його до запису.`;
   }
-  return `До програми не входять ${joinWithAnd(names)}: їх варто пройти додатково або обговорити з лікарем на консультації.`;
+  return `До програми не входять ${joinWithAnd(names)}. Запитайте про них лікаря на консультації або додайте до запису.`;
 }
 
 /** Нижня вікова межа з назви програми («… після 40» → 40); null – у назві віку немає. */
@@ -59,6 +60,26 @@ export function programAgeSentence(programName: string | null | undefined, pageM
   const age = programMinAge(programName);
   if (age === null || age >= pageMinAge) return null;
   return `Програма розрахована на ${audience} від ${age} років, і її склад підходить також після ${pageMinAge}.`;
+}
+
+/** Коротка форма для рядка картки програми (задача v2, блок 1b): «Програма розрахована на жінок від 40 років».
+ *  Правило те саме, що й у programAgeSentence: лише якщо нижня межа програми менша за нижню межу сторінки. */
+export function programAgeShort(programName: string | null | undefined, pageMinAge: number, audience = 'жінок'): string | null {
+  if (!programName) return null;
+  const age = programMinAge(programName);
+  if (age === null || age >= pageMinAge) return null;
+  return `Програма розрахована на ${audience} від ${age} років`;
+}
+
+const VISIT_COUNT_WORDS: Record<number, string> = { 1: 'один', 2: 'два', 3: 'три', 4: 'чотири' };
+
+/** «два візити», «один візит»: кількість словом (задача v2, блоки 1b і 7). */
+export function visitsText(n: number): string {
+  const word = VISIT_COUNT_WORDS[n] ?? String(n);
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  const noun = mod10 === 1 && mod100 !== 11 ? 'візит' : mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14) ? 'візити' : 'візитів';
+  return `${word} ${noun}`;
 }
 
 /** H2 блоку програми клініки. */
@@ -126,14 +147,54 @@ export function faqMissingInProgram(programName: string | null | undefined): { q
   };
 }
 
+/** Задача v2 (сторінка після 50): FAQ «чого немає в програмі» – нова відповідь. Питання те саме. */
+export function faqMissingInProgramV2(programName: string | null | undefined): { q: string; a: string } {
+  return {
+    q: faqMissingInProgram(programName).q,
+    a: 'Запитайте про нього лікаря на консультації: він призначить його, навіть якщо в клініці його не роблять. Результат лікар врахує на другому візиті.',
+  };
+}
+
+/** Задача v2, блок 5: абзац під картками групи «…не проводять». */
+export const ADDITIONS_ASK_DOCTOR =
+  'Запитайте про ці обстеження лікаря на консультації: він призначить їх, навіть якщо в клініці їх не роблять. Результат лікар врахує на другому візиті.';
+
+/** Задача v2, блок 5: заголовок групи недоступних у клініці обстежень. */
+export function additionsUnavailableTitle(clinicName: string | null | undefined): string {
+  return clinicName ? `В ${clinicName} не проводять` : 'У цій клініці не проводять';
+}
+
+/** Задача v2, блок 6: дисклеймер і рядок про будь-яку клініку. */
+export const DOCTOR_DECIDES_TEXT =
+  'Повний перелік обстежень визначає лікар за результатами огляду і розмови з вами. Програма дає лікарю ширші дані для висновку.';
+export const ANY_CLINIC_TEXT =
+  'Перелік обстежень із цієї сторінки складено за клінічними настановами, тож його можна пройти в будь-якій клініці.';
+
+/** Задача v2, блок 7: другий візит. Назва позиції з Supabase не підставляється, доки її не виправить DATA. */
+export const SECOND_VISIT_TEXT_V2 = 'Прийом терапевта після всіх обстежень. Лікар разом з вами розбирає результати.';
+
 /** E-E-A-T: текст редакції. */
 export const EDITORIAL_TEXT =
   'Текст підготувала редакція check-up.in.ua. Ми не лікарі, тому медичний зміст перевіряє рецензент, вказаний нижче. Сервіси для пацієнтів робимо з 2014 року, чекапи з 2019 року.';
+
+/** E-E-A-T: текст редакції за задачею v2 (PLATFORM-LINE 1.2.3 і 1.4.2); поки лише на сторінці після 50. */
+export const EDITORIAL_TEXT_V2 =
+  'Ми не лікарі і не клініка. Текст підготувала редакція check-up.in.ua, медичний зміст перевіряє рецензент, вказаний нижче. Ми знаємо, як чекапи складають зсередини: сервіси для пацієнтів з 2014 року, чекапи з 2019 року, понад 50 медичних команд.';
 
 /** Кількість філій словом, узгоджена з «філія / філії / філій». */
 const BRANCH_COUNT_WORDS: Record<number, string> = {
   1: 'одна', 2: 'дві', 3: 'три', 4: 'чотири', 5: "п'ять", 6: 'шість', 7: 'сім', 8: 'вісім', 9: "дев'ять", 10: 'десять',
 };
+
+/** «три філії»: кількість словом і узгоджене слово. */
+export function branchesCountText(n: number): string {
+  return `${BRANCH_COUNT_WORDS[n] ?? String(n)} ${branchesWord(n)}`;
+}
+
+/** Години роботи: коротке тире між годинами («8:00-18:00» → «8:00–18:00»). */
+export function hoursDash(s: string): string {
+  return s.replace(/(\d)\s*-\s*(\d)/g, '$1–$2');
+}
 
 export function branchesWord(n: number): string {
   const mod10 = n % 10;
