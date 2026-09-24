@@ -17,6 +17,8 @@ import { db } from '@/lib/supabase';
 export type CompositionServiceType = 'consultation' | 'lab' | 'instrumental';
 
 export interface CompositionServiceItem {
+  /** Код позиції клініки (clinic_services.code, на яку посилається program_services). */
+  code: string | null;
   name: string;
   serviceType: CompositionServiceType;
   visitNumber: number;
@@ -46,6 +48,9 @@ export interface ProgramComposition {
   consultationsSummary: string;
   instrumentalSummary: string;
   labSummary: string;
+  /** Лабораторні позиції без категорії опису (LAB_CATEGORY_BY_CODE): у labSummary не
+   *  виводяться, лише рахуються в N. Для звіту і перевірки даних. */
+  labUncategorized: string[];
   /** Для Блоку 7 "Як це проходить". */
   visitCount: number;
   visit1Groups: CompositionGroup[];
@@ -183,34 +188,66 @@ function buildInstrumentalSummary(items: CompositionServiceItem[]): string {
   return parts.join(' ');
 }
 
-/** Групування лабораторних позицій за призначенням (п.1 завдання). Закритий
- *  список ключових слів для позицій, що реально є в складі; невідома позиція
- *  потрапляє в "інші показники", а не губиться мовчки. */
-const LAB_CATEGORY_ORDER = [
-  'загальні аналізи крові й сечі',
-  'показники роботи печінки і нирок',
-  'холестерин і глюкоза',
-  'гормони щитоподібної залози',
-  'вітамін D',
-  'гінекологічні мазки',
-] as const;
+/** Категорії опису аналізів – задача Cowork «Опис аналізів у складі програми
+ *  вираховується зі складу» (24.09.2026). Порядок – як у таблиці задачі. */
+type LabCategory =
+  | 'blood'
+  | 'urine'
+  | 'liver_kidney'
+  | 'coagulation'
+  | 'cholesterol'
+  | 'glucose'
+  | 'thyroid'
+  | 'vitamin_d'
+  | 'helicobacter'
+  | 'gyn_smears';
 
-function classifyLab(name: string): string {
-  const n = name.toLowerCase();
-  if (n.includes('клінічний аналіз крові') || n.includes('загальний аналіз сечі')) return 'загальні аналізи крові й сечі';
-  if (n.includes('ліпідограма') || n.includes('глюкоза')) return 'холестерин і глюкоза';
-  if (n.includes('тиреоїдний')) return 'гормони щитоподібної залози';
-  if (n.includes('вітамін d') || n.includes('25-он')) return 'вітамін D';
-  if (n.includes('урогенітал') || n.includes('пап-тест')) return 'гінекологічні мазки';
-  if (
-    n.includes('алат') || n.includes('асат') || n.includes('гамма-глутамілтрансфераза') ||
-    n.includes('білірубін') || n.includes('загальний білок') || n.includes('лужна фосфатаза') ||
-    n.includes('альбумін') || n.includes('креатинін') || n.includes('сечовина') ||
-    n.includes('коагулограма') || n.includes('helicobacter')
-  ) {
-    return 'показники роботи печінки і нирок';
-  }
-  return 'інші показники';
+/** Зіставлення за кодом позиції (clinic_services.code, на яку посилається
+ *  program_services), не за назвою. Коди – ОН Клінік Харків. Позиція, якої тут
+ *  немає, в опис не виводиться і потрапляє в labUncategorized. */
+const LAB_CATEGORY_BY_CODE: Record<string, LabCategory> = {
+  '10003-OH': 'blood', // Клінічний аналіз крові (ЗАК + лейкоформула)
+  '10001-OH': 'urine', // Загальний аналіз сечі (ЗАС + мікроскопія осаду)
+  '10027-OH': 'liver_kidney', // АлАТ
+  '10028-OH': 'liver_kidney', // АсАТ
+  '10034-OH': 'liver_kidney', // ГГТ
+  '10031-OH': 'liver_kidney', // Білірубін
+  '10036-OH': 'liver_kidney', // Загальний білок
+  '10029-OH': 'liver_kidney', // Лужна фосфатаза
+  '10032-OH': 'liver_kidney', // Альбумін
+  '10037-OH': 'liver_kidney', // Креатинін
+  '10039-OH': 'liver_kidney', // Сечовина
+  '10051-OH': 'coagulation', // Пакет №50 «Коагулограма»
+  '10044-OH': 'cholesterol', // Пакет №36 Ліпідограма
+  '10033-OH': 'glucose', // Глюкоза (венозна кров)
+  '10063-OH': 'thyroid', // Пакет №01.15 «Тиреоїдний»
+  '11096-OH': 'vitamin_d', // 25-ОН вітамін D
+  '10096-OH': 'helicobacter', // Антитіла сумарні до Helicobacter pylori
+  '10010-OH': 'gyn_smears', // Мікроскопія урогенітального зішкрібу
+  '11014-OH': 'gyn_smears', // ПЛР. Пакет №09.04 «Урогенітальний (повний)»
+};
+
+/** Тексти категорій у порядку таблиці; об'єднані пари (кров і сеча, холестерин
+ *  і глюкоза) будуються з тих категорій, що є в складі. */
+function labCategoryTexts(present: Set<LabCategory>): string[] {
+  const out: string[] = [];
+  if (present.has('blood') && present.has('urine')) out.push('загальні аналізи крові й сечі');
+  else if (present.has('blood')) out.push('загальний аналіз крові');
+  else if (present.has('urine')) out.push('загальний аналіз сечі');
+  if (present.has('liver_kidney')) out.push('показники роботи печінки і нирок');
+  if (present.has('coagulation')) out.push('згортання крові');
+  if (present.has('cholesterol') && present.has('glucose')) out.push('холестерин і глюкоза');
+  else if (present.has('cholesterol')) out.push('холестерин');
+  else if (present.has('glucose')) out.push('глюкоза');
+  if (present.has('thyroid')) out.push('гормони щитоподібної залози');
+  if (present.has('vitamin_d')) out.push('вітамін D');
+  if (present.has('helicobacter')) out.push('аналіз на бактерію Helicobacter pylori');
+  if (present.has('gyn_smears')) out.push('гінекологічні мазки');
+  return out;
+}
+
+function labCategory(item: CompositionServiceItem): LabCategory | null {
+  return item.code ? LAB_CATEGORY_BY_CODE[item.code] ?? null : null;
 }
 
 function analysesWord(n: number): string {
@@ -224,11 +261,14 @@ function analysesWord(n: number): string {
 function buildLabSummary(items: CompositionServiceItem[]): string {
   const lab = items.filter((i) => i.serviceType === 'lab');
   if (lab.length === 0) return '';
-  const present = new Set(lab.map((i) => classifyLab(i.name)));
-  const ordered = LAB_CATEGORY_ORDER.filter((c) => present.has(c));
-  const extra = [...present].filter((c) => !(LAB_CATEGORY_ORDER as readonly string[]).includes(c));
-  const categories = [...ordered, ...extra];
-  return `${lab.length} ${analysesWord(lab.length)} крові, сечі та мазків: ${categories.join(', ')}.`;
+  const present = new Set(lab.map(labCategory).filter((c): c is LabCategory => c !== null));
+  const categories = labCategoryTexts(present);
+  const intro = `${lab.length} ${analysesWord(lab.length)}`;
+  return categories.length > 0 ? `${intro}: ${categories.join(', ')}.` : `${intro}.`;
+}
+
+function uncategorizedLab(items: CompositionServiceItem[]): string[] {
+  return items.filter((i) => i.serviceType === 'lab' && labCategory(i) === null).map((i) => i.name);
 }
 
 // -----------------------------------------------------------------------------
@@ -240,6 +280,7 @@ const EMPTY: ProgramComposition = {
   consultationsSummary: '',
   instrumentalSummary: '',
   labSummary: '',
+  labUncategorized: [],
   visitCount: 0,
   visit1Groups: [],
   visit2Items: [],
@@ -252,7 +293,7 @@ export async function fetchProgramComposition(checkupProgramId: string | null | 
     const sb = db() as any;
     const { data, error } = await sb
       .from('program_services')
-      .select('visit_number, clinic_services(name_ua, service_type)')
+      .select('visit_number, clinic_services(code, name_ua, service_type)')
       .eq('checkup_program_id', checkupProgramId)
       .order('created_at', { ascending: true });
 
@@ -261,6 +302,7 @@ export async function fetchProgramComposition(checkupProgramId: string | null | 
     const items: CompositionServiceItem[] = data
       .filter((row: any) => row.clinic_services)
       .map((row: any) => ({
+        code: (row.clinic_services.code as string | null) ?? null,
         name: row.clinic_services.name_ua as string,
         serviceType: row.clinic_services.service_type as CompositionServiceType,
         visitNumber: row.visit_number as number,
@@ -288,6 +330,7 @@ export async function fetchProgramComposition(checkupProgramId: string | null | 
       consultationsSummary: buildConsultationsSummary(summaryItems),
       instrumentalSummary: buildInstrumentalSummary(summaryItems),
       labSummary: buildLabSummary(summaryItems),
+      labUncategorized: uncategorizedLab(summaryItems),
       visitCount,
       visit1Groups: groupByType(visit1Items),
       visit2Items,
