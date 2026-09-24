@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 
 // Блок 5 обох MD (5a-female-40-50/vid-50-kharkiv.md). Контракт наданий Cowork
 // напряму в чаті 29.08.2026 (відсутній у components-map-FIXED.md):
@@ -43,7 +43,8 @@ export interface AvailableAdditionalService {
 
 export interface UnavailableAdditionalService {
   name: string;
-  why: string;
+  /** Текст або розмітка: сторінка може передати посилання на джерело ([n]) у тому ж вигляді, що й в основному тексті. */
+  why: ReactNode;
   whereToGo: string;
 }
 

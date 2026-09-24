@@ -120,43 +120,38 @@ function buildConsultationsSummary(items: CompositionServiceItem[]): string {
   return specialties.join(', ');
 }
 
-/** Відома область УЗД із назви позиції ("УЗД органів черевної порожнини..." →
- *  "черевна порожнина"). Fallback — відсічення дужок і уточнень методики,
- *  коли назва не збігається з жодним відомим шаблоном. */
-const UZD_AREA_MAP: [string, string][] = [
-  ['органів черевної порожнини', 'черевна порожнина'],
-  ['органів малого тазу', 'малий таз'],
-  ['органів сечовидільної системи', 'сечовидільна система'],
-  ['молочних залоз', 'молочні залози'],
-  ['щитоподібної залози', 'щитоподібна залоза'],
+/** Область УЗД у родовому відмінку з назви позиції («УЗД органів малого тазу…» →
+ *  «малого таза»). Fallback – відсічення дужок, коли назва не збігається з відомим шаблоном.
+ *  Задача Cowork «Правки після v1» (23.09.2026): шаблон опису складу для всіх вікових сторінок. */
+const UZD_AREA_GENITIVE: [string, string][] = [
+  ['органів черевної порожнини', 'органів черевної порожнини'],
+  ['органів малого тазу', 'малого таза'],
+  ['органів сечовидільної системи', 'нирок і сечового міхура'],
+  ['молочних залоз', 'молочних залоз'],
+  ['щитоподібної залози', 'щитоподібної залози'],
 ];
 
-function shortenUzdArea(rest: string): string {
+function uzdAreaGenitive(rest: string): string {
   const lower = rest.toLowerCase();
-  for (const [key, label] of UZD_AREA_MAP) {
+  for (const [key, label] of UZD_AREA_GENITIVE) {
     if (lower.startsWith(key)) return label;
   }
-  return rest
-    .replace(/\([^)]*\)/g, '')
-    .replace(/\s+(з доплерометрією.*|жінок.*|трансвагінальне.*)$/i, '')
-    .trim()
-    .toLowerCase();
+  return rest.replace(/\([^)]*\)/g, '').trim().toLowerCase();
 }
 
-function shortenOtherInstrumental(name: string): string {
-  if (/^Електрокардіографія/i.test(name)) return 'ЕКГ';
-  if (/^Рентгенографія/i.test(name)) return 'рентген органів грудної клітини';
-  return name.toLowerCase();
+/** Пояснення в дужках – лише для ЕКГ і відеокольпоскопії; інші позиції без пояснень. */
+function otherInstrumental(name: string): string {
+  if (/^Електрокардіографія/i.test(name)) return 'електрокардіографія (ЕКГ, запис роботи серця)';
+  if (/^Відеокольпоскопія/i.test(name)) return 'відеокольпоскопія (огляд шийки матки під збільшенням)';
+  if (/^Рентгенографія органів грудної клітини/i.test(name)) return 'рентген органів грудної клітини';
+  return name.replace(/\s*\([^)]*\)/g, '').trim().toLowerCase();
 }
 
-const CARDINAL_WORDS: Record<number, string> = {
-  1: 'одне', 2: 'два', 3: 'три', 4: 'чотири', 5: "п'ять",
-  6: 'шість', 7: 'сім', 8: 'вісім', 9: "дев'ять", 10: 'десять',
+/** «N ділянок» у родовому відмінку після «дослідження (УЗД)». */
+const AREAS_GENITIVE: Record<number, string> = {
+  1: 'однієї ділянки', 2: 'двох ділянок', 3: 'трьох ділянок', 4: 'чотирьох ділянок', 5: "п'яти ділянок",
+  6: 'шести ділянок', 7: 'семи ділянок', 8: 'восьми ділянок', 9: "дев'яти ділянок", 10: 'десяти ділянок',
 };
-
-function pluralDoslidzhennia(n: number): string {
-  return n >= 1 && n <= 4 ? 'дослідження' : 'досліджень';
-}
 
 /** "A, B і C" замість "A, B, C" — природніше для переліку 2+ елементів. */
 function joinWithAnd(items: string[]): string {
@@ -171,19 +166,19 @@ function buildInstrumentalSummary(items: CompositionServiceItem[]): string {
   for (const item of instrumental) {
     const m = item.name.match(/^УЗД\s+(.*)$/i);
     if (m) {
-      uzdAreas.push(shortenUzdArea(m[1]));
+      uzdAreas.push(uzdAreaGenitive(m[1]));
     } else {
-      other.push(shortenOtherInstrumental(item.name));
+      other.push(otherInstrumental(item.name));
     }
   }
   const parts: string[] = [];
   if (uzdAreas.length > 0) {
-    const word = CARDINAL_WORDS[uzdAreas.length] ?? String(uzdAreas.length);
-    const capitalized = word.charAt(0).toUpperCase() + word.slice(1);
-    parts.push(`${capitalized} ультразвукових ${pluralDoslidzhennia(uzdAreas.length)}: ${uzdAreas.join(', ')}.`);
+    const areas = AREAS_GENITIVE[uzdAreas.length] ?? `${uzdAreas.length} ділянок`;
+    parts.push(`Ультразвукове дослідження (УЗД) ${areas}: ${uzdAreas.join(', ')}.`);
   }
   if (other.length > 0) {
-    parts.push(`Плюс ${joinWithAnd(other)}.`);
+    const joined = joinWithAnd(other);
+    parts.push(uzdAreas.length > 0 ? `Також ${joined}.` : `${joined.charAt(0).toUpperCase()}${joined.slice(1)}.`);
   }
   return parts.join(' ');
 }
@@ -193,29 +188,37 @@ function buildInstrumentalSummary(items: CompositionServiceItem[]): string {
  *  потрапляє в "інші показники", а не губиться мовчки. */
 const LAB_CATEGORY_ORDER = [
   'загальні аналізи крові й сечі',
-  'біохімія та функція печінки і нирок',
-  'ліпідний профіль і глюкоза',
+  'показники роботи печінки і нирок',
+  'холестерин і глюкоза',
   'гормони щитоподібної залози',
   'вітамін D',
-  'гінекологічні дослідження',
+  'гінекологічні мазки',
 ] as const;
 
 function classifyLab(name: string): string {
   const n = name.toLowerCase();
   if (n.includes('клінічний аналіз крові') || n.includes('загальний аналіз сечі')) return 'загальні аналізи крові й сечі';
-  if (n.includes('ліпідограма') || n.includes('глюкоза')) return 'ліпідний профіль і глюкоза';
+  if (n.includes('ліпідограма') || n.includes('глюкоза')) return 'холестерин і глюкоза';
   if (n.includes('тиреоїдний')) return 'гормони щитоподібної залози';
   if (n.includes('вітамін d') || n.includes('25-он')) return 'вітамін D';
-  if (n.includes('урогенітал') || n.includes('пап-тест')) return 'гінекологічні дослідження';
+  if (n.includes('урогенітал') || n.includes('пап-тест')) return 'гінекологічні мазки';
   if (
     n.includes('алат') || n.includes('асат') || n.includes('гамма-глутамілтрансфераза') ||
     n.includes('білірубін') || n.includes('загальний білок') || n.includes('лужна фосфатаза') ||
     n.includes('альбумін') || n.includes('креатинін') || n.includes('сечовина') ||
     n.includes('коагулограма') || n.includes('helicobacter')
   ) {
-    return 'біохімія та функція печінки і нирок';
+    return 'показники роботи печінки і нирок';
   }
   return 'інші показники';
+}
+
+function analysesWord(n: number): string {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return 'аналіз';
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return 'аналізи';
+  return 'аналізів';
 }
 
 function buildLabSummary(items: CompositionServiceItem[]): string {
@@ -225,7 +228,7 @@ function buildLabSummary(items: CompositionServiceItem[]): string {
   const ordered = LAB_CATEGORY_ORDER.filter((c) => present.has(c));
   const extra = [...present].filter((c) => !(LAB_CATEGORY_ORDER as readonly string[]).includes(c));
   const categories = [...ordered, ...extra];
-  return `Лабораторна частина складу – ${lab.length} аналізів. Напрямки: ${joinWithAnd(categories)}.`;
+  return `${lab.length} ${analysesWord(lab.length)} крові, сечі та мазків: ${categories.join(', ')}.`;
 }
 
 // -----------------------------------------------------------------------------
