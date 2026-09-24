@@ -38,7 +38,8 @@ export interface AvailableAdditionalService {
   priceType?: 'exact' | 'from';
   priceNote?: string;
   priceDate?: string;
-  explanation: string;
+  /** Текст або розмітка (посилання на джерело [n]), як і why. */
+  explanation: ReactNode;
 }
 
 export interface UnavailableAdditionalService {
