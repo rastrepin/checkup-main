@@ -205,7 +205,7 @@ type LabCategory =
 /** Зіставлення за кодом позиції (clinic_services.code, на яку посилається
  *  program_services), не за назвою. Коди – ОН Клінік Харків. Позиція, якої тут
  *  немає, в опис не виводиться, потрапляє в labUncategorized і дає попередження
- *  в лозі білду (warnUncategorizedLab). До ітерації 2 відповідність переїде в Supabase. */
+ *  в лозі білду (warnUncategorizedLab). */
 const LAB_CATEGORY_BY_CODE: Record<string, LabCategory> = {
   '10003-OH': 'blood', // Клінічний аналіз крові (ЗАК + лейкоформула)
   '10001-OH': 'urine', // Загальний аналіз сечі (ЗАС + мікроскопія осаду)
