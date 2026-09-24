@@ -10,6 +10,25 @@ import AccordionSection from '@/components/shared/AccordionSection';
 import InfoFrame from '@/components/shared/InfoFrame';
 import CrossAgeNav from '@/components/shared/CrossAgeNav';
 import BookingFlow, { BookCta } from '@/components/city/BookingFlow';
+import {
+  type AgeAddition,
+  EDITORIAL_TEXT,
+  FIRST_VISIT_TEXT,
+  WHERE_TO_GO,
+  additionsIntro,
+  branchesWord,
+  faqMissingInProgram,
+  faqOtherClinic,
+  geoText,
+  lcFirst,
+  missingTestsSentence,
+  otherPathHeading,
+  otherPathText,
+  preparationItems,
+  programAgeSentence,
+  programHeading,
+  secondVisitSentence,
+} from '@/lib/programs/age-page-shared';
 
 // Вікова сторінка міста – чернетка SPRINT-KHARKIV-v0, каркас 5.2 (12 блоків).
 // Контент: content/kharkiv/female-vid-50-rokiv.md (v0) дослівно; файл згенеровано з того самого джерела, що й MD.
@@ -17,8 +36,9 @@ import BookingFlow, { BookCta } from '@/components/city/BookingFlow';
 // platform_program_offers → checkup_programs (program_type = 'clinic') → onclinic-kharkiv.
 // Hero, «Двері», GEO, автор і рецензент – верстка в сторінці (рішення спринту, без нових спільних компонентів).
 // Задача Cowork «Оновлення текстів сторінки після 50» (v1, 23.09.2026): тексти за редакторським аудитом і рецензентом.
-// Підготовка і перший візит будуються тут, у сторінці, з позицій composition; опис складу – спільний шаблон
-// у lib/programs/composition.ts (задача «Правки після v1», діє для всіх вікових сторінок).
+// Опис складу – спільний шаблон у lib/programs/composition.ts; блоки [СПІЛЬНИЙ] (програма, доповнення, інший шлях,
+// візити, підготовка, спільні FAQ, GEO, текст редакції) – lib/programs/age-page-shared.ts (задача «Оновлення
+// текстів сторінки 40–50», 24.09.2026). Видимий текст сторінки від перенесення не змінився.
 
 export const revalidate = 3600;
 
@@ -71,82 +91,41 @@ const SOURCES: string[] = [
   "МОЗ України. Стандарт медичної допомоги «Рак молочної залози», наказ №195 від 03.02.2025.",
 ];
 
-/* Цілі блоку 2 для зіставлення зі складом програми (блок 4, міст). */
-const TARGETS: { label: string; keywords: string[]; missing: string | null }[] = [
-  { label: "ПАП-тест", keywords: ["пап-тест", "цервікальн", "впл"], missing: "Мазок на клітини шийки матки роблять раз на 3 роки. Його можна пройти окремо в гінеколога." },
-  { label: "Холестерин (ліпідограма)", keywords: ["ліпідограм"], missing: "Якщо ви не перевіряли холестерин після 20 років або з останнього аналізу минуло понад 4–6 років, його можна здати окремо." },
-  { label: "Глюкоза", keywords: ["глюкоз"], missing: null },
-  { label: "Мамографія", keywords: ["мамограф"], missing: null },
-  { label: "Тест калу на приховану кров", keywords: ["прихован", "імунохімічн"], missing: null },
-  { label: "Денситометрія (DXA)", keywords: ["денситометр", "dxa", "абсорбціометр"], missing: null },
+/* Цілі блоку 2 для зіставлення зі складом програми (блок 4: «З переліку вище в програмі є», «Що ще входить»). */
+const TARGETS: { label: string; keywords: string[] }[] = [
+  { label: "ПАП-тест", keywords: ["пап-тест", "цервікальн", "впл"] },
+  { label: "Холестерин (ліпідограма)", keywords: ["ліпідограм"] },
+  { label: "Глюкоза", keywords: ["глюкоз"] },
+  { label: "Мамографія", keywords: ["мамограф"] },
+  { label: "Тест калу на приховану кров", keywords: ["прихован", "імунохімічн"] },
+  { label: "Денситометрія (DXA)", keywords: ["денситометр", "dxa", "абсорбціометр"] },
 ];
 
-/* Кандидати в доповнення (screening-evidence-matrix.md, розділ 3).
- * missingName – назва для {missingTests} (Hero, картка програми, GEO); null – не входить
- * (денситометрія для 50+ не обов'язкова для всіх: лише з 65 або за факторів ризику). */
-const ADDITIONS: { id: string; name: string; keywords: string[]; explanation: string; why: React.ReactNode; missingName: string | null }[] = [
-  { id: "dxa", name: "Денситометрія (DXA)", keywords: ["денситометр", "dxa", "абсорбціометр"], explanation: "З 65 років, а до 65 – у постменопаузі за факторів ризику перелому.", why: "З 65 років рекомендована, до 65 – за факторів ризику перелому.", missingName: null },
-  { id: "mammo", name: "Мамографія", keywords: ["мамограф"], explanation: "У 50–69 років кожні 2 роки для всіх жінок.", why: <>У 50–69 років її роблять кожні 2 роки всім жінкам. УЗД молочних залоз не замінює мамографію: для скринінгу раку молочної залози після 50 років використовують саме мамографію<S n={[1]} />.</>, missingName: "мамографія" },
-  { id: "fit", name: "Тест калу на приховану кров", keywords: ["прихован", "імунохімічн"], explanation: "З 50 до 75 років раз на 2 роки, за факторів ризику щороку.", why: "З 50 років його роблять раз на 2 роки.", missingName: "аналіз калу на приховану кров" },
+const PAGE_MIN_AGE = 50;
+const LIST_HEADING = "Які обстеження потрібні жінці після 50";
+
+/* Доповнення: усі обстеження з переліку, яких немає в програмі (screening-evidence-matrix.md, розділ 3).
+ * forAll – рекомендоване після 50 усім; лише такі входять у {missingTests} (Hero, картка програми, GEO).
+ * Денситометрія після 50 не для всіх (з 65 або за факторів ризику), холестерин – залежно від попереднього
+ * результату, тому forAll = false. */
+const ADDITIONS: AgeAddition[] = [
+  { id: "pap", name: "ПАП-тест", keywords: ["пап-тест", "цервікальн", "впл"], explanation: "Мазок на клітини шийки матки роблять раз на 3 роки. Його можна пройти окремо в гінеколога.", why: "Мазок на клітини шийки матки роблять раз на 3 роки. Його можна пройти окремо в гінеколога.", forAll: true, missingName: "ПАП-тест" },
+  { id: "lipid", name: "Холестерин (ліпідограма)", keywords: ["ліпідограм"], explanation: "Якщо ви не перевіряли холестерин після 20 років або з останнього аналізу минуло понад 4–6 років, його можна здати окремо.", why: "Якщо ви не перевіряли холестерин після 20 років або з останнього аналізу минуло понад 4–6 років, його можна здати окремо.", forAll: false },
+  { id: "dxa", name: "Денситометрія (DXA)", keywords: ["денситометр", "dxa", "абсорбціометр"], explanation: "З 65 років, а до 65 – у постменопаузі за факторів ризику перелому.", why: "З 65 років рекомендована, до 65 – за факторів ризику перелому.", forAll: false },
+  { id: "mammo", name: "Мамографія", keywords: ["мамограф"], explanation: "У 50–69 років кожні 2 роки для всіх жінок.", why: <>У 50–69 років її роблять кожні 2 роки всім жінкам. УЗД молочних залоз не замінює мамографію: для скринінгу раку молочної залози після 50 років використовують саме мамографію<S n={[1]} />.</>, forAll: true, missingName: "мамографія" },
+  { id: "fit", name: "Тест калу на приховану кров", keywords: ["прихован", "імунохімічн"], explanation: "З 50 до 75 років раз на 2 роки, за факторів ризику щороку.", why: "З 50 років його роблять раз на 2 роки.", forAll: true, missingName: "аналіз калу на приховану кров" },
 ];
-const WHERE_TO_GO = 'Можна пройти в іншому закладі і принести результат на другий візит.';
 
 /** FAQ: видимий текст і FAQPage Schema будуються з одного масиву. */
 function buildFaq(programName: string | null): { q: string; a: string }[] {
-  const inProgram = programName ? `програмі «${programName}»` : 'програмі клініки';
-  const inProgramAcc = programName ? `програму «${programName}»` : 'програму клініки';
   return [
     { q: "Менопауза вже настала. Що змінюється в переліку?", a: "У переліку за віком менопауза впливає лише на денситометрію. Якщо менопауза вже настала і є фактори ризику перелому, її рекомендують і до 65 років. Фактори ризику перелічені в розділі «Що залежить від вашої історії»." },
     { q: "Чи потрібна колоноскопія, якщо нічого не турбує?", a: "Для скринінгу після 50 спочатку роблять тест калу на приховану кров раз на 2 роки. Колоноскопію призначають, якщо тест позитивний, протягом 1–2 місяців." },
     { q: "Чи потрібен ПАП-тест після 65?", a: "Якщо попередні результати були нормальними – два негативні тести на ВПЛ або три нормальні мазки за останні 10 років, – скринінг припиняють. Якщо результатів ви не знаєте, його продовжують." },
-    { q: "Чи можна пройти перелік не в цій клініці?", a: "Так. Перелік складено за клінічними настановами, тому його можна пройти в будь-якому закладі. Записуватися до клініки-партнера через цю сторінку не обов'язково." },
-    { q: `Що робити, якщо потрібного обстеження немає в ${inProgram}?`, a: `Його можна пройти окремо в іншому закладі і принести результат на другий візит: лікар врахує його разом з рештою показників. Що з переліку входить у ${inProgramAcc}, вказано в її описі.` },
+    faqOtherClinic(),
+    faqMissingInProgram(programName),
   ];
 }
-
-/* {missingTests}: «A і B», «A, B і C». */
-function joinWithAnd(items: string[]): string {
-  if (items.length <= 1) return items.join('');
-  return `${items.slice(0, -1).join(', ')} і ${items[items.length - 1]}`;
-}
-
-/** Речення про відсутні обстеження (Hero, картка програми, GEO); null – відсутніх немає. */
-function missingSentence(names: string[]): string | null {
-  if (names.length === 0) return null;
-  if (names.length === 1) {
-    return `До програми не входить ${names[0]}: це обстеження варто пройти додатково або обговорити з лікарем на консультації.`;
-  }
-  return `До програми не входять ${joinWithAnd(names)}: їх варто пройти додатково або обговорити з лікарем на консультації.`;
-}
-
-/** Підготовка (розділ 8.2 задачі): пункт показується, якщо в складі є відповідна позиція. */
-function preparationItems(items: { name: string }[]): string[] {
-  const names = items.map((i) => i.name.toLowerCase());
-  const hasAny = (needle: string) => names.some((n) => n.includes(needle));
-  const out: string[] = [];
-  if (hasAny('глюкоза') || hasAny('ліпідограма')) {
-    out.push('натще: 8–12 годин без їжі перед аналізом крові, пити можна чисту воду без газу');
-  }
-  if (hasAny('пап-тест') || hasAny('урогенітал')) {
-    out.push('ПАП-тест і гінекологічні мазки не здають під час менструації: якщо цикл ще є, плануйте візит на перші дні після її завершення, у менопаузі підійде будь-який день');
-  }
-  if (hasAny('урогенітал') || hasAny('пап-тест')) {
-    out.push('за 24–48 годин до візиту: без статевих контактів, спринцювань, вагінальних свічок, таблеток і кремів');
-  }
-  return out;
-}
-
-/** Кількість філій словом, узгоджена з «філія / філії / філій». */
-const BRANCH_COUNT_WORDS: Record<number, string> = {
-  1: 'одна', 2: 'дві', 3: 'три', 4: 'чотири', 5: "п'ять", 6: 'шість', 7: 'сім', 8: 'вісім', 9: "дев'ять", 10: 'десять',
-};
-
-/** Вік із назви програми («… після 40» → 40); null – у назві віку немає. */
-function programAge(name: string): number | null {
-  const m = name.match(/(\d{2})/);
-  return m ? Number(m[1]) : null;
-}
-const PAGE_AGE = 50;
 
 const SCHEDULE_LABELS: [string, string][] = [
   ['mon_fri', 'пн–пт'],
@@ -169,21 +148,7 @@ function scheduleText(b: OfferBranch): string | null {
   return parts.length ? parts.join(', ') : null;
 }
 
-function branchesWord(n: number) {
-  const mod10 = n % 10;
-  const mod100 = n % 100;
-  if (mod10 === 1 && mod100 !== 11) return 'філія';
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return 'філії';
-  return 'філій';
-}
-
 const has = (name: string, keywords: string[]) => keywords.some((k) => name.toLowerCase().includes(k));
-
-/** Мала перша літера в середині речення, крім абревіатур (ПАП-тест). */
-function lcFirst(s: string) {
-  if (s.length > 1 && s[1] === s[1].toUpperCase() && s[1] !== s[1].toLowerCase()) return s;
-  return s.charAt(0).toLowerCase() + s.slice(1);
-}
 
 function S({ n }: { n: number[] }) {
   return (
@@ -239,7 +204,6 @@ export default async function FemaleAgeVid50KharkivPage() {
   const tests = items.filter((i) => i.serviceType !== 'consultation');
   const matched = TARGETS.map((t) => ({ ...t, found: tests.filter((i) => has(i.name, t.keywords)).map((i) => i.name) }));
   const inProgram = matched.filter((t) => t.found.length > 0);
-  const missing = matched.filter((t) => t.found.length === 0 && t.missing);
   const matchedNames = new Set(inProgram.flatMap((t) => t.found));
   const beyond = tests.filter((i) => !matchedNames.has(i.name));
   const beyondInstrumental = beyond.filter((i) => i.serviceType === 'instrumental').map((i) => i.name);
@@ -251,13 +215,13 @@ export default async function FemaleAgeVid50KharkivPage() {
   const additionsUnavailable = additions.filter((a) => !additionsAvailable.includes(a));
   const showAdditions = Boolean(program) && additions.length > 0;
 
-  // {missingTests}: з того самого зіставлення, що й блок «Що варто додати»; денситометрія не входить.
-  const missingNames = additions.map((a) => a.missingName).filter((n): n is string => Boolean(n));
-  const missingText = program ? missingSentence(missingNames) : null;
-  const ageOfProgram = program ? programAge(program.name_ua) : null;
+  // {missingTests}: з того самого зіставлення, що й блок «Що варто додати»; лише forAll (спільний модуль).
+  const missingText = program ? missingTestsSentence(additions) : null;
+  const ageText = programAgeSentence(program?.name_ua, PAGE_MIN_AGE);
   const programNameQ = program ? `«${program.name_ua}»` : null;
   const FAQ = buildFaq(program?.name_ua ?? null);
   const preparation = preparationItems(items);
+  const secondVisit = composition ? secondVisitSentence(composition.visit2Items) : null;
 
   const notice = program?.price_date ? priceDateNotice(program.price_date) : undefined;
 
@@ -332,8 +296,7 @@ export default async function FemaleAgeVid50KharkivPage() {
               <p className="text-lg text-gray-700 leading-relaxed mt-2">
                 Якщо вам після 50 і нічого не турбує, ось що варто перевірити за клінічними настановами.
                 {program && ` Комплексне обстеження організму в Харкові можна пройти за програмою ${programNameQ}.`}
-                {program && ageOfProgram !== null && ageOfProgram !== PAGE_AGE &&
-                  ` Програма розрахована на жінок від ${ageOfProgram} років, і її склад підходить також після ${PAGE_AGE}.`}
+                {ageText && ` ${ageText}`}
                 {missingText && ` ${missingText}`}
               </p>
             </div>
@@ -342,7 +305,7 @@ export default async function FemaleAgeVid50KharkivPage() {
 
         {/* 2. Що вам потрібно в цьому віці – не залежить від партнера */}
         <Section bg={BG_WHITE} eyebrow="За клінічними настановами">
-          <H2 id="shcho-potribno">Які обстеження потрібні жінці після 50</H2>
+          <H2 id="shcho-potribno">{LIST_HEADING}</H2>
           <p className={P}>Після 50 два обстеження рекомендують усім жінкам: мамографію і скринінг колоректального раку, тобто раку товстої кишки<S n={[1]} />. До цього віку їх роблять за скаргами або за підвищеного ризику. З 65 років до них додається перевірка щільності кісток<S n={[2]} />.</p>
           <h3 className="text-lg font-semibold text-[#0b1a24] mt-8">Молочні залози</h3>
           <p className={P}>У 50–69 років мамографію роблять кожні 2 роки всім жінкам, навіть якщо факторів ризику немає<S n={[1]} />. Якщо з&apos;явилося ущільнення в грудях чи під пахвою, зміни шкіри, втягнення соска або виділення із соска, до лікаря звертаються одразу, не чекаючи планової мамографії<S n={[1]} />. Що робити після 69, описано на сторінці «<Link href="/ukr/screening/mamografiia" className="text-[#005485] underline hover:no-underline">Мамографія: що показує і коли потрібна</Link>».</p>
@@ -395,7 +358,7 @@ export default async function FemaleAgeVid50KharkivPage() {
 
         {/* 4. Готовий варіант – програма клініки з даних */}
         <Section bg={BG_WHITE} eyebrow="Програма клініки">
-          <H2 id="gotovyi-variant">{program && clinic ? `Програма ${programNameQ} в ${clinic.name}` : 'Програма клініки в Харкові'}</H2>
+          <H2 id="gotovyi-variant">{programHeading(program?.name_ua, clinic?.name)}</H2>
           {program && clinic && composition ? (
             <>
               <div className="mt-6 border border-[#e8edf3] rounded-[14px] p-6 bg-white">
@@ -471,25 +434,7 @@ export default async function FemaleAgeVid50KharkivPage() {
                 <div className="mt-6">
                   <h3 className="text-lg font-semibold text-[#0b1a24]">Консультації</h3>
                   <p className={P}>На першому візиті: {composition.consultationsSummary}.</p>
-                  {composition.visit2Items.length > 0 && (
-                    <p className={P}>
-                      Другий візит: {composition.visit2Items.map(lcFirst).join(', ')}. Лікар разом з вами розбирає результати.
-                    </p>
-                  )}
-                </div>
-              )}
-
-              {missing.length > 0 && (
-                <div className="mt-6">
-                  <h3 className="text-lg font-semibold text-[#0b1a24]">Чого з переліку в програмі немає</h3>
-                  <ul className="mt-3 space-y-3">
-                    {missing.map((t) => (
-                      <li key={t.label} className="text-[14px] text-gray-700 leading-relaxed">
-                        <span className="font-semibold text-[#0b1a24]">{t.label}.</span> {t.missing} Результат принесіть на
-                        другий візит.
-                      </li>
-                    ))}
-                  </ul>
+                  {secondVisit && <p className={P}>{secondVisit}</p>}
                 </div>
               )}
             </>
@@ -502,7 +447,7 @@ export default async function FemaleAgeVid50KharkivPage() {
         {showAdditions && program && (
           <Section bg={BG_GRAY} eyebrow="Доповнення">
             <H2 id="dodaty">Що варто додати</H2>
-            <p className={P}>Цих обстежень із переліку в програмі {programNameQ} немає.</p>
+            <p className={P}>{additionsIntro(program.name_ua)}</p>
             <div className="mt-6">
               <AdditionalServices
                 available={additionsAvailable.map((a) => ({ id: a.id, name: a.name, explanation: a.explanation }))}
@@ -518,10 +463,10 @@ export default async function FemaleAgeVid50KharkivPage() {
 
         {/* 6. Якщо готова не підходить */}
         <Section bg={showAdditions ? BG_WHITE : BG_GRAY} eyebrow="Інший шлях">
-          <H2 id="inshyi-shliakh">{program ? `Якщо програма ${programNameQ} не підходить` : 'Якщо програма клініки не підходить'}</H2>
+          <H2 id="inshyi-shliakh">{otherPathHeading(program?.name_ua)}</H2>
           <div className="mt-6">
             <InfoFrame>
-              <p>Перелік із розділу «Які обстеження потрібні жінці після 50» можна пройти в будь-якій клініці. З його результатами лікар робить висновок і, якщо потрібно, призначає додаткові обстеження.</p>
+              <p>{otherPathText(LIST_HEADING)}</p>
             </InfoFrame>
           </div>
         </Section>
@@ -584,7 +529,7 @@ export default async function FemaleAgeVid50KharkivPage() {
               Програма проходить за {composition.visitCount} {composition.visitCount === 1 ? 'візит' : 'візити'}.
             </p>
             <h3 className="text-lg font-semibold text-[#0b1a24] mt-8">Перший візит</h3>
-            <p className={P}>На першому візиті ви проходите консультації, обстеження й аналізи, що входять у програму.</p>
+            <p className={P}>{FIRST_VISIT_TEXT}</p>
             {composition.visit2Items.length > 0 && (
               <>
                 <h3 className="text-lg font-semibold text-[#0b1a24] mt-8">Другий візит</h3>
@@ -644,11 +589,13 @@ export default async function FemaleAgeVid50KharkivPage() {
             <div className="max-w-[1200px] mx-auto px-6 lg:px-14 py-10">
               <div className="max-w-3xl text-[14px] text-gray-600 leading-relaxed">
                 <p>
-                  Чекап для жінок після 50 років у Харкові можна пройти в {clinic.name}:{' '}
-                  {BRANCH_COUNT_WORDS[branches.length] ?? branches.length} {branchesWord(branches.length)},{' '}
-                  {branches.map((b) => `${b.address_ua}${b.metro_ua ? ` (${b.metro_ua})` : ''}`).join('; ')}.
-                  {program ? ` Програма клініки: ${programNameQ}.` : ''}
-                  {missingText ? ` ${missingText}` : ''}
+                  {geoText({
+                    subject: 'Чекап для жінок після 50 років',
+                    clinicName: clinic.name,
+                    branches,
+                    programName: program?.name_ua,
+                    missingText,
+                  })}
                 </p>
               </div>
             </div>
@@ -659,10 +606,7 @@ export default async function FemaleAgeVid50KharkivPage() {
         <section style={{ backgroundColor: BG_GRAY, borderTop: BORDER }}>
           <div className="max-w-[1200px] mx-auto px-6 lg:px-14 py-12">
             <div className="max-w-3xl text-xs text-gray-500 leading-relaxed space-y-2">
-              <p>
-                Текст підготувала редакція check-up.in.ua. Ми не лікарі, тому медичний зміст перевіряє рецензент, вказаний
-                нижче. Сервіси для пацієнтів робимо з 2014 року, чекапи з 2019 року.
-              </p>
+              <p>{EDITORIAL_TEXT}</p>
               <p>
                 Медичний рецензент: <strong className="text-gray-700">{REVIEWER.name}</strong>, {REVIEWER.jobTitle},{' '}
                 {REVIEWER.org}.
