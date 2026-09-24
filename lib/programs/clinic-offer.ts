@@ -122,7 +122,9 @@ export async function fetchClinicOffers(
       }
     }
 
-    const compositions = await Promise.all(programs.map((p) => fetchProgramComposition(p.id)));
+    const compositions = await Promise.all(
+      programs.map((p) => fetchProgramComposition(p.id, { programName: p.name_ua, clinicName: clinic.name })),
+    );
     return {
       clinic,
       branches,

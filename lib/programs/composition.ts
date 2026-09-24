@@ -204,7 +204,8 @@ type LabCategory =
 
 /** Зіставлення за кодом позиції (clinic_services.code, на яку посилається
  *  program_services), не за назвою. Коди – ОН Клінік Харків. Позиція, якої тут
- *  немає, в опис не виводиться і потрапляє в labUncategorized. */
+ *  немає, в опис не виводиться, потрапляє в labUncategorized і дає попередження
+ *  в лозі білду (warnUncategorizedLab). До ітерації 2 відповідність переїде в Supabase. */
 const LAB_CATEGORY_BY_CODE: Record<string, LabCategory> = {
   '10003-OH': 'blood', // Клінічний аналіз крові (ЗАК + лейкоформула)
   '10001-OH': 'urine', // Загальний аналіз сечі (ЗАС + мікроскопія осаду)
@@ -224,6 +225,7 @@ const LAB_CATEGORY_BY_CODE: Record<string, LabCategory> = {
   '11096-OH': 'vitamin_d', // 25-ОН вітамін D
   '10096-OH': 'helicobacter', // Антитіла сумарні до Helicobacter pylori
   '10010-OH': 'gyn_smears', // Мікроскопія урогенітального зішкрібу
+  '11221-OH': 'gyn_smears', // ПАП-тест на основі рідинної цитології
   '11014-OH': 'gyn_smears', // ПЛР. Пакет №09.04 «Урогенітальний (повний)»
 };
 
@@ -271,6 +273,33 @@ function uncategorizedLab(items: CompositionServiceItem[]): string[] {
   return items.filter((i) => i.serviceType === 'lab' && labCategory(i) === null).map((i) => i.name);
 }
 
+/** Контекст для попереджень у лозі: назви програми і клініки (з fetchClinicOffers). */
+export interface CompositionLogContext {
+  programName?: string | null;
+  clinicName?: string | null;
+}
+
+/** Уже виведені попередження – щоб одна позиція не дублювалась у лозі для кожної
+ *  сторінки, що показує ту саму програму (в межах одного процесу білду). */
+const warnedUncategorized = new Set<string>();
+
+/** Попередження в лог білду про лабораторні позиції без категорії опису.
+ *  Опис на сторінці при цьому будується як завжди (позиція лише рахується в N). */
+function warnUncategorizedLab(items: CompositionServiceItem[], context?: CompositionLogContext): void {
+  const program = context?.programName || 'невідома програма';
+  const clinic = context?.clinicName || 'невідома клініка';
+  for (const item of items) {
+    if (item.serviceType !== 'lab' || labCategory(item) !== null) continue;
+    const key = `${clinic}|${program}|${item.code ?? item.name}`;
+    if (warnedUncategorized.has(key)) continue;
+    warnedUncategorized.add(key);
+    console.warn(
+      `[composition] Позиція без категорії опису аналізів: програма «${program}», клініка «${clinic}», ` +
+        `позиція «${item.name}» (код ${item.code ?? 'відсутній'}). В опис не виводиться, рахується в кількості аналізів.`,
+    );
+  }
+}
+
 // -----------------------------------------------------------------------------
 
 const EMPTY: ProgramComposition = {
@@ -287,7 +316,10 @@ const EMPTY: ProgramComposition = {
   preparationNotes: [],
 };
 
-export async function fetchProgramComposition(checkupProgramId: string | null | undefined): Promise<ProgramComposition> {
+export async function fetchProgramComposition(
+  checkupProgramId: string | null | undefined,
+  context?: CompositionLogContext,
+): Promise<ProgramComposition> {
   if (!checkupProgramId) return EMPTY;
   try {
     const sb = db() as any;
@@ -322,6 +354,8 @@ export async function fetchProgramComposition(checkupProgramId: string | null | 
     const visit1Items = items.filter((i) => i.visitNumber === 1);
     const visit2Items = items.filter((i) => i.visitNumber === 2).map((i) => i.name);
     const visitCount = items.reduce((max, i) => Math.max(max, i.visitNumber), 0);
+
+    warnUncategorizedLab(summaryItems, context);
 
     return {
       items,
