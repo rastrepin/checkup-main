@@ -1,33 +1,91 @@
 @import "tailwindcss";
 
-/* ─── Fixel Text @font-face ─────────────────────────────────────────────── */
+/* ─── Fixel Text ───────────────────────────────────────────────────────── */
+/* Сам шрифт підключено через next/font/local в app/layout.tsx (preload,
+   змінна --font-fixel-text). Нижче – запасні шрифти з підлаштованими
+   метриками: поки Fixel Text вантажиться, текст займає те саме місце,
+   і після заміни шрифту макет не зсувається. size-adjust пораховано за
+   середньою шириною символів кириличного тексту сторінок, окремо для
+   кожного накреслення 400/500/600/700. */
 @font-face {
-  font-family: 'Fixel Text';
-  src: url('/fonts/FixelText-Regular.woff2') format('woff2');
+  font-family: 'Fixel Text Fallback';
+  src: local('Arial'), local('ArialMT'), local('Liberation Sans'), local('LiberationSans-Regular');
   font-weight: 400;
   font-style: normal;
-  font-display: swap;
+  size-adjust: 102.68%;
+  ascent-override: 87.65%;
+  descent-override: 18.50%;
+  line-gap-override: 28.24%;
 }
 @font-face {
-  font-family: 'Fixel Text';
-  src: url('/fonts/FixelText-Medium.woff2') format('woff2');
+  font-family: 'Fixel Text Fallback';
+  src: local('Arial'), local('ArialMT'), local('Liberation Sans'), local('LiberationSans-Regular');
   font-weight: 500;
   font-style: normal;
-  font-display: swap;
+  size-adjust: 103.56%;
+  ascent-override: 86.91%;
+  descent-override: 18.35%;
+  line-gap-override: 28.00%;
 }
 @font-face {
-  font-family: 'Fixel Text';
-  src: url('/fonts/FixelText-SemiBold.woff2') format('woff2');
+  font-family: 'Fixel Text Fallback';
+  src: local('Arial Bold'), local('Arial-BoldMT'), local('Liberation Sans Bold'), local('LiberationSans-Bold');
   font-weight: 600;
   font-style: normal;
-  font-display: swap;
+  size-adjust: 97.20%;
+  ascent-override: 92.59%;
+  descent-override: 19.55%;
+  line-gap-override: 29.84%;
 }
 @font-face {
-  font-family: 'Fixel Text';
-  src: url('/fonts/FixelText-Bold.woff2') format('woff2');
+  font-family: 'Fixel Text Fallback';
+  src: local('Arial Bold'), local('Arial-BoldMT'), local('Liberation Sans Bold'), local('LiberationSans-Bold');
   font-weight: 700;
   font-style: normal;
-  font-display: swap;
+  size-adjust: 98.05%;
+  ascent-override: 91.79%;
+  descent-override: 19.38%;
+  line-gap-override: 29.58%;
+}
+@font-face {
+  font-family: 'Fixel Text Fallback Roboto';
+  src: local('Roboto'), local('Roboto-Regular');
+  font-weight: 400;
+  font-style: normal;
+  size-adjust: 101.14%;
+  ascent-override: 88.98%;
+  descent-override: 18.79%;
+  line-gap-override: 28.67%;
+}
+@font-face {
+  font-family: 'Fixel Text Fallback Roboto';
+  src: local('Roboto'), local('Roboto-Regular');
+  font-weight: 500;
+  font-style: normal;
+  size-adjust: 102.01%;
+  ascent-override: 88.22%;
+  descent-override: 18.63%;
+  line-gap-override: 28.43%;
+}
+@font-face {
+  font-family: 'Fixel Text Fallback Roboto';
+  src: local('Roboto Bold'), local('Roboto-Bold');
+  font-weight: 600;
+  font-style: normal;
+  size-adjust: 101.98%;
+  ascent-override: 88.25%;
+  descent-override: 18.63%;
+  line-gap-override: 28.44%;
+}
+@font-face {
+  font-family: 'Fixel Text Fallback Roboto';
+  src: local('Roboto Bold'), local('Roboto-Bold');
+  font-weight: 700;
+  font-style: normal;
+  size-adjust: 102.87%;
+  ascent-override: 87.49%;
+  descent-override: 18.47%;
+  line-gap-override: 28.19%;
 }
 
 /* ─── Fixel Display @font-face ──────────────────────────────────────────── */
@@ -86,7 +144,7 @@
   --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);
 
-  --font-sans: 'Fixel Text', system-ui, sans-serif;
+  --font-sans: var(--font-fixel-text, system-ui, sans-serif);
   --font-display: 'Fixel Display', system-ui, sans-serif;
   --font-serif: 'Source Serif 4', Georgia, serif;
 
@@ -98,7 +156,7 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: 'Fixel Text', system-ui, sans-serif;
+  font-family: var(--font-fixel-text, system-ui, sans-serif);
   -webkit-font-smoothing: antialiased;
 }
 
