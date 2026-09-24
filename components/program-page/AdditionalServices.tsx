@@ -46,6 +46,7 @@ export interface UnavailableAdditionalService {
   name: string;
   /** Текст або розмітка: сторінка може передати посилання на джерело ([n]) у тому ж вигляді, що й в основному тексті. */
   why: ReactNode;
+  /** Порожній рядок – рядок не рендериться (задача v2, сторінка після 50). */
   whereToGo: string;
 }
 
@@ -61,6 +62,11 @@ export interface AdditionalServicesProps {
   /** false – режим без цін: чекбокси і пояснення, без суми і приміток до ціни.
    *  За замовчуванням true – поведінка як раніше. */
   showPrices?: boolean;
+  /** 'info' (задача v2, 24.09.2026): картки без чекбоксів і без кнопки «Записатися» –
+   *  доповнення додаються на етапі форми запису. За замовчуванням 'select' – поведінка як раніше. */
+  mode?: 'select' | 'info';
+  /** Заголовок групи недоступних обстежень; без нього – як раніше. */
+  unavailableTitle?: string;
 }
 
 function fmt(n: number) {
@@ -74,6 +80,8 @@ export default function AdditionalServices({
   sourceCta,
   clinicName,
   showPrices = true,
+  mode = 'select',
+  unavailableTitle,
 }: AdditionalServicesProps) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
@@ -98,6 +106,43 @@ export default function AdditionalServices({
       })
     );
   };
+
+  if (mode === 'info') {
+    const card = 'border-[1.5px] border-[#e5e7eb] rounded-[12px] p-4 bg-white';
+    return (
+      <div>
+        {available.length > 0 && (
+          <div className="mb-6">
+            <p className="text-[13px] font-bold uppercase tracking-[0.08em] text-gray-500 mb-3">Можна додати до запису</p>
+            <div className="space-y-3">
+              {available.map((item) => (
+                <div key={item.id} className={card}>
+                  <p className="text-[17px] font-bold text-[#0b1a24]">{item.name}</p>
+                  <p className="text-gray-700 leading-relaxed mt-1.5">{item.explanation}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {unavailable.length > 0 && (
+          <div>
+            <p className="text-[13px] font-bold uppercase tracking-[0.08em] text-gray-500 mb-3">
+              {unavailableTitle ?? `Що варто пройти, але ${clinicName ? `в ${clinicName}` : 'у цій клініці'} не проводиться`}
+            </p>
+            <div className="space-y-3">
+              {unavailable.map((item) => (
+                <div key={item.name} className={card}>
+                  <p className="text-[17px] font-bold text-[#0b1a24]">{item.name}</p>
+                  <p className="text-gray-700 leading-relaxed mt-1.5">{item.why}</p>
+                  {item.whereToGo && <p className="text-gray-600 mt-1.5">{item.whereToGo}</p>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -153,13 +198,15 @@ export default function AdditionalServices({
           Стиль: gray-100 + border-warm — "довідкові й опорні блоки" (UX-переробка 29.08.2026, п.2/п.6) */}
       {unavailable.length > 0 && (
       <div>
-        <p className="text-sm font-semibold text-gray-500 mb-3">Що варто пройти, але {clinicName ? `в ${clinicName}` : 'у цій клініці'} не проводиться</p>
+        <p className="text-sm font-semibold text-gray-500 mb-3">
+          {unavailableTitle ?? `Що варто пройти, але ${clinicName ? `в ${clinicName}` : 'у цій клініці'} не проводиться`}
+        </p>
         <div className="space-y-3">
           {unavailable.map((item) => (
             <div key={item.name} className="border border-border-warm rounded-[10px] px-4 py-3 bg-gray-100">
               <p className="text-sm font-semibold text-[#0b1a24]">{item.name}</p>
               <p className="text-[13px] text-gray-500 mt-1">{item.why}</p>
-              <p className="text-[13px] text-gray-600 mt-1.5">{item.whereToGo}</p>
+              {item.whereToGo && <p className="text-[13px] text-gray-600 mt-1.5">{item.whereToGo}</p>}
             </div>
           ))}
         </div>

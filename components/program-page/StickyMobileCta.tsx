@@ -16,23 +16,55 @@ export interface StickyMobileCtaProps {
   price?: number;
   programSlug: string;
   sourceCta: string;
+  /** Задача v2 (24.09.2026): id елемента (Hero), після прокрутки якого кнопка з'являється.
+   *  Без нього – як раніше, після 400 px прокрутки. */
+  revealAfterId?: string;
+  /** 'v2': ціна Source Serif 4 navy, кнопка navy з radius 14 px. За замовчуванням – як раніше. */
+  look?: 'default' | 'v2';
 }
 
 function fmt(n: number) {
   return n.toLocaleString('uk-UA');
 }
 
-export default function StickyMobileCta({ programNameShort, price, programSlug, sourceCta }: StickyMobileCtaProps) {
+export default function StickyMobileCta({ programNameShort, price, programSlug, sourceCta, revealAfterId, look = 'default' }: StickyMobileCtaProps) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    const onScroll = () => setVisible(window.scrollY > 400);
+    const onScroll = () => {
+      const el = revealAfterId ? document.getElementById(revealAfterId) : null;
+      setVisible(el ? el.getBoundingClientRect().bottom < 0 : window.scrollY > 400);
+    };
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
   if (!visible) return null;
+
+  if (look === 'v2') {
+    return (
+      <div
+        className="fixed bottom-0 left-0 right-0 z-[150] md:hidden bg-white border-t border-gray-200 px-5 py-3 flex items-center justify-between gap-3"
+        style={{ boxShadow: '0 -8px 24px rgba(0,0,0,0.04)' }}
+      >
+        <div className="min-w-0 flex-1">
+          <p className="text-xs text-gray-500 truncate leading-tight">{programNameShort}</p>
+          {typeof price === 'number' && (
+            <p className="text-[19px] font-bold text-[#005485] leading-tight mt-0.5" style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}>
+              {fmt(price)} грн
+            </p>
+          )}
+        </div>
+        <BookCta
+          programSlug={programSlug}
+          sourceCta={sourceCta}
+          label="Записатися"
+          className="!w-auto shrink-0 !rounded-[14px] px-6 min-h-[52px] uppercase tracking-[0.08em] font-bold"
+        />
+      </div>
+    );
+  }
 
   return (
     <div
