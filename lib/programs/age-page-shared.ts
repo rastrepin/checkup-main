@@ -43,7 +43,7 @@ export function missingTestsSentence(missingAdditions: AgeAddition[]): string | 
   const names = missingAdditions.filter((a) => a.forAll && a.missingName).map((a) => a.missingName as string);
   if (names.length === 0) return null;
   if (names.length === 1) {
-    return `До програми не входить ${names[0]}. Запитайте про це обстеження лікаря на консультації або додайте його до запису.`;
+    return `До програми не входить ${names[0]}. Запитайте про це обстеження лікаря на консультації або додайте до запису.`;
   }
   return `До програми не входять ${joinWithAnd(names)}. Запитайте про них лікаря на консультації або додайте до запису.`;
 }

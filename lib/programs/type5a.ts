@@ -67,7 +67,7 @@ export function priceDateNotice(priceDate: string | null): string | undefined {
   twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
   if (date < twoMonthsAgo) {
     const label = date.toLocaleDateString('uk-UA', { day: 'numeric', month: 'long', year: 'numeric' });
-    return `Ціну уточнено ${label} — може відрізнятися, менеджер підтвердить під час запису.`;
+    return `Ціну уточнено ${label}, може відрізнятися, менеджер підтвердить під час запису.`;
   }
   return undefined;
 }
