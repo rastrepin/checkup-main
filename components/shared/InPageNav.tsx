@@ -21,6 +21,8 @@ export interface InPageNavItem {
 
 // ОНОВЛЕНО 24.09.2026 (задача v2 сторінки після 50, блок 1a): пігулки з рамкою за макетом,
 // до першої прокрутки активний перший пункт. Компонент досі не використовувався на інших сторінках.
+// ОНОВЛЕНО 25.09.2026 (рішення Ігоря після задачі v2): закріплене лише на desktop (≥ 1024 px);
+// на mobile меню прокручується разом зі сторінкою, закріплена тільки кнопка запису знизу.
 export default function InPageNav({ items }: { items: InPageNavItem[] }) {
   const [activeId, setActiveId] = useState<string | null>(items[0]?.id ?? null);
 
@@ -54,7 +56,7 @@ export default function InPageNav({ items }: { items: InPageNavItem[] }) {
   return (
     <nav
       aria-label="Зміст сторінки"
-      className="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-gray-200 text-sm"
+      className="lg:sticky lg:top-0 z-30 bg-white/95 backdrop-blur border-b border-gray-200 text-sm"
     >
       <div className="max-w-[1200px] mx-auto flex gap-2 overflow-x-auto px-5 sm:px-6 lg:px-14 py-3 [scrollbar-width:none]">
       {items.map((item) => {
