@@ -55,7 +55,7 @@ const REVIEWER = { name: 'Удовиченко Олена Олександрів
 
 const TEXT = 'text-[#374151] leading-relaxed';
 const P = `${TEXT} mt-4`;
-const H3 = 'text-lg font-bold text-[#0b1a24] mt-8 scroll-mt-24';
+const H3 = 'text-lg font-bold text-[#0b1a24] mt-8 scroll-mt-4 lg:scroll-mt-24';
 const LINK = 'text-[#005485] underline hover:no-underline';
 
 const getOffers = cache(() => fetchClinicOffers([PLATFORM_PROGRAM], CLINIC_SLUG));
@@ -206,16 +206,18 @@ function Eyebrow({ children }: { children: string }) {
 
 function H2({ children, id, className = '' }: { children: React.ReactNode; id?: string; className?: string }) {
   return (
-    <h2 id={id} className={`font-bold text-[#0b1a24] scroll-mt-24 ${className}`} style={{ fontSize: 'clamp(24px, 3vw, 30px)', lineHeight: 1.25 }}>
+    <h2 id={id} className={`font-bold text-[#0b1a24] scroll-mt-4 lg:scroll-mt-24 ${className}`} style={{ fontSize: 'clamp(24px, 3vw, 30px)', lineHeight: 1.25 }}>
       {children}
     </h2>
   );
 }
 
 /** Блок основної колонки: білий фон, розділювач зверху (макет v2). */
+// Відступ для переходу за якорем (scroll-mt): з 1024 px – під закріплене меню 1a; на mobile меню не закріплене,
+// тому заголовок розділу стає біля верху екрана (25.09.2026).
 function Block({ eyebrow, children, id }: { eyebrow?: string; children: React.ReactNode; id?: string }) {
   return (
-    <section id={id} className="px-5 sm:px-6 lg:px-0 py-10 lg:py-14 border-t border-[#eef0f2] scroll-mt-16">
+    <section id={id} className="px-5 sm:px-6 lg:px-0 py-10 lg:py-14 border-t border-[#eef0f2] -scroll-mt-6 lg:scroll-mt-16">
       <div className="max-w-3xl">
         {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
         {children}
@@ -380,7 +382,7 @@ export default async function FemaleAgeVid50KharkivPage() {
 
         <div className="max-w-[1200px] mx-auto lg:px-14 lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-x-12">
           {/* 1b. Доступні програми в Харкові: mobile – одразу після меню, desktop – права колонка, sticky */}
-          <aside id={ID.programs} className="lg:col-start-2 lg:row-start-1 scroll-mt-16" aria-labelledby="prohramy-h2">
+          <aside id={ID.programs} className="lg:col-start-2 lg:row-start-1 -scroll-mt-3 lg:scroll-mt-16" aria-labelledby="prohramy-h2">
             <div className="px-5 sm:px-6 lg:px-0 pt-7 pb-10 lg:pt-14 lg:sticky lg:top-16">
               <H2 id="prohramy-h2" className="mb-4 lg:!text-[22px]">Доступні програми в Харкові</H2>
               {program && clinic ? (
@@ -749,7 +751,7 @@ export default async function FemaleAgeVid50KharkivPage() {
                 <p className="font-bold text-[#0b1a24] pt-2">Джерела</p>
                 <ol className="space-y-1.5 list-none text-sm">
                   {SOURCES.map((s, i) => (
-                    <li key={i} id={`source-${i + 1}`} className="flex gap-2 scroll-mt-24">
+                    <li key={i} id={`source-${i + 1}`} className="flex gap-2 scroll-mt-4 lg:scroll-mt-24">
                       <span className="font-semibold text-gray-700 shrink-0">{i + 1}.</span>
                       <span>{s}</span>
                     </li>
