@@ -703,8 +703,7 @@ export default async function FemaleAge3040KharkivPage() {
               </div>
             </div>
 
-            {/* 9. GEO – статичний текст з даних. Задача v1, розділ 8: GEO без змін, тому речення {missingTests}
-                сюди не передається (до задачі воно тут не виводилось). */}
+            {/* 9. GEO – статичний текст з даних; речення {missingTests} – як на сторінці після 50 (рішення Ігоря, 26.09.2026). */}
             {clinic && branches.length > 0 && (
               <div className="px-5 sm:px-6 py-6 bg-[#f4f6f8] lg:rounded-[12px]">
                 <p className="max-w-3xl text-sm text-[#4a5a6b] leading-relaxed">
@@ -713,7 +712,7 @@ export default async function FemaleAge3040KharkivPage() {
                     clinicName: clinic.name,
                     branches,
                     programName: program?.name_ua,
-                    missingText: null,
+                    missingText,
                   })}
                 </p>
               </div>
