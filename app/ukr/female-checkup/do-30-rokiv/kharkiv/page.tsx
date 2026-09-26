@@ -13,13 +13,14 @@ import {
   type AgeAddition,
   additionsAskDoctor,
   ANY_CLINIC_TEXT,
+  DISCLOSURE_TEXT,
+  DISCLOSURE_TITLE,
   DOCTOR_DECIDES_TEXT,
   EDITORIAL_TEXT_V2,
   FIRST_VISIT_TEXT,
   SECOND_VISIT_TEXT_V2,
   additionsIntro,
   additionsUnavailableTitle,
-  branchesCountText,
   faqMissingInProgramV2,
   faqOtherClinic,
   geoText,
@@ -630,10 +631,6 @@ export default async function FemaleAgeDo30KharkivPage() {
             {clinic && (
               <Block eyebrow="Контакти" id={ID.contacts} gray>
                 <H2>Контакти клініки</H2>
-                <p className={P}>
-                  {clinic.name}
-                  {branches.length > 0 ? `, ${branchesCountText(branches.length)}.` : '.'}
-                </p>
                 {branches.length > 0 && (
                   <ul className="mt-4 space-y-3">
                     {branches.map((b) => {
@@ -733,10 +730,8 @@ export default async function FemaleAgeDo30KharkivPage() {
                   <span className="font-semibold text-[#0b1a24]">Медичний рецензент:</span> {REVIEWER.name}, {REVIEWER.jobTitle},{' '}
                   {REVIEWER.org}.
                 </p>
-                <p className="text-sm text-gray-500">
-                  Розкриття: check-up.in.ua отримує комісію від клінік-партнерів за факт запису. Перелік обстежень на цій
-                  сторінці складений за клінічними настановами, а не за складом програм партнерів.
-                </p>
+                <GroupLabel className="pt-2">{DISCLOSURE_TITLE}</GroupLabel>
+                <p className="text-sm text-gray-500">{DISCLOSURE_TEXT}</p>
                 <p className="font-bold text-[#0b1a24] pt-2">Джерела</p>
                 <ol className="space-y-1.5 list-none text-sm">
                   {SOURCES.map((s, i) => (
