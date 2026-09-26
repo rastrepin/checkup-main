@@ -231,7 +231,8 @@ function H2({ children, id, className = '' }: { children: React.ReactNode; id?: 
 // тому заголовок розділу стає біля верху екрана.
 // Фони смуг (правка Ігоря 26.09.2026): блоки чергують білий і сірий фон; блок-продовження має фон попереднього.
 // Сіра смуга на desktop тягнеться на всю ширину екрана, під правою колонкою теж (тінь + clip-path, без зміни розмітки);
-// картка програм у правій колонці закріплена (sticky) і малюється поверх смуги.
+// картка програм у правій колонці закріплена (sticky); clip-path робить блоки окремим шаром, тому сайдбар має
+// z-10 і білий фон, щоб лишатися білим поверх сірих смуг.
 const BAND_GRAY = 'bg-[#f4f6f8] shadow-[0_0_0_100vmax_#f4f6f8] [clip-path:inset(0_-100vmax)]';
 
 function Block({ eyebrow, children, id, gray = false, className = '' }: { eyebrow?: string; children: React.ReactNode; id?: string; gray?: boolean; className?: string }) {
@@ -417,7 +418,7 @@ export default async function FemaleAge4050KharkivPage() {
         <div className="relative max-w-[1200px] mx-auto lg:px-14 lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-x-12">
           {/* 1b. Доступні програми в Харкові: mobile – одразу після меню, desktop – права колонка, sticky */}
           <aside id={showComposition ? undefined : ID.programs} className="lg:col-start-2 lg:row-start-1 -scroll-mt-3 lg:scroll-mt-16 bg-[#f4f6f8] lg:bg-transparent" aria-labelledby="prohramy-h2">
-            <div className="px-5 sm:px-6 lg:px-0 pt-7 pb-10 lg:pt-14 lg:sticky lg:top-16">
+            <div className="px-5 sm:px-6 lg:px-0 pt-7 pb-10 lg:pt-14 lg:sticky lg:top-16 lg:z-10 lg:bg-white">
               <H2 id="prohramy-h2" className="mb-4 lg:!text-[22px]">Доступні програми в Харкові</H2>
               {program && clinic ? (
                 <>
