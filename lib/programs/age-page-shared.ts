@@ -266,3 +266,49 @@ export function geoText(params: {
   if (missingText) text += ` ${missingText}`;
   return text;
 }
+
+/**
+ * Schema.org (SEO-STANDARD р.5, типи 5 і 5a; задача Cowork «Schema на вікових сторінках», 26.09.2026):
+ * ItemList програм блоку 1b. Кожен елемент – програма (Service) з клінікою-постачальником (provider) і URL;
+ * ціна з датою (Offer, validFrom = дата ціни) – лише всередині елемента програми. Offer на рівні сторінки не виводиться.
+ * url програми – картка програми на цій сторінці (окремих сторінок програм на субдомені клініки поки немає).
+ * Даних немає – повертає null, і ItemList на сторінці не виводиться.
+ */
+export function programsItemListLd(opts: {
+  listName: string;
+  programsUrl: string;
+  city: string;
+  clinic: { name: string; website: string | null } | null;
+  programs: { name_ua: string; price_discount: number | null; price_date: string | null }[];
+}): object | null {
+  const { listName, programsUrl, city, clinic, programs } = opts;
+  if (!clinic || programs.length === 0) return null;
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: listName,
+    numberOfItems: programs.length,
+    itemListElement: programs.map((p, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      item: {
+        '@type': 'Service',
+        name: p.name_ua,
+        url: programsUrl,
+        areaServed: { '@type': 'City', name: city },
+        provider: { '@type': 'MedicalClinic', name: clinic.name, ...(clinic.website ? { url: clinic.website } : {}) },
+        ...(typeof p.price_discount === 'number' && p.price_discount > 0
+          ? {
+              offers: {
+                '@type': 'Offer',
+                price: p.price_discount,
+                priceCurrency: 'UAH',
+                ...(p.price_date ? { validFrom: p.price_date.slice(0, 10) } : {}),
+                url: programsUrl,
+              },
+            }
+          : {}),
+      },
+    })),
+  };
+}

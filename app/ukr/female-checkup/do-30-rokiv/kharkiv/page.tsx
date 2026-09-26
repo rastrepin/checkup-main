@@ -27,6 +27,7 @@ import {
   hoursDash,
   missingTestsSentence,
   preparationItems,
+  programsItemListLd,
   visitsText,
 } from '@/lib/programs/age-page-shared';
 
@@ -292,18 +293,15 @@ export default async function FemaleAgeDo30KharkivPage() {
       mainEntity: FAQ.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })),
     },
   ];
-  if (program && clinic) {
-    jsonLd.push({
-      '@context': 'https://schema.org',
-      '@type': 'Offer',
-      name: program.name_ua,
-      price: program.price_discount,
-      priceCurrency: 'UAH',
-      ...(program.price_date ? { validFrom: program.price_date } : {}),
-      url: PAGE_URL,
-      seller: { '@type': 'MedicalClinic', name: clinic.name },
-    });
-  }
+  // SEO-STANDARD р.5 (тип 5a): ItemList програм блоку 1b; ціна з датою – лише всередині елемента програми.
+  const programsLd = programsItemListLd({
+    listName: 'Доступні програми в Харкові',
+    programsUrl: `${PAGE_URL}#${ID.programs}`,
+    city: 'Харків',
+    clinic,
+    programs: program ? [program] : [],
+  });
+  if (programsLd) jsonLd.push(programsLd);
 
   return (
     <>
