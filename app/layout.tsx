@@ -1,20 +1,24 @@
 import type { Metadata } from 'next';
-import { Onest, Cormorant_Garamond } from 'next/font/google';
+import localFont from 'next/font/local';
 import './globals.css';
 
-const onest = Onest({
-  variable: '--font-onest',
-  subsets: ['latin', 'cyrillic'],
-  weight: ['400', '500', '600', '700'],
+// Fixel Text – основний шрифт тексту. next/font/local додає <link rel="preload">
+// для всіх чотирьох накреслень. Запасні шрифти з підлаштованими метриками
+// (Fixel Text Fallback – Arial / Liberation Sans, Fixel Text Fallback Roboto – Android)
+// описано в globals.css: метрики пораховано на кириличному тексті сторінок,
+// тому заміна шрифту після завантаження не зсуває макет (CLS).
+const fixelText = localFont({
+  src: [
+    { path: '../public/fonts/FixelText-Regular.woff2', weight: '400', style: 'normal' },
+    { path: '../public/fonts/FixelText-Medium.woff2', weight: '500', style: 'normal' },
+    { path: '../public/fonts/FixelText-SemiBold.woff2', weight: '600', style: 'normal' },
+    { path: '../public/fonts/FixelText-Bold.woff2', weight: '700', style: 'normal' },
+  ],
+  variable: '--font-fixel-text',
   display: 'swap',
-});
-
-const cormorant = Cormorant_Garamond({
-  variable: '--font-cormorant',
-  subsets: ['latin', 'cyrillic'],
-  weight: ['400'],
-  style: ['italic'],
-  display: 'swap',
+  preload: true,
+  adjustFontFallback: false,
+  fallback: ['Fixel Text Fallback', 'Fixel Text Fallback Roboto', 'system-ui', 'sans-serif'],
 });
 
 export const metadata: Metadata = {
@@ -25,7 +29,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="uk" className={`${onest.variable} ${cormorant.variable} h-full antialiased`}>
+    <html lang="uk" className={`${fixelText.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

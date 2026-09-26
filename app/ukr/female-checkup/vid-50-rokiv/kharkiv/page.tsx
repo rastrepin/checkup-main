@@ -1,791 +1,789 @@
 import type { Metadata } from 'next';
+import { cache } from 'react';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
-import { fetchType5aData, priceDateNotice } from '@/lib/programs/type5a';
-import { fetchProgramComposition } from '@/lib/programs/composition';
-import ProgramSidebar from '@/components/program-page/ProgramSidebar';
-import CompositionSummaryText from '@/components/program-page/CompositionSummaryText';
+import { fetchClinicOffers, type ClinicOffer, type OfferBranch } from '@/lib/programs/clinic-offer';
+import { priceDateNotice } from '@/lib/programs/type5a';
 import StickyMobileCta from '@/components/program-page/StickyMobileCta';
 import AdditionalServices from '@/components/program-page/AdditionalServices';
-import InPageNav from '@/components/shared/InPageNav';
 import AccordionSection from '@/components/shared/AccordionSection';
 import CrossAgeNav from '@/components/shared/CrossAgeNav';
-import BookingFlow from '@/components/city/BookingFlow';
-import FaqBlock from '@/components/city/FaqBlock';
-import { Badge } from '@/components/ui';
+import InPageNav, { type InPageNavItem } from '@/components/shared/InPageNav';
+import BookingFlow, { BookCta } from '@/components/city/BookingFlow';
+import {
+  type AgeAddition,
+  additionsAskDoctor,
+  ANY_CLINIC_TEXT,
+  DOCTOR_DECIDES_TEXT,
+  EDITORIAL_TEXT_V2,
+  FIRST_VISIT_TEXT,
+  SECOND_VISIT_TEXT_V2,
+  additionsIntro,
+  additionsUnavailableTitle,
+  branchesCountText,
+  faqMissingInProgramV2,
+  faqOtherClinic,
+  geoText,
+  hoursDash,
+  missingTestsSentence,
+  preparationItems,
+  programAgeShort,
+  visitsText,
+} from '@/lib/programs/age-page-shared';
 
-// Тип 5a — жіночий чекап після 50 років, Харків.
-// Джерело контенту: 5a-female-vid-50-kharkiv.md (дата контенту 25.07.2026), дослівно.
-// Блокер даних, зазначений у MD (platform_program_offers zhinochyi-pislya-40 →
-// female-checkup-vid-50), закрито попередньою міграцією — підтверджено прямим SQL
-// власником і Cowork незалежно 29.08.2026 (task-cowork-01-migration.md, Частина 5).
-// ОНОВЛЕНО (завдання "Наповнення складу програми", 29.08.2026): Блок 7 «Як це
-// проходить» і лічильники сайдбара тепер рахуються з program_services через
-// lib/programs/composition.ts (Частина 3/4 завдання), не з застарілих
-// checkup_programs.consultations_count/analyses_count/diagnostics_count.
-// ОНОВЛЕНО (завдання "Оновлення контенту, female 40-50 і vid-50", 02.09.2026):
-// Блок 2 (вступ + абзац «Що означають позначки») і Блок 3 (перейменований з
-// «Чого зазвичай не потрібно» на «Що дає і чого не дає обстеження», зміст
-// повністю замінено) і перші два питання FAQ оновлені за новою версією MD.
-// FAQ п.5 («Чи потрібна колоноскопія кожній жінці після 50?») лишено без змін
-// за прямою вказівкою завдання — можливий змістовний дубль із новим FAQ 2,
-// позначений у MD як [УТОЧНИТИ: стратегія], рішення відкладено. Дата
-// оновлення в E-E-A-T навмисно НЕ змінена (за завданням).
+// Вікова сторінка міста – SPRINT-KHARKIV-v0, тип 5a.
+// Контент: content/kharkiv/female-vid-50-rokiv.md дослівно.
+// Задача Cowork «Нова структура і тексти сторінки після 50» (v2, 24.09.2026) і доповнення з відповідями
+// рецензента (цукор після 50 – Стандарт №1300 [7]; ВПЛ раз на 5–10 років і державний мінімум).
+// Нова структура вмикається лише тут: сторінки до 30, 30–40 і 40–50 лишаються в попередньому вигляді.
+// Програма, ціна, дата ціни, склад, філії – тільки з Supabase (fetchClinicOffers):
+// platform_program_offers → checkup_programs (program_type = 'clinic') → onclinic-kharkiv.
+// Тексти спільних блоків і правила виводу – lib/programs/age-page-shared.ts; опис складу – lib/programs/composition.ts.
 
 export const revalidate = 3600;
 
-const CHECKUP_PROGRAM_SLUG = 'zhinochyi-pislya-40';
-const SOURCE_CTA = 'age_page_female_vid50_kharkiv';
 const PAGE_PATH = '/ukr/female-checkup/vid-50-rokiv/kharkiv';
 const PAGE_URL = `https://check-up.in.ua${PAGE_PATH}`;
-const SUBDOMAIN_HREF = 'https://onclinic.check-up.in.ua/kharkiv/zhinochyi-pislya-40';
+const PLATFORM_PROGRAM = 'female-checkup-vid-50';
+const CLINIC_SLUG = 'onclinic-kharkiv';
+const SOURCE_CTA = 'age_page_female_vid_50_kharkiv';
+// SEO-STANDARD р.4, Тип 5a. X (мінімальна ціна програм клініки для сторінки) – з Supabase у generateMetadata.
+const TITLE = "Чекап для жінок після 50 років: які обстеження проходити, програми в Харкові | check-up.in.ua";
+const DESCRIPTION_BASE = "Які обстеження потрібні жінкам після 50 років. 7 цілей скринінгу.";
+const UPDATED_ISO = '2026-09-24';
+const UPDATED_LABEL = '24.09.2026';
+const REVIEWER = { name: 'Удовиченко Олена Олександрівна', jobTitle: 'лікар акушер-гінеколог', org: 'ОН Клінік Харків' };
+
+const TEXT = 'text-[#374151] leading-relaxed';
+const P = `${TEXT} mt-4`;
+const H3 = 'text-lg font-bold text-[#0b1a24] mt-8 scroll-mt-4 lg:scroll-mt-24';
+const LINK = 'text-[#005485] underline hover:no-underline';
+
+const getOffers = cache(() => fetchClinicOffers([PLATFORM_PROGRAM], CLINIC_SLUG));
+
+/** Мінімальна ціна (price_discount) програм клініки для сторінки; null – даних немає. */
+function minPrice(offers: ClinicOffer[]): number | null {
+  const prices = offers.map((o) => o.program.price_discount).filter((p) => typeof p === 'number' && p > 0);
+  return prices.length > 0 ? Math.min(...prices) : null;
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const { offers } = await getOffers();
+  const x = minPrice(offers);
+  const description = x ? `${DESCRIPTION_BASE} Програми в Харкові від ${fmt(x)} грн.` : DESCRIPTION_BASE;
+  return {
+    title: { absolute: TITLE },
+    description,
+    robots: { index: true, follow: true },
+    alternates: { canonical: PAGE_URL },
+    openGraph: { title: TITLE, description, url: PAGE_URL, type: 'website' },
+  };
+}
+
+/* Джерела: [n] у тексті → пункт n (нумерація задачі v2, розділ 15.2, і доповнення: [7] – Стандарт №1300). */
+const SOURCES: string[] = [
+  "МОЗ України. Наказ №1368 від 05.08.2024: порядки скринінгу і ранньої діагностики раку молочної залози, раку шийки матки і колоректального раку.",
+  "USPSTF. Osteoporosis to Prevent Fractures: Screening, 2025. Жінки 65 років і старше; жінки до 65 у постменопаузі з підвищеним ризиком перелому.",
+  "МОЗ України. Стандарт медичної допомоги «Скринінг раку шийки матки. Ведення пацієнток з аномальними результатами скринінгу та передраковими станами шийки матки», наказ №1057 від 18.06.2024.",
+  "Mayo Clinic Family Health Book, 5th Edition.",
+  "USPSTF. Prediabetes and Type 2 Diabetes: Screening, 2021. Дорослі 35–70 років з надлишковою вагою або ожирінням, кожні 3 роки.",
+  "МОЗ України. Стандарт медичної допомоги «Рак молочної залози», наказ №195 від 03.02.2025.",
+  "МОЗ України. Стандарт медичної допомоги «Цукровий діабет 2 типу у дорослих», наказ №1300 від 24.07.2024.",
+];
+
+const PAGE_MIN_AGE = 50;
+
+/* Якорі підрозділів блоку 2 (картка з відповіддю в Hero веде на них). */
+const ID = {
+  list: 'shcho-potribno',
+  breast: 'molochni-zalozy',
+  colon: 'kolorektalnyi-rak',
+  cervix: 'rak-shyiky-matky',
+  bones: 'shchilnist-kistok',
+  pressure: 'tysk',
+  cholesterol: 'kholesteryn',
+  diabetes: 'diabet',
+  history: 'istoriia',
+  programs: 'prohramy',
+  composition: 'sklad-prohramy',
+  additions: 'dodaty',
+  visits: 'yak-tse-prokhodyt',
+  contacts: 'kontakty',
+  faq: 'faq',
+} as const;
+
+/* Картка з відповіддю: шість обстежень для всіх після 50 (назви – ті самі, що в мості блоку 4). */
+const ANSWER_ITEMS: { label: string; id: string }[] = [
+  { label: 'мамографію', id: ID.breast },
+  { label: 'аналіз калу на приховану кров', id: ID.colon },
+  { label: 'ПАП-тест', id: ID.cervix },
+  { label: 'вимірювання тиску', id: ID.pressure },
+  { label: 'аналіз на холестерин', id: ID.cholesterol },
+  { label: 'аналіз на цукор у крові', id: ID.diabetes },
+];
+
+/* Доповнення: усі обстеження з переліку, яких немає в програмі (screening-evidence-matrix.md, розділ 3).
+ * forAll – рекомендоване після 50 усім; лише такі входять у {missingTests} (міст блоку 4, GEO).
+ * Денситометрія після 50 не для всіх (з 65 або за факторів ризику), холестерин – залежно від попереднього
+ * результату, тому forAll = false. */
+const ADDITIONS: AgeAddition[] = [
+  { id: "pap", name: "ПАП-тест", keywords: ["пап-тест", "цервікальн", "впл"], explanation: "Мазок на клітини шийки матки роблять раз на 3 роки. Його можна пройти окремо в гінеколога.", why: "Мазок на клітини шийки матки роблять раз на 3 роки. Його можна пройти окремо в гінеколога.", forAll: true, missingName: "ПАП-тест" },
+  { id: "lipid", name: "Холестерин (ліпідограма)", keywords: ["ліпідограм"], explanation: "Якщо ви не перевіряли холестерин після 20 років або з останнього аналізу минуло понад 4–6 років, його можна здати окремо.", why: "Якщо ви не перевіряли холестерин після 20 років або з останнього аналізу минуло понад 4–6 років, його можна здати окремо.", forAll: false },
+  { id: "mammo", name: "Мамографія", keywords: ["мамограф"], explanation: "У 50–69 років кожні 2 роки для всіх жінок.", why: <>У 50–69 років її роблять кожні 2 роки всім жінкам. УЗД молочних залоз не замінює мамографію: для скринінгу раку молочної залози після 50 років використовують саме мамографію<S n={[1]} />. Лікар може призначити УЗД додатково, якщо тканина молочних залоз щільна або потрібно уточнити зміни, знайдені на мамограмі: наприклад, відрізнити кісту від пухлини<S n={[6]} />.</>, forAll: true, missingName: "мамографія", missingNameAcc: "мамографію" },
+  { id: "dxa", name: "Денситометрія (DXA)", keywords: ["денситометр", "dxa", "абсорбціометр"], explanation: "Її роблять з 65 років, а до 65, якщо менопауза вже настала і є фактори ризику перелому.", why: "Її роблять з 65 років, а до 65, якщо менопауза вже настала і є фактори ризику перелому.", forAll: false },
+  { id: "fit", name: "Аналіз калу на приховану кров", keywords: ["прихован", "імунохімічн"], explanation: "З 50 до 75 років раз на 2 роки, за факторів ризику щороку.", why: "З 50 до 75 років раз на 2 роки, за факторів ризику щороку.", forAll: true, missingName: "аналіз калу на приховану кров" },
+];
+
+/** FAQ: видимий текст і FAQPage Schema будуються з одного масиву. */
+function buildFaq(programName: string | null): { q: string; a: string }[] {
+  return [
+    { q: "Менопауза вже настала. Що змінюється в переліку?", a: "У переліку за віком менопауза впливає лише на денситометрію. Якщо менопауза вже настала і є фактори ризику перелому, її рекомендують і до 65 років. Фактори ризику перелічені в розділі «Що залежить від вашої історії»." },
+    { q: "Чи потрібна колоноскопія, якщо нічого не турбує?", a: "Для планової перевірки ні: після 50 спочатку раз на 2 роки роблять аналіз калу на приховану кров. Колоноскопію призначають, якщо в аналізі знайшли кров, і роблять її протягом 1–2 місяців." },
+    { q: "Чи потрібен ПАП-тест після 65?", a: "Ні, якщо попередні результати були нормальними: два негативні тести на ВПЛ або три нормальні мазки за останні 10 років. Якщо результатів ви не знаєте, скринінг продовжують." },
+    faqOtherClinic(),
+    faqMissingInProgramV2(programName),
+  ];
+}
+
+const SCHEDULE_LABELS: [string, string][] = [
+  ['mon_fri', 'пн–пт'],
+  ['sat', 'сб'],
+  ['sun', 'нд'],
+];
 
 function fmt(n: number) {
   return n.toLocaleString('uk-UA');
 }
 
-export async function generateMetadata(): Promise<Metadata> {
-  const { program } = await fetchType5aData(CHECKUP_PROGRAM_SLUG);
-  const price = program?.price_discount ?? null;
-  const title = 'Чекап для жінок після 50: які обстеження проходити, програми в Харкові | check-up.in.ua';
-  const description = price
-    ? `Які обстеження потрібні жінці після 50 років: тиск, холестерин, глюкоза, мамографія, колоректальний скринінг, щільність кісток. Програми в Харкові від ${fmt(price)} грн.`
-    : 'Які обстеження потрібні жінці після 50 років: тиск, холестерин, глюкоза, мамографія, колоректальний скринінг, щільність кісток.';
-  return {
-    title: { absolute: title },
-    description,
-    robots: { index: true, follow: true },
-    alternates: { canonical: PAGE_URL },
-    openGraph: { title, description, url: PAGE_URL, type: 'website' },
-  };
+function fmtDate(iso: string) {
+  const [y, m, d] = iso.slice(0, 10).split('-');
+  return `${d}.${m}.${y}`;
 }
 
-const FAQ = [
-  {
-    q: 'Менопауза почалася. Що тепер перевіряти?',
-    a: 'Три речі, які до менопаузи були менш важливими. Перше – серцево-судинний ризик: тиск, холестерин, глюкоза. Зі зниженням естрогену він зрівнюється з чоловічим, і саме зараз ці показники починають визначати наступні десять років. Друге – мамографія раз на два роки. Третє – стан кишківника: скринінг колоректального раку починається з 50. Оцінку щільності кісток додають від 65 років або раніше, якщо є фактори ризику.',
-  },
-  {
-    q: 'Чи потрібна колоноскопія, якщо нічого не турбує?',
-    a: 'Не обов\'язково саме колоноскопія. Скринінг колоректального раку з 50 років можна починати з аналізу калу на приховану кров: він простий, не потребує підготовки і повторюється раз на два роки. Колоноскопію призначають, якщо результат позитивний. Але вона є і самостійним варіантом: виявляє поліпи і видаляє їх за одну процедуру, тому повторюється значно рідше, зазвичай раз на десять років. Обидва шляхи прийнятні, вибір залежить від того, що вам зручніше.',
-  },
-  {
-    q: 'Скільки часу займає чекап?',
-    a: 'Два візити. Перший для жінки 50+ зазвичай триває дві-три години: здача аналізів і інструментальні обстеження. Другий – близько години, якщо за результатами не призначено додаткових досліджень чи консультацій. Між візитами кілька днів.',
-  },
-  {
-    q: 'Чим програма для 50+ відрізняється від програми для 40-50?',
-    a: 'Основа однакова: обстеження серцево-судинної системи, обміну речовин і базові показники крові. Різниця в доповненнях – мамографія, скринінг колоректального раку і, від 65 років, оцінка щільності кісток.',
-  },
-  {
-    q: 'Чи потрібна колоноскопія кожній жінці після 50?',
-    a: 'Ні. Скринінг починають з аналізу калу на приховану кров. Колоноскопію призначають, якщо результат позитивний – її роблять протягом одного-двох місяців після тесту.',
-  },
-  {
-    q: 'Як часто повторювати чекап?',
-    a: 'Базові показники – тиск, ліпідограма, глюкоза – перевіряють щороку або раз на кілька років залежно від результатів попереднього разу. Мамографію і скринінг колоректального раку – раз на два роки. Періодичність для вас визначає лікар за результатами першого чекапу.',
-  },
-];
+function scheduleText(b: OfferBranch): string | null {
+  if (!b.schedule) return null;
+  const parts = SCHEDULE_LABELS.filter(([k]) => b.schedule?.[k]).map(([k, label]) => `${label} ${hoursDash(String(b.schedule?.[k]))}`);
+  return parts.length ? parts.join(', ') : null;
+}
 
-const SCREENING_ITEMS = [
-  'Артеріальний тиск',
-  'Холестерин і ліпідний профіль',
-  'Глюкоза і ризик цукрового діабету 2 типу',
-  'Рак молочної залози',
-  'Рак шийки матки',
-  'Колоректальний рак',
-  'Щільність кісток',
-];
+const has = (name: string, keywords: string[]) => keywords.some((k) => name.toLowerCase().includes(k));
 
-const SOURCES = [
-  'Порядок скринінгу і ранньої діагностики раку молочної залози, раку шийки матки та колоректального раку, наказ МОЗ України №1368 від 05.08.2024.',
-  'Стандарт медичної допомоги «Скринінг раку шийки матки», наказ МОЗ України №1057 від 18.06.2024.',
-  'Стандарт медичної допомоги «Рак молочної залози», наказ МОЗ України №195 від 03.02.2025.',
-  'УКПМД «Гіпертонічна хвороба (артеріальна гіпертензія)», наказ МОЗ України №1581 від 12.09.2024.',
-  'УКПМД «Цукровий діабет 2 типу у дорослих», наказ МОЗ України №1300 від 24.07.2024.',
-  'Клінічна настанова «Профілактика серцево-судинних захворювань», наказ МОЗ України №564 від 13.06.2016.',
-  'Настанови «Скринінг та профілактика колоректального раку» і «Остеопороз», Реєстр медико-технологічних документів ДЕЦ МОЗ (dec.gov.ua).',
-  'U.S. Preventive Services Task Force: скринінг остеопорозу (2025), скринінг переддіабету і цукрового діабету 2 типу (2021).',
-  'Mayo Clinic Family Health Book, п’яте видання, розділ «Breast Health».',
-  'Національний канцер-реєстр України, бюлетень за 2024 рік.',
-];
+/** Міст блоку 4: що з переліку є в програмі. Назви – як у картці з відповіддю; тиск – якщо в складі є прийом терапевта. */
+function inProgramList(items: { name: string; serviceType: string }[]): string[] {
+  const tests = items.filter((i) => i.serviceType !== 'consultation');
+  const found = (keywords: string[]) => tests.some((i) => has(i.name, keywords));
+  const out: string[] = [];
+  if (found(['пап-тест', 'цервікальн', 'впл'])) out.push('ПАП-тест');
+  if (items.some((i) => i.serviceType === 'consultation' && has(i.name, ['терапевт']))) out.push('вимірювання тиску на консультації терапевта');
+  const chol = found(['ліпідограм']);
+  const gluc = found(['глюкоз']);
+  if (chol && gluc) out.push('аналізи на холестерин і цукор у крові');
+  else if (chol) out.push('аналіз на холестерин');
+  else if (gluc) out.push('аналіз на цукор у крові');
+  return out;
+}
 
-export default async function Page() {
-  const { program, branches } = await fetchType5aData(CHECKUP_PROGRAM_SLUG);
+function S({ n }: { n: number[] }) {
+  return (
+    <sup className="text-[#005485] whitespace-nowrap">
+      {' '}
+      [
+      {n.map((i, idx) => (
+        <span key={i}>
+          {idx > 0 && ', '}
+          <a href={`#source-${i}`} className="hover:underline">
+            {i}
+          </a>
+        </span>
+      ))}
+      ]
+    </sup>
+  );
+}
 
-  if (!program || !program.price_date) {
-    notFound();
+function Eyebrow({ children }: { children: string }) {
+  return <p className="text-xs font-bold uppercase tracking-[0.08em] text-[#005485] mb-2">{children}</p>;
+}
+
+function H2({ children, id, className = '' }: { children: React.ReactNode; id?: string; className?: string }) {
+  return (
+    <h2 id={id} className={`font-bold text-[#0b1a24] scroll-mt-4 lg:scroll-mt-24 ${className}`} style={{ fontSize: 'clamp(24px, 3vw, 30px)', lineHeight: 1.25 }}>
+      {children}
+    </h2>
+  );
+}
+
+/** Блок основної колонки: білий фон, розділювач зверху (макет v2). */
+// Відступ для переходу за якорем (scroll-mt): з 1024 px – під закріплене меню 1a; на mobile меню не закріплене,
+// тому заголовок розділу стає біля верху екрана (25.09.2026).
+function Block({ eyebrow, children, id }: { eyebrow?: string; children: React.ReactNode; id?: string }) {
+  return (
+    <section id={id} className="px-5 sm:px-6 lg:px-0 py-10 lg:py-14 border-t border-[#eef0f2] -scroll-mt-6 lg:scroll-mt-16">
+      <div className="max-w-3xl">
+        {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
+        {children}
+      </div>
+    </section>
+  );
+}
+
+function GroupLabel({ children, className = '' }: { children: string; className?: string }) {
+  return <p className={`text-[13px] font-bold uppercase tracking-[0.08em] text-gray-500 ${className}`}>{children}</p>;
+}
+
+export default async function FemaleAgeVid50KharkivPage() {
+  const { clinic, branches, clinicServiceNames, offers } = await getOffers();
+  const offer = offers[0] ?? null;
+  const program = offer?.program ?? null;
+  const composition = offer?.composition ?? null;
+  const items = composition?.items ?? [];
+
+  const tests = items.filter((i) => i.serviceType !== 'consultation');
+  const inProgram = inProgramList(items);
+  const instrumentalAll = tests.filter((i) => i.serviceType === 'instrumental').map((i) => i.name);
+  const labAll = tests.filter((i) => i.serviceType === 'lab').map((i) => i.name);
+
+  // Блок 5: доповнення, яких немає в складі; доступність – за clinic_services.
+  const additions = ADDITIONS.filter((a) => !tests.some((i) => has(i.name, a.keywords)));
+  const additionsAvailable = additions.filter((a) => clinicServiceNames.some((n) => has(n, a.keywords)));
+  const additionsUnavailable = additions.filter((a) => !additionsAvailable.includes(a));
+  const showAdditions = Boolean(program) && additions.length > 0;
+
+  // {missingTests}: з того самого зіставлення, що й блок «Що варто додати»; лише forAll (спільний модуль).
+  const missingText = program ? missingTestsSentence(additions, (a) => additionsAvailable.includes(a)) : null;
+  const ageShort = programAgeShort(program?.name_ua, PAGE_MIN_AGE);
+  const FAQ = buildFaq(program?.name_ua ?? null);
+  const preparation = preparationItems(items);
+  const visitCount = composition?.visitCount ?? 0;
+  const showVisits = Boolean(program && composition && visitCount > 0);
+
+  const notice = program?.price_date ? priceDateNotice(program.price_date) : undefined;
+
+  const navItems: InPageNavItem[] = [
+    { id: ID.list, label: 'Що перевірити' },
+    { id: ID.programs, label: 'Програми' },
+    ...(showVisits ? [{ id: ID.visits, label: 'Як це проходить' }] : []),
+    { id: ID.faq, label: 'Питання' },
+  ];
+
+  const jsonLd: object[] = [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'MedicalWebPage',
+      name: "Чекап для жінок після 50 років – що перевіряти і де пройти в Харкові",
+      url: PAGE_URL,
+      dateModified: UPDATED_ISO,
+      reviewedBy: {
+        '@type': 'Person',
+        name: REVIEWER.name,
+        jobTitle: REVIEWER.jobTitle,
+        worksFor: { '@type': 'MedicalClinic', name: REVIEWER.org },
+      },
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'check-up.in.ua', item: 'https://check-up.in.ua' },
+        { '@type': 'ListItem', position: 2, name: 'Харків', item: 'https://check-up.in.ua/ukr/kharkiv' },
+        { '@type': 'ListItem', position: 3, name: 'Жінкам', item: 'https://check-up.in.ua/ukr/female-checkup/kharkiv' },
+        { '@type': 'ListItem', position: 4, name: "Після 50 років", item: PAGE_URL },
+      ],
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: FAQ.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })),
+    },
+  ];
+  if (program && clinic) {
+    jsonLd.push({
+      '@context': 'https://schema.org',
+      '@type': 'Offer',
+      name: program.name_ua,
+      price: program.price_discount,
+      priceCurrency: 'UAH',
+      ...(program.price_date ? { validFrom: program.price_date } : {}),
+      url: PAGE_URL,
+      seller: { '@type': 'MedicalClinic', name: clinic.name },
+    });
   }
-
-  const notice = priceDateNotice(program.price_date);
-  const composition = await fetchProgramComposition(program.id);
-  // Лічильники — з реального складу (program_services), не з застарілих полів
-  // checkup_programs (Частина 3 завдання "Наповнення складу програми"). Консультації
-  // рахують лише візит 1 — повторний прийом терапевта на другому візиті не є новим
-  // спеціалістом і в лічильник не входить (показується в блоці 7).
-  const counts = [
-    composition.counts.consultations ? { label: 'консультацій', count: composition.counts.consultations } : null,
-    composition.counts.analyses ? { label: 'аналізів', count: composition.counts.analyses } : null,
-    composition.counts.diagnostics ? { label: 'обстежень', count: composition.counts.diagnostics } : null,
-  ].filter((c): c is { label: string; count: number } => c !== null);
-
-  const sidebarBranches = branches.map((b) => ({ name: b.name_ua, address: b.address_ua }));
-  const compositionText = {
-    consultationsSummary: composition.consultationsSummary,
-    instrumentalSummary: composition.instrumentalSummary,
-    labSummary: composition.labSummary,
-  };
-
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@graph': [
-      {
-        '@type': 'MedicalWebPage',
-        name: 'Обстеження для жінок після 50: що перевіряти і де пройти в Харкові',
-        url: PAGE_URL,
-        lastReviewed: '2026-08-29',
-        reviewedBy: { '@type': 'Person', name: 'Удовиченко Олена Олександрівна', jobTitle: 'Лікар акушер-гінеколог' },
-        author: { '@type': 'Organization', name: 'check-up.in.ua' },
-      },
-      {
-        '@type': 'ItemList',
-        name: 'Обстеження для жінок після 50 років',
-        itemListElement: SCREENING_ITEMS.map((name, i) => ({ '@type': 'ListItem', position: i + 1, name })),
-      },
-      {
-        '@type': 'BreadcrumbList',
-        itemListElement: [
-          { '@type': 'ListItem', position: 1, name: 'Чекапи в Харкові', item: 'https://check-up.in.ua/ukr/kharkiv' },
-          { '@type': 'ListItem', position: 2, name: 'Жіночий чекап', item: 'https://check-up.in.ua/ukr/female-checkup/kharkiv' },
-          { '@type': 'ListItem', position: 3, name: 'Після 50 років', item: PAGE_URL },
-        ],
-      },
-      {
-        '@type': 'FAQPage',
-        mainEntity: FAQ.map((f) => ({
-          '@type': 'Question',
-          name: f.q,
-          acceptedAnswer: { '@type': 'Answer', text: f.a },
-        })),
-      },
-    ],
-  };
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <main className="text-[#0b1a24] pb-24 md:pb-0">
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
-      <div className="bg-warm-bg">
-        <div className="max-w-6xl mx-auto px-4 pt-8 pb-6">
-          <nav className="text-sm text-gray-500 mb-4" aria-label="Хлібні крихти">
-            <Link href="/ukr/kharkiv" className="hover:underline">Чекапи в Харкові</Link>
-            {' → '}
-            <Link href="/ukr/female-checkup/kharkiv" className="hover:underline">Жіночий чекап</Link>
-            {' → '}
-            <span className="text-gray-700">Після 50 років</span>
-          </nav>
-
-          <div className="max-w-[680px]">
-            <h1 id="hero" className="text-[28px] sm:text-3xl font-bold text-text-primary leading-tight mb-4 scroll-mt-24">
-              Обстеження для жінок після 50: що перевіряти і де пройти в Харкові
-            </h1>
-            <p className="text-[15px] text-text-secondary leading-relaxed">
-              Після 50 років у перелік обстежень додаються ті, що шукають захворювання, ймовірність яких у цьому віці
-              зростає. Перевірити варто артеріальний тиск, холестерин, глюкозу, стан молочних залоз і кишківника, а від
-              65 років – щільність кісток. Обсяг залежить від спадкової історії, ваги і того, що ви проходили раніше.
-            </p>
+        {/* 1. Hero – без ціни */}
+        <section id="hero" style={{ backgroundColor: '#f4f6f8' }}>
+          <div className="max-w-[1200px] mx-auto px-5 sm:px-6 lg:px-14 pt-4 pb-6 lg:py-14">
+            <div className="max-w-3xl">
+              <nav aria-label="Breadcrumb" className="text-[13px] text-gray-500 mb-3.5">
+                <Link href="/" className="hover:underline">check-up.in.ua</Link>
+                <span className="mx-1.5">/</span>
+                <Link href="/ukr/kharkiv" className="hover:underline">Харків</Link>
+                <span className="mx-1.5">/</span>
+                <Link href="/ukr/female-checkup/kharkiv" className="hover:underline">Жінкам</Link>
+                <span className="mx-1.5">/</span>
+                <span className="text-gray-700">Після 50 років</span>
+              </nav>
+              <p className="text-xs font-bold uppercase tracking-[0.08em] text-[#005485] mb-2.5">Жіночий чекап · Харків</p>
+              <h1
+                className="font-bold mb-3.5"
+                style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: 'clamp(28px, 5vw, 52px)', lineHeight: 1.15 }}
+              >
+                Чекап для жінок після 50 років – що перевіряти і де пройти в Харкові
+              </h1>
+              <p className="text-[#4a5a6b] leading-relaxed mb-4">
+                Якщо вам після 50 і нічого не турбує, клінічні настанови радять пройти кілька обстежень. Для ширшого
+                обстеження зверніться до свого лікаря або оберіть комплексну програму в Харкові.
+              </p>
+              <div className="bg-white border-[1.5px] border-[#e5e7eb] rounded-[12px] px-4 pt-4 pb-3 mb-4">
+                <p className="font-semibold text-[#0b1a24] mb-2">Після 50 жінкам без скарг рекомендують шість обстежень:</p>
+                <ul className="list-disc pl-5 space-y-1 text-[#374151] leading-snug">
+                  {ANSWER_ITEMS.map((a, i) => (
+                    <li key={a.id}>
+                      <a href={`#${a.id}`} className={LINK}>
+                        {a.label}
+                      </a>
+                      {i < ANSWER_ITEMS.length - 1 ? ';' : '.'}
+                    </li>
+                  ))}
+                </ul>
+                <p className="text-[15px] text-[#374151] mt-2">
+                  З 65 років до них додається{' '}
+                  <a href={`#${ID.bones}`} className={LINK}>
+                    перевірка щільності кісток
+                  </a>
+                  .
+                </p>
+              </div>
+              <a
+                href={`#${ID.programs}`}
+                className="flex sm:inline-flex items-center justify-center gap-2 min-h-[52px] px-7 rounded-full bg-[#005485] text-white text-[15px] font-semibold hover:bg-[#003a5e] transition-colors"
+              >
+                Доступні програми в Харкові
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M12 5v14M6 13l6 6 6-6" />
+                </svg>
+              </a>
+              <p className="flex items-center gap-2 mt-3 text-[13px] text-[#4a5a6b]">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#04b5ba" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="shrink-0">
+                  <path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z" />
+                  <path d="M9 12l2 2 4-4" />
+                </svg>
+                <span>Інформаційний матеріал: не замінює консультацію лікаря.</span>
+              </p>
+            </div>
           </div>
-        </div>
-      </div>
+        </section>
 
-      <main className="max-w-6xl mx-auto px-4 py-8">
-        <InPageNav
-          items={[
-            { id: 'shcho-pereviryaty', label: 'Що перевіряти' },
-            { id: 'chogo-ne-potribno', label: 'Що дає обстеження' },
-            { id: 'programa', label: 'Програма' },
-            { id: 'yak-tse-prohodyt', label: 'Як це проходить' },
-            { id: 'faq', label: 'Питання і відповіді' },
-          ]}
-        />
+        {/* 1a. Внутрішнє меню */}
+        <InPageNav items={navItems} />
 
-        <div className="flex flex-col lg:flex-row gap-8 lg:items-start mt-2">
-          <aside className="lg:order-2 lg:w-[320px] shrink-0 lg:sticky lg:top-6">
-            <ProgramSidebar
-              mode="program"
-              price={program.price_discount}
-              priceDate={program.price_date}
-              priceDateNotice={notice}
-              official_name={program.name_ua}
-              branches={sidebarBranches}
-              counts={counts}
-              compositionText={compositionText}
-              subdomainHref={SUBDOMAIN_HREF}
-              additionalServices={[]}
-              programSlug={CHECKUP_PROGRAM_SLUG}
-              sourceCta={SOURCE_CTA}
-            />
+        <div className="max-w-[1200px] mx-auto lg:px-14 lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-x-12">
+          {/* 1b. Доступні програми в Харкові: mobile – одразу після меню, desktop – права колонка, sticky */}
+          <aside id={ID.programs} className="lg:col-start-2 lg:row-start-1 -scroll-mt-3 lg:scroll-mt-16" aria-labelledby="prohramy-h2">
+            <div className="px-5 sm:px-6 lg:px-0 pt-7 pb-10 lg:pt-14 lg:sticky lg:top-16">
+              <H2 id="prohramy-h2" className="mb-4 lg:!text-[22px]">Доступні програми в Харкові</H2>
+              {program && clinic ? (
+                <>
+                  <div className="border-[1.5px] border-[#e5e7eb] rounded-[12px] px-4 pt-[18px] pb-4 bg-white">
+                    <p className="text-[13px] text-gray-500 mb-1">{clinic.name}</p>
+                    <p className="text-xl font-bold text-[#0b1a24] leading-snug mb-1.5">{program.name_ua}</p>
+                    <p className="text-sm text-[#4a5a6b] mb-3.5">
+                      {[ageShort, visitCount > 0 ? visitsText(visitCount) : null].filter(Boolean).map((t) => (
+                        <span key={t as string}>{t} · </span>
+                      ))}
+                      <a href={`#${ID.composition}`} className="underline hover:no-underline text-[#005485]">
+                        склад програми
+                      </a>
+                    </p>
+                    <p className="text-[28px] font-bold text-[#005485] leading-tight" style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}>
+                      {fmt(program.price_discount)} грн
+                    </p>
+                    {program.price_date && (
+                      <p className="text-[13px] text-gray-500 mt-0.5">Ціна клініки станом на {fmtDate(program.price_date)}</p>
+                    )}
+                    {notice && <p className="text-[13px] text-gray-500 mt-1">{notice}</p>}
+                    <div className="mt-4 flex flex-col gap-2.5">
+                      <BookCta
+                        programSlug={program.slug}
+                        sourceCta={`${SOURCE_CTA}_card`}
+                        label="Записатися"
+                        className="!rounded-full min-h-[52px] uppercase tracking-[0.1em] font-bold text-[13px]"
+                      />
+                      {clinic.website && (
+                        <a
+                          href={clinic.website}
+                          className="inline-flex items-center justify-center min-h-12 rounded-full border-[1.5px] border-[#005485]/30 text-[#005485] font-bold text-[13px] uppercase tracking-[0.1em] hover:bg-[#f0f7fb]"
+                        >
+                          Детальніше
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                  {clinic.website && (
+                    <a href={clinic.website} className="block mt-4 text-[15px] font-semibold text-[#005485] hover:underline">
+                      Усі програми {clinic.name} →
+                    </a>
+                  )}
+                </>
+              ) : (
+                <p className={TEXT}>Дані про програму клініки зараз недоступні. Перелік обстежень із цієї сторінки можна пройти в будь-якій клініці.</p>
+              )}
+            </div>
           </aside>
 
-          <div className="flex-1 lg:order-1 min-w-0">
-            <section id="shcho-pereviryaty" className="scroll-mt-24 mb-10">
-              <h2 className="text-xl font-bold text-[#0b1a24] mb-3">Що перевіряти після 50</h2>
-              <p className="text-[15px] text-gray-600 leading-relaxed mb-3">
-                Після п&apos;ятдесяти привід прийти на обстеження зазвичай уже сформульований: менопауза настала або
-                завершується, і разом з нею змінилося самопочуття. Приливи, сон, вага, суглоби, сухість – кожна з
-                цих скарг знайома, але незрозуміло, що з цього просто вік, а що варто перевірити.
-              </p>
-              <p className="text-[15px] text-gray-600 leading-relaxed mb-3">
-                Відповідь у тому, що змінюється всередині. Зі зниженням естрогену зростає серцево-судинний ризик: до
-                менопаузи він у жінок нижчий, ніж у чоловіків того самого віку, після – зрівнюється. Кістка починає
-                втрачати щільність, причому найшвидше саме в перші роки після менопаузи. Змінюється розподіл
-                жирової тканини. Тканина молочної залози стає менш щільною, а ризик раку молочної залози при цьому
-                зростає.
-              </p>
-              <p className="text-[15px] text-gray-600 leading-relaxed mb-3">
-                Саме ці зміни, а не вік як число, визначають набір обстежень після п&apos;ятдесяти. Частина з них
-                шукає те, що вже почалося і поки не дає відчуттів.
-              </p>
-              <p className="text-[15px] text-gray-600 leading-relaxed mb-3">
-                Нижче – кожне з них: навіщо роблять, яким методом і як часто повторюють.
-              </p>
-              <p className="text-[15px] text-gray-600 leading-relaxed mb-3">
-                <strong>Що означають позначки.</strong> USPSTF – незалежна робоча група з профілактичної медицини,
-                чиї оцінки використовують як міжнародний орієнтир. Ступінь A означає, що користь обстеження доведена
-                переконливо, ступінь B – що доказів достатньо, але вони слабші.
-              </p>
-              <p className="text-[15px] text-gray-600 leading-relaxed mb-6">
-                Ці оцінки стосуються груп людей, а не окремої людини. Вони показують, наскільки сильні докази, і не
-                замінюють рішення, яке ви приймаєте з лікарем з огляду на свою історію.
-              </p>
+          <div className="lg:col-start-1 lg:row-start-1 min-w-0">
+            {/* 2. Які обстеження потрібні жінці після 50 – не залежить від партнера */}
+            <Block eyebrow="За клінічними настановами" id={ID.list}>
+              <H2>Які обстеження потрібні жінці після 50</H2>
+              <h3 id={ID.breast} className={H3}>Молочні залози</h3>
+              <p className={P}>У 50–69 років мамографію роблять кожні 2 роки всім жінкам, навіть якщо факторів ризику немає<S n={[1]} />. Що робити після 69, описано на сторінці «<Link href="/ukr/screening/mamografiia" className={LINK}>Мамографія: що показує і коли потрібна</Link>».</p>
+              <p className={P}>Якщо з&apos;явилося ущільнення в грудях чи під пахвою, зміни шкіри, втягнення соска або виділення із соска, до лікаря звертаються одразу, не чекаючи планової мамографії<S n={[1]} />.</p>
+              <h3 id={ID.colon} className={H3}>Колоректальний рак</h3>
+              <p className={P}>З 50 до 75 років раз на 2 роки роблять аналіз калу на приховану кров або фекальний імунохімічний тест (ФІТ)<S n={[1]} />. Якщо цикл ще є, тест не здають під час менструації: краще зачекати кілька днів після її завершення, інакше аналіз може показати кров, якої в кишці немає.</p>
+              <p className={P}>Якщо кров знайшли, протягом 1–2 місяців потрібні колоноскопія (огляд кишки зсередини тонкою гнучкою трубкою з камерою) і консультація проктолога або онколога<S n={[1]} />. Кров у калі не обов&apos;язково означає рак: частіше її причиною бувають поліпи, геморой або тріщина заднього проходу. Колоноскопія показує точну причину.</p>
+              <p className={P}>Після 75 років планову перевірку припиняють. Чи потрібне обстеження далі, ви вирішуєте разом із лікарем, з огляду на стан здоров&apos;я і фактори ризику<S n={[1]} />.</p>
+              <h3 id={ID.cervix} className={H3}>Рак шийки матки</h3>
+              <p className={P}>До 65 років роблять мазок на клітини шийки матки (ПАП-тест) раз на 3 роки або тест на вірус папіломи людини (ВПЛ) раз на 5–10 років: інтервал ви обираєте разом із гінекологом<S n={[3]} />. Після 65 скринінг припиняють, якщо попередні результати були нормальними<S n={[3]} />. Державний порядок скринінгу передбачає мінімум: тест раз на 10 років до 55 років<S n={[1]} />. Детальніше на сторінці «<Link href="/ukr/screening/pap-test" className={LINK}>ПАП-тест: що показує і коли потрібен</Link>».</p>
+              <h3 id={ID.bones} className={H3}>Щільність кісток</h3>
+              <p className={P}>З 65 років рекомендують денситометрію: вимірювання щільності кісток на рентгенівському апараті з низькою дозою опромінення (метод DXA)<S n={[2]} />. Остеопороз, тобто підвищену крихкість кісток, має приблизно кожна четверта жінка 65 років і старше<S n={[2]} />. До 65 її роблять, якщо менопауза вже настала і є фактори ризику перелому: вони перелічені в розділі «<a href={`#${ID.history}`} className={LINK}>Що залежить від вашої історії</a>».</p>
+              <h3 id={ID.pressure} className={H3}>Артеріальний тиск</h3>
+              <p className={P}>Після 50 тиск вимірюють щороку<S n={[4]} />. Для цього достатньо вимірювання на прийомі, окремий аналіз не потрібен.</p>
+              <h3 id={ID.cholesterol} className={H3}>Холестерин</h3>
+              <p className={P}>Ліпідограма, тобто аналіз крові на холестерин і його фракції, показує, чи не підвищений ризик для серця і судин. Якщо ви її ще не здавали, аналіз варто зробити зараз. Якщо попередній результат був у нормі, його повторюють раз на 4–6 років<S n={[4]} />. Якщо результат відхиляється від норми, разом із лікарем ви визначаєте, коли повторити аналіз і що робити далі, з огляду на ваш загальний ризик.</p>
+              <h3 id={ID.diabetes} className={H3}>Цукровий діабет 2 типу</h3>
+              <p className={P}>Після 50 рівень цукру в крові рекомендують перевіряти всім, навіть за нормальної ваги: якщо результат у нормі, аналіз повторюють щонайменше раз на 3 роки<S n={[7]} />. Перевіряють аналізом крові на глюкозу натще або на глікований гемоглобін (HbA1c, середній рівень цукру за останні 2–3 місяці)<S n={[5]} />. Аналіз показує діабет 2 типу і переддіабет: стан, коли рівень цукру вже вищий за норму, але ще не досягає рівня діабету.</p>
+              <p className={P}>Особливо важливо не пропускати аналіз, якщо є надлишкова вага (індекс маси тіла 25 і більше), діабет 2 типу був у батьків, братів чи сестер, під час вагітності був гестаційний діабет або є синдром полікістозних яєчників<S n={[5]} />.</p>
+            </Block>
 
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-base font-bold text-[#0b1a24] mb-1.5 flex items-center gap-2">
-                    Артеріальний тиск <Badge variant="uspstf" size="sm">USPSTF A</Badge>
-                  </h3>
-                  <p className="text-[14px] text-gray-600 leading-relaxed mb-2">Після 50 років тиск вимірюють щороку.</p>
-                  <p className="text-[14px] text-gray-600 leading-relaxed mb-2">
-                    Підвищений тиск роками не дає жодних відчуттів, поки не з&apos;являються наслідки з боку серця,
-                    судин і нирок. Виміряне значення – єдиний спосіб дізнатися про нього завчасно. Разом із рівнем
-                    холестерину і глюкози воно формує оцінку серцево-судинного ризику на найближчі десять років.
-                  </p>
-                  <p className="text-[12px] text-gray-500">
-                    Джерело: УКПМД «Гіпертонічна хвороба (артеріальна гіпертензія)», наказ МОЗ України №1581 від
-                    12.09.2024.
-                  </p>
-                </div>
+            {/* 2b. Що залежить від вашої історії */}
+            <Block eyebrow="Ваша історія" id={ID.history}>
+              <H2>Що залежить від вашої історії</H2>
+              <p className={P}>Перелік вище розрахований на жінку без скарг і без особливої історії. Він змінюється, якщо:</p>
+              <h3 className={H3}>Підтверджена мутація BRCA1 або BRCA2</h3>
+              <p className={P}>Якщо у вас підтверджено мутацію в генах BRCA1 або BRCA2 (спадкова зміна, що підвищує ризик раку молочної залози), основним стандартом обстеження в Україні є щорічна МРТ молочних залоз із контрастною речовиною разом із мамографією<S n={[6]} />. Індивідуальну програму спостереження і профілактики ви узгоджуєте з онкологом-мамологом і лікарем-генетиком.</p>
+              <h3 className={H3}>Фактори ризику колоректального раку</h3>
+              <p className={P}>Якщо є фактори ризику колоректального раку, аналіз калу на приховану кров або ФІТ роблять щороку<S n={[1]} />. До факторів ризику належать<S n={[1]} />:</p>
+              <ul className={`mt-3 list-disc pl-5 space-y-1 ${TEXT}`}>
+                <li>колоректальний рак або поліпи кишечника в близьких родичів;</li>
+                <li>поліпи кишечника, знайдені у вас раніше;</li>
+                <li>запальні захворювання кишечника: хвороба Крона або виразковий коліт;</li>
+                <li>спадкові синдроми, зокрема сімейний аденоматозний поліпоз.</li>
+              </ul>
+              <p className={P}>Чи є у вас інші фактори ризику, ви оцінюєте разом із лікарем.</p>
+              <h3 className={H3}>Невідомі результати попередніх ПАП-тестів</h3>
+              <p className={P}>Якщо вам більше 65 і ви не знаєте результатів попередніх мазків, скринінг продовжують, доки не буде двох негативних тестів на ВПЛ або трьох нормальних мазків за останні 10 років<S n={[3]} />.</p>
+              <h3 className={H3}>ВІЛ або інший стан, що пригнічує імунітет</h3>
+              <p className={P}>Графік скринінгу інший: ПАП-тест або тест на ВПЛ роблять кожні 5 років<S n={[1]} />, і з віком скринінг не припиняють<S n={[3]} />.</p>
+              <h3 className={H3}>Менопауза і фактори ризику перелому</h3>
+              <p className={P}>Якщо менопауза вже настала, денситометрію рекомендують і до 65 років за таких факторів ризику перелому<S n={[2]} />:</p>
+              <ul className={`mt-3 list-disc pl-5 space-y-1 ${TEXT}`}>
+                <li>низька маса тіла;</li>
+                <li>перелом стегна в батька чи матері;</li>
+                <li>куріння;</li>
+                <li>надмірне вживання алкоголю.</li>
+              </ul>
+            </Block>
 
-                <div>
-                  <h3 className="text-base font-bold text-[#0b1a24] mb-1.5 flex items-center gap-2">
-                    Холестерин і ліпідний профіль <Badge variant="uspstf" size="sm">USPSTF B</Badge>
-                  </h3>
-                  <p className="text-[14px] text-gray-600 leading-relaxed mb-2">
-                    Ліпідограма показує рівень холестерину і його фракцій. Після 50 років її здають щонайменше раз
-                    на чотири-шість років, за наявності факторів ризику – частіше.
-                  </p>
-                  <p className="text-[14px] text-gray-600 leading-relaxed mb-2">
-                    Ліпопротеїни низької щільності переносять жирові речовини до стінок артерій, ліпопротеїни
-                    високої щільності забирають їх звідти до печінки. Проблема виникає, коли перших забагато або
-                    других замало – саме тому в результаті важливий не загальний холестерин, а співвідношення
-                    фракцій.
-                  </p>
-                  <p className="text-[14px] text-gray-600 leading-relaxed mb-2">
-                    Показник набуває змісту в порівнянні з попереднім: важливий не лише рівень, а й напрямок
-                    зміни. Тому результат зберігають і показують лікарю разом із попередніми.
-                  </p>
-                  <p className="text-[12px] text-gray-500">
-                    Джерело: клінічна настанова «Профілактика серцево-судинних захворювань», наказ МОЗ України
-                    №564 від 13.06.2016.
-                  </p>
-                </div>
-
-                <div>
-                  <h3 className="text-base font-bold text-[#0b1a24] mb-1.5 flex items-center gap-2">
-                    Глюкоза і ризик цукрового діабету 2 типу <Badge variant="uspstf" size="sm">USPSTF B</Badge>
-                  </h3>
-                  <p className="text-[14px] text-gray-600 leading-relaxed mb-2">
-                    Скринінг переддіабету і діабету 2 типу проводять кожні три роки жінкам із надлишковою вагою або
-                    ожирінням, тобто з індексом маси тіла від 25.
-                  </p>
-                  <p className="text-[14px] text-gray-600 leading-relaxed mb-2">
-                    Показанням є поєднання віку і маси тіла, а не вік окремо. За нормальної ваги і без діабету в
-                    родині щорічна перевірка глюкози не дає додаткової інформації.
-                  </p>
-                  <p className="text-[14px] text-gray-600 leading-relaxed mb-2">
-                    Переддіабет – стан, за якого рівень глюкози вже вищий за норму, але ще не досягає діабетичних
-                    значень. На цьому етапі зміна харчування і фізичної активності здатна зупинити перехід у
-                    діабет.
-                  </p>
-                  <p className="text-[12px] text-gray-500">
-                    Джерела: УКПМД «Цукровий діабет 2 типу у дорослих», наказ МОЗ України №1300 від 24.07.2024;
-                    USPSTF, 2021.
-                  </p>
-                </div>
-
-                <AccordionSection summary="Показати всі обстеження">
-                <div className="space-y-6">
-                <div>
-                  <h3 className="text-base font-bold text-[#0b1a24] mb-1.5 flex items-center gap-2">
-                    Рак молочної залози <Badge variant="uspstf" size="sm">USPSTF B</Badge>
-                  </h3>
-                  <p className="text-[14px] text-gray-600 leading-relaxed mb-2">
-                    Метод скринінгу – мамографія, раз на два роки. В Україні популяційна програма охоплює жінок
-                    50-69 років.
-                  </p>
-                  <p className="text-[14px] text-gray-600 leading-relaxed mb-2">
-                    Мамографія знаходить пухлину на стадії, коли лікування найефективніше. Але метод не
-                    безпомилковий: стандартна мамографія пропускає близько 15 відсотків випадків, найчастіше при
-                    щільній тканині залози. У зворотний бік похибка теж є – приблизно три з чотирьох ділянок, що
-                    виглядають підозріло на знімку, виявляються доброякісними.
-                  </p>
-                  <p className="text-[14px] text-gray-600 leading-relaxed mb-2">
-                    Це не аргумент відмовитися від обстеження, а причина не панікувати після виклику на
-                    дообстеження: у більшості випадків воно нічого не підтверджує.
-                  </p>
-                  <p className="text-[14px] text-gray-600 leading-relaxed mb-2">
-                    Приблизно одна жінка з восьми стикається з раком молочної залози протягом життя. Якщо
-                    захворювання було в матері, сестри чи доньки, скринінг починають раніше – за п&apos;ять-десять
-                    років до віку, у якому діагноз поставили родичці.
-                  </p>
-                  <p className="text-[12px] text-gray-500">
-                    Джерела: наказ МОЗ України №1368 від 05.08.2024; наказ МОЗ України №195 від 03.02.2025.
-                  </p>
-                </div>
-
-                <div>
-                  <h3 className="text-base font-bold text-[#0b1a24] mb-1.5 flex items-center gap-2">
-                    Рак шийки матки <Badge variant="uspstf" size="sm">USPSTF A</Badge>
-                  </h3>
-                  <p className="text-[14px] text-gray-600 leading-relaxed mb-2">
-                    Скринінг охоплює жінок до 65 років. Метод – цитологічне дослідження, тест на вірус папіломи
-                    людини або їх поєднання. Тест на ВПЛ рідше пропускає передракові зміни, тому дозволяє
-                    повторювати скринінг не так часто.
-                  </p>
-                  <p className="text-[14px] text-gray-600 leading-relaxed mb-2">
-                    Позитивний результат означає потребу в дообстеженні, а не наявність раку чи дисплазії.
-                  </p>
-                  <p className="text-[12px] text-gray-500">
-                    Джерела: наказ МОЗ України №1368 від 05.08.2024; наказ МОЗ України №1057 від 18.06.2024.
-                  </p>
-                </div>
-
-                <div>
-                  <h3 className="text-base font-bold text-[#0b1a24] mb-1.5 flex items-center gap-2">
-                    Колоректальний рак <Badge variant="uspstf" size="sm">USPSTF A</Badge>
-                  </h3>
-                  <p className="text-[14px] text-gray-600 leading-relaxed mb-2">Скринінг проводять від 50 років. Є два шляхи.</p>
-                  <p className="text-[14px] text-gray-600 leading-relaxed mb-2">
-                    Аналіз калу на приховану кров або фекальний імунохімічний тест – простий і неінвазивний,
-                    повторюється раз на два роки. За позитивного результату далі призначають колоноскопію.
-                    Обмеження методу в тому, що не кожен поліп і не кожна пухлина кровоточать, тому негативний
-                    результат не виключає їх повністю.
-                  </p>
-                  <p className="text-[14px] text-gray-600 leading-relaxed mb-2">
-                    Колоноскопія – огляд кишківника зсередини. Виявляє поліпи і видаляє їх за ту саму процедуру,
-                    тому повторюється значно рідше, зазвичай раз на десять років. Потребує підготовки і седації.
-                  </p>
-                  <p className="text-[14px] text-gray-600 leading-relaxed mb-2">
-                    Практично кожен колоректальний рак розвинувся з поліпа, хоча не кожен поліп стає раком.
-                    Більшість пухлин розвиваються повільно, роками – саме тому регулярний скринінг зазвичай встигає
-                    знайти зміни до того, як вони стануть небезпечними. У 2024 році в Україні зареєстрували 13 239
-                    нових випадків.
-                  </p>
-                  <p className="text-[12px] text-gray-500">
-                    Джерела: наказ МОЗ України №1368 від 05.08.2024; настанова «Скринінг та профілактика
-                    колоректального раку», Реєстр медико-технологічних документів ДЕЦ МОЗ; Національний
-                    канцер-реєстр України, 2024.
-                  </p>
-                </div>
-
-                <div>
-                  <h3 className="text-base font-bold text-[#0b1a24] mb-1.5 flex items-center gap-2">
-                    Щільність кісток <Badge variant="uspstf" size="sm">USPSTF B</Badge>
-                  </h3>
-                  <p className="text-[14px] text-gray-600 leading-relaxed mb-2">
-                    Оцінку щільності кісток рекомендують усім жінкам від 65 років. У молодшому віці після
-                    менопаузи – за наявності факторів ризику: перелом стегна в батьків, низька маса тіла, куріння,
-                    надмірне вживання алкоголю.
-                  </p>
-                  <p className="text-[14px] text-gray-600 leading-relaxed mb-2">
-                    Метод – двоенергетична рентгенівська абсорбціометрія, або DXA. Обстеження вимірює, скільки
-                    мінералів міститься в ділянці кістки; зазвичай досліджують хребет, стегно і передпліччя. Серед
-                    жінок від 65 років остеопороз мають 27 відсотків.
-                  </p>
-                  <p className="text-[14px] text-gray-600 leading-relaxed mb-2">
-                    Кістка втрачає щільність без болю і без будь-яких відчуттів. Перший симптом остеопорозу
-                    зазвичай – перелом, найчастіше стегна, зап&apos;ястка або хребців.
-                  </p>
-                  <p className="text-[12px] text-gray-500">
-                    Джерела: USPSTF, рекомендація 2025 року (ступінь B); настанова «Остеопороз», Реєстр
-                    медико-технологічних документів ДЕЦ МОЗ.
-                  </p>
-                </div>
-
-                <div>
-                  <h3 className="text-base font-bold text-[#0b1a24] mb-1.5">Загальні показники крові та функція органів</h3>
-                  <p className="text-[14px] text-gray-600 leading-relaxed">
-                    Загальний аналіз крові, показники функції нирок і печінки не є скринінгом конкретного
-                    захворювання. Вони дають лікарю базову картину, на тлі якої інтерпретуються решта результатів,
-                    і допомагають помітити відхилення, яких ви ще не відчуваєте.
-                  </p>
-                </div>
-                </div>
-                </AccordionSection>
-              </div>
-            </section>
-
-            <section id="chogo-ne-potribno" className="scroll-mt-24 mb-10 bg-gray-50 rounded-xl p-6">
-              {/* Приглушений стиль, без рамки-акценту — зняття занепокоєння, не CalloutBlock (п.6).
-                  ОНОВЛЕНО (п.4, "UX-виправлення, ітерація 2", 29.08.2026): вступ тепер завжди видимий
-                  розгорнутим — раніше блок згортався цілком і поруч із іншим згорнутим блоком виглядав
-                  як два порожні місця підряд. Під розкриттям лишаються лише самі пункти. */}
-              <h3 className="text-base font-bold text-text-primary mb-3">Що дає і чого не дає обстеження</h3>
-              <p className="text-[15px] text-gray-600 leading-relaxed mb-4">
-                Обстеження має сенс тоді, коли його результат щось змінює: підказує дію, знімає питання або показує,
-                за чим стежити далі. Якщо жоден можливий результат не змінює нічого, це і є підстава не робити його
-                зараз.
-              </p>
-              <AccordionSection summary="Показати приклади">
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="text-base font-bold text-[#0b1a24] mb-1.5">Скринінг раку шийки матки після 65 років</h3>
-                    <p className="text-[14px] text-gray-600 leading-relaxed mb-2">
-                      Показує зміни клітин шийки матки на етапі, коли до раку ще далеко.
-                    </p>
-                    <p className="text-[14px] text-gray-600 leading-relaxed mb-2">
-                      Не потрібен нескінченно. Після 65 років скринінг припиняють, якщо попередні результати були в
-                      нормі й обстеження проводилися за графіком.
-                    </p>
-                    <p className="text-[14px] text-gray-600 leading-relaxed mb-2">
-                      Що змінює результат. Якщо всі попередні перевірки були в нормі – практично нічого: імовірність
-                      знайти щось нове мінімальна, а ймовірність хибної тривоги лишається. Продовжують тоді, коли
-                      скринінг раніше не проводився, результати були відсутні або в них були відхилення.
-                    </p>
-                    <p className="text-[12px] text-gray-500">Джерело: наказ МОЗ України №1057 від 18.06.2024.</p>
+            {/* 4. Що входить у програму */}
+            {program && clinic && composition && (
+              <Block eyebrow="Програма клініки" id={ID.composition}>
+                <H2>Що входить у програму</H2>
+                <p className="font-semibold text-[#0b1a24] mt-2">
+                  {program.name_ua} · {clinic.name}
+                </p>
+                {(inProgram.length > 0 || missingText) && (
+                  <div className="mt-5 bg-[#f4f6f8] rounded-[12px] p-4 flex flex-col gap-3">
+                    {inProgram.length > 0 && (
+                      <div className="flex gap-2.5 items-start">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#04b5ba" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="shrink-0 mt-0.5">
+                          <path d="M5 12l5 5 9-10" />
+                        </svg>
+                        <p className={TEXT}>
+                          <span className="font-semibold text-[#0b1a24]">З переліку в програмі є:</span> {inProgram.join(', ')}.
+                        </p>
+                      </div>
+                    )}
+                    {missingText && (
+                      <div className="flex gap-2.5 items-start">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#005485" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true" className="shrink-0 mt-0.5">
+                          <path d="M12 5v14M5 12h14" />
+                        </svg>
+                        <p className={TEXT}>{missingText}</p>
+                      </div>
+                    )}
                   </div>
-                  <div>
-                    <h3 className="text-base font-bold text-[#0b1a24] mb-1.5">Обстеження після 75 років</h3>
-                    <p className="text-[14px] text-gray-600 leading-relaxed mb-2">
-                      Показує те саме, що й раніше.
-                    </p>
-                    <p className="text-[14px] text-gray-600 leading-relaxed mb-2">
-                      Не завжди встигає принести користь. Скринінг знаходить зміни, які розвиваються роками. Якщо
-                      цих років попереду менше, ніж потрібно змінам, щоб проявитися, обстеження створює більше
-                      втручань, ніж користі.
-                    </p>
-                    <p className="text-[14px] text-gray-600 leading-relaxed mb-2">
-                      Що змінює результат. Для колоректального раку орієнтир – 75 років, далі рішення індивідуальне.
-                      Щодо мамографії після 75 – та сама логіка: обговорити з лікарем, зважаючи на загальний стан і
-                      те, скільки років активного життя попереду.
-                    </p>
-                    <p className="text-[14px] text-gray-600 leading-relaxed mb-2">
-                      Це не про вік як обмеження, а про баланс: у 76 років з добрим здоров&apos;ям скринінг може бути
-                      доречним, у 76 з тяжкими супутніми захворюваннями – ні.
-                    </p>
-                    <p className="text-[12px] text-gray-500">
-                      Джерело: Mayo Clinic Family Health Book, розділи «Cancer» і «Breast Health».
-                    </p>
-                  </div>
-                  <div>
-                    <h3 className="text-base font-bold text-[#0b1a24] mb-1.5">Самообстеження грудей замість мамографії</h3>
-                    <p className="text-[14px] text-gray-600 leading-relaxed mb-2">
-                      Показує помітні зміни: ущільнення, зміну форми, виділення.
-                    </p>
-                    <p className="text-[14px] text-gray-600 leading-relaxed mb-2">
-                      Не замінює мамографію і не є скринінгом. Дослідження не підтвердили, що регулярне
-                      самообстеження знижує смертність від раку молочної залози, зате підтвердили, що воно дає зайву
-                      тривогу і біопсії з негативним результатом.
-                    </p>
-                    <p className="text-[14px] text-gray-600 leading-relaxed mb-2">
-                      Що змінює результат. Знати, як ваші груди виглядають і відчуваються в нормі, корисно: ви
-                      помітите зміну раніше. Це причина звернутися до лікаря, а не заміна мамографії.
-                    </p>
-                    <p className="text-[12px] text-gray-500">Джерело: Mayo Clinic Family Health Book, розділ «Breast Health».</p>
-                  </div>
-                  <div>
-                    <h3 className="text-base font-bold text-[#0b1a24] mb-1.5">Щорічна мамографія замість обстеження раз на два роки</h3>
-                    <p className="text-[14px] text-gray-600 leading-relaxed mb-2">
-                      Показує те саме, що й обстеження раз на два роки.
-                    </p>
-                    <p className="text-[14px] text-gray-600 leading-relaxed mb-2">
-                      Не дає переваги в цьому віці. Для жінки 50-69 років без факторів ризику скорочення інтервалу
-                      не покращує результат, але подвоює кількість хибних тривог за той самий період.
-                    </p>
-                    <p className="text-[14px] text-gray-600 leading-relaxed mb-2">
-                      Що змінює результат. Частіше – якщо так рекомендує лікар з огляду на вашу історію або на
-                      результати попереднього знімка. За власною ініціативою скорочувати інтервал сенсу немає.
-                    </p>
-                    <p className="text-[12px] text-gray-500">
-                      Джерело: наказ МОЗ України №1368 від 05.08.2024.
-                    </p>
-                    <p className="text-[13px] text-gray-500 leading-relaxed border-l-2 border-gray-200 pl-3 mt-2">
-                      [УТОЧНИТИ: рецензент] Чи додавати сюди позиції щодо скринінгу функції щитоподібної залози і
-                      ЕКГ у безсимптомних осіб низького ризику. Міжнародні рекомендації щодо обох стриманіші, ніж
-                      поширена практика, але обидві позиції входять у програми клінік, і формулювання потребує
-                      підпису лікаря. До узгодження блок містить лише пункти вище.
-                    </p>
-                  </div>
-                </div>
-              </AccordionSection>
-            </section>
-
-            {/* Блок 4 — головний на сторінці (п.1, "UX-виправлення, ітерація 2", 29.08.2026):
-                контрастний бокс (border-2 + shadow-md), більший внутрішній відступ, ключовий
-                склад показується РОЗГОРНУТО тут (не під розкриттям) — на відміну від сайдбара,
-                де той самий склад згорнутий для швидкого погляду. */}
-            <section id="programa" className="scroll-mt-24 mb-10">
-              <h2 className="text-xl font-bold text-[#0b1a24] mb-3">Готова програма для цього віку</h2>
-              <div className="bg-white border-2 border-navy/15 shadow-md rounded-2xl p-6 sm:p-8 mb-4">
-                <h3 className="text-lg font-bold text-[#0b1a24] mb-1">{program.name_ua}</h3>
-                <div className="text-2xl font-bold text-[#0b1a24] mb-1">{fmt(program.price_discount)} грн</div>
-                {counts.length > 0 && (
-                  <p className="text-[13px] text-gray-500 mb-4">
-                    {counts.map((c) => `${c.count} ${c.label}`).join(' · ')}
-                  </p>
                 )}
 
-                <div className="mb-4 pt-4 border-t border-gray-100">
-                  <CompositionSummaryText
-                    consultationsSummary={composition.consultationsSummary}
-                    instrumentalSummary={composition.instrumentalSummary}
-                    labSummary={composition.labSummary}
+                {composition.consultationsSummary && (
+                  <>
+                    <GroupLabel className="mt-6 mb-1">Консультації</GroupLabel>
+                    <p className={TEXT}>{composition.consultationsSummary.charAt(0).toUpperCase() + composition.consultationsSummary.slice(1)}.</p>
+                  </>
+                )}
+                {composition.instrumentalSummary && (
+                  <>
+                    <GroupLabel className="mt-4 mb-1">Обстеження</GroupLabel>
+                    <p className={TEXT}>{composition.instrumentalSummary}</p>
+                  </>
+                )}
+                {composition.labSummary && (
+                  <>
+                    <GroupLabel className="mt-4 mb-1">Аналізи</GroupLabel>
+                    <p className={TEXT}>{composition.labSummary}</p>
+                  </>
+                )}
+
+                <div className="mt-6 border-y border-[#e5e7eb] py-2">
+                  <AccordionSection summary="Повний склад програми">
+                    <div className={`space-y-4 text-[15px] ${TEXT} pb-2`}>
+                      {composition.consultationsSummary && (
+                        <div>
+                          <p className="font-semibold text-[#0b1a24] mb-1">Консультації</p>
+                          <p>
+                            Перший візит: {composition.consultationsSummary}.
+                            {composition.visit2ConsultationsSummary && ` Другий візит: ${composition.visit2ConsultationsSummary}.`}
+                          </p>
+                        </div>
+                      )}
+                      {instrumentalAll.length > 0 && (
+                        <div>
+                          <p className="font-semibold text-[#0b1a24] mb-1">Обстеження</p>
+                          <ul className="list-disc pl-5 space-y-1">
+                            {instrumentalAll.map((n) => (
+                              <li key={n}>{n}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {labAll.length > 0 && (
+                        <div>
+                          <p className="font-semibold text-[#0b1a24] mb-1">Аналізи</p>
+                          <ul className="list-disc pl-5 space-y-1">
+                            {labAll.map((n) => (
+                              <li key={n}>{n}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  </AccordionSection>
+                </div>
+              </Block>
+            )}
+
+            {/* 5. Що варто додати – без цін і без кнопки: доповнення додаються на етапі форми запису */}
+            {showAdditions && program && (
+              <Block eyebrow="Доповнення" id={ID.additions}>
+                <H2>Що варто додати</H2>
+                <p className={P}>{additionsIntro(program.name_ua)}</p>
+                <div className="mt-5">
+                  <AdditionalServices
+                    available={additionsAvailable.map((a) => ({ id: a.id, name: a.name, explanation: a.explanation }))}
+                    unavailable={additionsUnavailable.map((a) => ({ name: a.name, why: a.why, whereToGo: '' }))}
+                    programSlug={program.slug}
+                    sourceCta={`${SOURCE_CTA}_additions`}
+                    clinicName={clinic?.name}
+                    showPrices={false}
+                    mode="info"
+                    unavailableTitle={additionsUnavailableTitle(clinic?.name)}
                   />
                 </div>
+                {additionsUnavailable.length > 0 && <p className={P}>{additionsAskDoctor(additionsUnavailable.length)}</p>}
+              </Block>
+            )}
 
-                <a
-                  href={SUBDOMAIN_HREF}
-                  className="inline-flex items-center gap-1.5 text-[13px] text-navy underline decoration-navy/40 underline-offset-2 hover:decoration-navy"
-                >
-                  Повний склад програми, лікарі та підготовка – на сторінці програми
-                  <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M7 17L17 7M17 7H9M17 7V15" />
-                  </svg>
-                </a>
+            {/* 6. Дисклеймер і будь-яка клініка */}
+            <div className="px-5 sm:px-6 lg:px-0 pb-10">
+              <div className="max-w-3xl bg-[#e8f9fa] rounded-[12px] p-4" role="note">
+                <p className="text-[#0b1a24] leading-relaxed">{DOCTOR_DECIDES_TEXT}</p>
+                <p className="text-[15px] text-[#374151] leading-relaxed mt-2">{ANY_CLINIC_TEXT}</p>
               </div>
-              <p className="text-[15px] text-gray-600 leading-relaxed">
-                Це базова програма ОН Клінік для жінок від 40 років. Вона закриває більшість цілей, перелічених
-                вище: тиск, ліпідограму, глюкозу, огляд гінеколога і базові показники крові. Обстеження, специфічні
-                саме для віку після 50, до неї додають окремо – нижче видно, які саме.
-              </p>
-            </section>
+            </div>
 
-            <section id="dopovnennya" className="scroll-mt-24 mb-10 bg-gray-50 rounded-xl p-6">
-              <h2 className="text-xl font-bold text-[#0b1a24] mb-3">Що варто додати після 50</h2>
-              <p className="text-[15px] text-gray-600 leading-relaxed mb-5">
-                Готова програма розрахована на вік від 40 років. Нижче – обстеження, які для віку після 50 мають
-                окрему підставу.
-              </p>
-
-              <AdditionalServices
-                available={[
-                  {
-                    id: 'fecal-occult-blood-test',
-                    name: 'Аналіз калу на приховану кров',
-                    priceVariants: [{ label: 'Аналіз калу на приховану кров (код 11098-OH)', price: 315 }],
-                    priceType: 'exact',
-                    priceDate: '2026-08-09',
-                    explanation: 'Скринінг колоректального раку від 50 років, раз на два роки. У складі програми його немає.',
-                  },
-                  {
-                    id: 'colonoscopy',
-                    name: 'Колоноскопія',
-                    priceVariants: [{ label: 'Колоноскопія', price: 2000 }],
-                    priceType: 'exact',
-                    priceNote: 'До ціни додається анестезія внутрішньовенна при фіброколоноскопії — 2000 грн окремою позицією. Разом 4000 грн: показувати лише 2000 грн — ввести в оману.',
-                    priceDate: '2026-08-09',
-                    explanation: 'Альтернатива аналізу калу: огляд кишківника зсередини з можливістю видалити поліпи під час процедури. Повторюється значно рідше.',
-                  },
-                ]}
-                unavailable={[
-                  {
-                    name: 'Мамографія',
-                    why: 'Основний метод скринінгу раку молочної залози для жінок 50-69 років, раз на два роки. В ОН Клінік не проводиться.',
-                    whereToGo:
-                      'Мамографію можна пройти безкоштовно за направленням сімейного лікаря – вона входить у програму медичних гарантій. Для цього зверніться до лікаря, з яким укладено декларацію. Направлення дійсне в будь-якому закладі, що має договір з Національною службою здоров’я.',
-                  },
-                  {
-                    name: 'Денситометрія (DXA)',
-                    why: 'Оцінка щільності кісткової тканини, рекомендована жінкам від 65 років. В ОН Клінік не проводиться.',
-                    whereToGo: 'Уточнюється в клініці.',
-                  },
-                ]}
-                programSlug={CHECKUP_PROGRAM_SLUG}
-                sourceCta={SOURCE_CTA}
-              />
-
-              <div className="mt-6">
-                <h3 className="text-base font-bold text-[#0b1a24] mb-2">УЗД молочних залоз і мамографія – різні обстеження</h3>
-                <p className="text-[14px] text-gray-600 leading-relaxed mb-2">
-                  У складі програми є УЗД молочних залоз з доплерометрією і регіонарними лімфовузлами. Після 50
-                  років воно не замінює мамографію, і це варто розуміти до візиту.
-                </p>
-                <p className="text-[14px] text-gray-600 leading-relaxed mb-2">
-                  УЗД добре показує рідинні утворення: кісти, розширені протоки, а також стан регіонарних
-                  лімфовузлів. Мамографія бачить інше – зокрема дрібні відкладення солей кальцію, які можуть бути
-                  ранньою ознакою змін і на УЗД не візуалізуються.
-                </p>
-                <p className="text-[14px] text-gray-600 leading-relaxed mb-2">
-                  Значення має і вік. У молодших жінок тканина залози щільна, і рентгенівський знімок читається
-                  гірше – там УЗД інформативніше. Після менопаузи залозиста тканина заміщується жировою, і
-                  мамографія працює точніше. Тому до 40 років основним методом частіше є УЗД, після 50 –
-                  мамографія.
-                </p>
-                <p className="text-[13px] font-semibold text-[#0b1a24] mt-3 mb-1.5">Що відбувається за результатами УЗД</p>
-                <p className="text-[14px] text-gray-600 leading-relaxed mb-2">
-                  Лікар ультразвукової діагностики описує знахідку і відносить її до категорії за міжнародною
-                  класифікацією. Гінеколог інтерпретує опис разом з оглядом і вашою історією.
-                </p>
-                <p className="text-[14px] text-gray-600 leading-relaxed mb-2">
-                  Якщо змін немає або вони явно доброякісні – рекомендують плановий скринінг за віком, тобто
-                  мамографію раз на два роки.
-                </p>
-                <p className="text-[14px] text-gray-600 leading-relaxed mb-2">
-                  Якщо знахідка потребує уточнення – направляють до мамолога і на мамографію, іноді додатково на
-                  прицільне УЗД або біопсію.
-                </p>
-                <p className="text-[14px] text-gray-600 leading-relaxed mb-3">
-                  Якщо ви прийшли зі скаргою – ущільнення, виділення, зміна форми чи шкіри – це вже не скринінг, а
-                  діагностика. Маршрут інший: огляд мамолога, і обстеження призначає він.
-                </p>
-                <p className="text-[13px] text-gray-500 leading-relaxed italic">
-                  Обране вами не є остаточним замовленням. Це те, що ви хочете обговорити на консультації: лікар
-                  підтвердить, чи потрібне кожне обстеження саме вам, і назве остаточну вартість.
-                </p>
-              </div>
-            </section>
-
-            {/* Дисклеймер про роль лікаря — простий текст, без рамки й акценту, не CalloutBlock (п.6) */}
-            <section className="mt-10 mb-10">
-              <p className="text-[13px] text-gray-600 leading-relaxed mb-2">
-                Перелічене вище – орієнтир, а не призначення. Повний перелік обстежень визначає лікар за
-                результатами огляду і розмови з вами: те, що потрібно одній жінці 55 років, може бути зайвим для
-                іншої.
-              </p>
-              <p className="text-[13px] text-gray-600 leading-relaxed">
-                Програма чекапу дає лікарю ширшу картину, ніж окремий аналіз. Саме на підставі сукупності
-                показників він робить висновок, а не на підставі одного значення поза контекстом.
-              </p>
-            </section>
-
-            {/* Блок 7 "Як це проходить" (завдання "Наповнення складу програми", 29.08.2026,
-                Частина 4). Склад за візитами і підготовка виводяться зі складу програми —
-                правило рахується один раз у lib/programs/composition.ts, не дублюється тут. */}
-            <section id="yak-tse-prohodyt" className="scroll-mt-24 mb-10 bg-gray-50 rounded-xl p-6">
-              <h2 className="text-xl font-bold text-[#0b1a24] mb-3">Як це проходить</h2>
-              <p className="text-[15px] text-gray-600 leading-relaxed mb-3">
-                Чекап проходить у два візити. На першому здають аналізи і проходять інструментальні
-                обстеження, на другому лікар розбирає готові результати. Між візитами кілька днів –
-                час, потрібний лабораторії.
-              </p>
-              <p className="text-[15px] text-gray-600 leading-relaxed mb-5">
-                Висновок формується саме на другому візиті: окремі показники інтерпретуються разом,
-                у контексті вашого віку, ваги, спадкової історії і того, що показав огляд.
-              </p>
-
-              <div className="bg-white border border-gray-200 rounded-[10px] p-5 mb-4">
-                <p className="text-xs font-semibold text-text-secondary mb-3">Візит 1</p>
-                <CompositionSummaryText
-                  consultationsSummary={composition.consultationsSummary}
-                  instrumentalSummary={composition.instrumentalSummary}
-                  labSummary={composition.labSummary}
-                />
-              </div>
-
-              {composition.visit2Items.length > 0 && (
-                <div className="bg-white border border-gray-200 rounded-[10px] p-5 mb-4">
-                  <p className="text-xs font-semibold text-text-secondary mb-2">Візит 2</p>
-                  <ul className="text-[14px] text-gray-700 space-y-0.5 list-disc list-inside">
-                    {composition.visit2Items.map((item) => (
-                      <li key={item}>{item}</li>
-                    ))}
-                  </ul>
+            {/* 7. Як це проходить */}
+            {showVisits && composition && (
+              <Block eyebrow="Візити" id={ID.visits}>
+                <H2>Як це проходить</H2>
+                <p className={P}>Програма проходить за {visitsText(visitCount)}.</p>
+                <div className="mt-4 flex flex-col gap-4">
+                  <div className="flex gap-3">
+                    <span className="w-8 h-8 shrink-0 rounded-full bg-[#e8f9fa] text-[#005485] font-bold flex items-center justify-center" aria-hidden="true">1</span>
+                    <div>
+                      <h3 className="font-bold text-[#0b1a24] mt-1">Перший візит</h3>
+                      <p className={`${TEXT} mt-1`}>{FIRST_VISIT_TEXT}</p>
+                    </div>
+                  </div>
+                  {composition.visit2Items.length > 0 && (
+                    <div className="flex gap-3">
+                      <span className="w-8 h-8 shrink-0 rounded-full bg-[#e8f9fa] text-[#005485] font-bold flex items-center justify-center" aria-hidden="true">2</span>
+                      <div>
+                        <h3 className="font-bold text-[#0b1a24] mt-1">Другий візит</h3>
+                        <p className={`${TEXT} mt-1`}>{SECOND_VISIT_TEXT_V2}</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
+                {preparation.length > 0 && (
+                  <>
+                    <h3 className={H3}>Підготовка</h3>
+                    <ul className={`mt-3 list-disc pl-5 space-y-1 ${TEXT}`}>
+                      {preparation.map((n, i) => (
+                        <li key={n}>
+                          {n}
+                          {i < preparation.length - 1 ? ';' : '.'}
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+                <p className={P}>
+                  Якщо ви приїжджаєте з іншого міста або з-за кордону, скажіть про це під час запису і вкажіть бажану дату.
+                </p>
+              </Block>
+            )}
 
-              {composition.preparationNotes.length > 0 && (
-                <div>
-                  <p className="text-[13px] font-semibold text-text-secondary mb-1.5">Підготовка</p>
-                  <ul className="text-[14px] text-gray-600 space-y-1 list-disc list-inside">
-                    {composition.preparationNotes.map((note) => (
-                      <li key={note}>{note}</li>
-                    ))}
+            {/* 7a. Контакти клініки */}
+            {clinic && (
+              <Block eyebrow="Контакти" id={ID.contacts}>
+                <H2>Контакти клініки</H2>
+                <p className={P}>
+                  {clinic.name}
+                  {branches.length > 0 ? `, ${branchesCountText(branches.length)}.` : '.'}
+                </p>
+                {branches.length > 0 && (
+                  <ul className="mt-4 space-y-3">
+                    {branches.map((b) => {
+                      const sch = scheduleText(b);
+                      return (
+                        <li key={b.id} className="border-[1.5px] border-[#e5e7eb] rounded-[12px] px-4 py-3.5 bg-white">
+                          <p className="font-bold text-[#0b1a24]">{b.name_ua}</p>
+                          <p className={`${TEXT} mt-1`}>
+                            {b.address_ua}
+                            {b.metro_ua ? `, ${b.metro_ua}` : ''}
+                          </p>
+                          {sch && <p className="text-sm text-gray-500 mt-1">{sch}</p>}
+                          {b.tracking_phone && (
+                            <p className="text-[15px] mt-1">
+                              <a href={`tel:${b.tracking_phone.replace(/\s/g, '')}`} className="text-[#005485] hover:underline">
+                                {b.tracking_phone}
+                              </a>
+                            </p>
+                          )}
+                        </li>
+                      );
+                    })}
                   </ul>
-                </div>
-              )}
-            </section>
+                )}
+                {clinic.phone && (
+                  <p className={P}>
+                    Телефон:{' '}
+                    <a href={`tel:${clinic.phone.replace(/\s/g, '')}`} className="text-[#005485] hover:underline">
+                      {clinic.phone}
+                    </a>
+                  </p>
+                )}
+                {clinic.website && (
+                  <p className="mt-4 text-[15px]">
+                    <a href={clinic.website} className="font-semibold text-[#005485] hover:underline">
+                      Сторінка клініки на check-up.in.ua →
+                    </a>
+                  </p>
+                )}
+              </Block>
+            )}
+
+            {/* 8. FAQ – нативний <details>, відповіді в DOM */}
+            <Block eyebrow="Питання" id={ID.faq}>
+              <H2>Часті запитання</H2>
+              <div className="mt-6 space-y-3">
+                {FAQ.map((f) => (
+                  <div key={f.q} className="border border-[#e8edf3] rounded-[10px] px-5 py-3">
+                    <AccordionSection summary={f.q}>
+                      <p className={`text-[15px] ${TEXT}`}>{f.a}</p>
+                    </AccordionSection>
+                  </div>
+                ))}
+              </div>
+            </Block>
+
+            {/* 8a. Інші вікові групи */}
+            <div className="px-5 sm:px-6 lg:px-0 pb-8">
+              <div className="max-w-3xl">
+                <CrossAgeNav currentHref={PAGE_PATH} typographicDash />
+                <p className="text-[15px] mt-2">
+                  <Link href="/ukr/male-checkup/kharkiv" className="font-semibold text-[#005485] hover:underline">
+                    Чекап для чоловіків у Харкові →
+                  </Link>
+                </p>
+              </div>
+            </div>
+
+            {/* 9. GEO – статичний текст з даних */}
+            {clinic && branches.length > 0 && (
+              <div className="px-5 sm:px-6 py-6 bg-[#f4f6f8] lg:rounded-[12px]">
+                <p className="max-w-3xl text-sm text-[#4a5a6b] leading-relaxed">
+                  {geoText({
+                    subject: 'Чекап для жінок після 50 років',
+                    clinicName: clinic.name,
+                    branches,
+                    programName: program?.name_ua,
+                    missingText,
+                  })}
+                </p>
+              </div>
+            )}
+
+            {/* 10. Автор, рецензент, розкриття, джерела */}
+            <div className="px-5 sm:px-6 lg:px-0 pt-8 pb-12">
+              <div className="max-w-3xl text-[#374151] leading-relaxed space-y-3">
+                <p className="text-[#0b1a24]">{EDITORIAL_TEXT_V2}</p>
+                <p className="text-[15px]">
+                  <span className="font-semibold text-[#0b1a24]">Медичний рецензент:</span> {REVIEWER.name}, {REVIEWER.jobTitle},{' '}
+                  {REVIEWER.org}.
+                </p>
+                <p className="text-sm text-gray-500">
+                  Розкриття: check-up.in.ua отримує комісію від клінік-партнерів за факт запису. Перелік обстежень на цій
+                  сторінці складений за клінічними настановами, а не за складом програм партнерів.
+                </p>
+                <p className="font-bold text-[#0b1a24] pt-2">Джерела</p>
+                <ol className="space-y-1.5 list-none text-sm">
+                  {SOURCES.map((s, i) => (
+                    <li key={i} id={`source-${i + 1}`} className="flex gap-2 scroll-mt-4 lg:scroll-mt-24">
+                      <span className="font-semibold text-gray-700 shrink-0">{i + 1}.</span>
+                      <span>{s}</span>
+                    </li>
+                  ))}
+                </ol>
+                <p className="text-[13px] text-gray-500 pt-2">Оновлено: {UPDATED_LABEL}</p>
+              </div>
+            </div>
           </div>
-        </div>
-
-        <FaqBlock items={FAQ} />
-
-        {/* Додаткова частина сторінки — Блок 8а і далі (завдання "Скорочення складу
-            і розділення сторінки", п.2, 29.08.2026). Інший фон (bg-gray-50) і
-            заокруглений контейнер відділяють її від ключової частини вище. Контент
-            НЕ ховається: жодного accordion чи display:none, усе лишається в DOM і
-            індексованим — лише візуально й типографічно "тихіше". */}
-        <div className="mt-6 bg-gray-50 rounded-2xl px-4 sm:px-6">
-          <CrossAgeNav currentHref={PAGE_PATH} />
-
-          <section className="py-8 border-t border-gray-200">
-            <h2 className="text-base font-semibold text-gray-700 mb-3">Де пройти в Харкові</h2>
-            <p className="text-[13px] text-gray-600 leading-relaxed">
-            Пройти чекап для жінок після 50 у Харкові можна в ОН Клінік – у трьох локаціях: на вулиці Ярослава
-            Мудрого, 30а, на проспекті Героїв Харкова, 257 (біля станції метро «Палац Спорту») і на вулиці
-            Молочній, 48 (Левада). Програму «Check-up жіночий після 40» проводять лікарі Check-Up Центру ОН Клінік
-            Харків. Конкретну локацію узгоджує оператор клініки під час підтвердження запису – залежно від того,
-            які обстеження ви обрали.
-          </p>
-        </section>
-
-        <section className="py-8 border-t border-gray-200 text-[13px] text-gray-500 leading-relaxed">
-          <p className="mb-1"><span className="font-semibold text-gray-700">Медичний редактор:</span> Ігор Растрепін, check-up.in.ua</p>
-          <p className="mb-1">
-            <span className="font-semibold text-gray-700">Рецензент:</span> Удовиченко Олена Олександрівна, лікар
-            акушер-гінеколог, ОН Клінік Харків
-          </p>
-          <p className="mb-1">Дата публікації: 25.07.2026</p>
-          <p className="mb-4">Дата оновлення: 29.08.2026</p>
-
-          <p className="font-semibold text-gray-700 mb-1.5">Джерела</p>
-          <ol className="list-decimal list-inside space-y-1 mb-4">
-            {SOURCES.map((s, i) => (
-              <li key={i}>{s}</li>
-            ))}
-          </ol>
-
-          <p className="font-semibold text-gray-700 mb-1">Про повноту джерел</p>
-          <p className="mb-4">
-            Єдиного українського стандарту профілактичного чекапу не існує: диспансеризацію скасовано 2018 року
-            наказом МОЗ №504, а програма «Скринінг здоров&apos;я 40+» охоплює лише серцево-судинні захворювання,
-            цукровий діабет і ментальне здоров&apos;я. Рекомендації щодо решти напрямків на цій сторінці
-            спираються на окремі українські порядки скринінгу і на міжнародні клінічні настанови.
-          </p>
-
-          <p className="font-semibold text-gray-700 mb-1">Розкриття</p>
-          <p>
-            check-up.in.ua – медичний маркетплейс. Ми отримуємо комісію від клінік-партнерів. Це не впливає на
-            медичний зміст: перелік обстежень на цій сторінці складений за клінічними настановами, а не за складом
-            програм партнерів.
-          </p>
-        </section>
         </div>
       </main>
 
-      <BookingFlow
-        programs={[program]}
-        branches={branches}
-        clinicId={program.clinic_id}
-        clinicSlug="onclinic-kharkiv"
-        city="kharkiv"
-        programsComposition={{ [program.slug]: composition.counts }}
-      />
-      <StickyMobileCta
-        programNameShort="Check-Up жіночий після 40"
-        price={program.price_discount}
-        programSlug={CHECKUP_PROGRAM_SLUG}
-        sourceCta={`${SOURCE_CTA}_sticky`}
-      />
+      {program && clinic && composition && (
+        <>
+          <BookingFlow
+            programs={[program]}
+            branches={branches}
+            clinicId={clinic.id}
+            clinicSlug={clinic.slug}
+            city="kharkiv"
+            programsComposition={{ [program.slug]: composition.counts }}
+          />
+          <StickyMobileCta
+            programNameShort={program.name_ua}
+            price={program.price_discount}
+            programSlug={program.slug}
+            sourceCta={`${SOURCE_CTA}_sticky`}
+            revealAfterId="hero"
+            look="v2"
+          />
+        </>
+      )}
     </>
   );
 }

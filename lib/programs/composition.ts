@@ -17,6 +17,8 @@ import { db } from '@/lib/supabase';
 export type CompositionServiceType = 'consultation' | 'lab' | 'instrumental';
 
 export interface CompositionServiceItem {
+  /** Код позиції клініки (clinic_services.code, на яку посилається program_services). */
+  code: string | null;
   name: string;
   serviceType: CompositionServiceType;
   visitNumber: number;
@@ -44,8 +46,13 @@ export interface ProgramComposition {
   /** Стислі описи складу (Частина 1, "Скорочення складу") — те, що сторінки
    *  реально показують у Блоці 4/7 і сайдбарі замість переліку. */
   consultationsSummary: string;
+  /** Спеціальності прийомів другого візиту («терапевт») – для повного складу програми. */
+  visit2ConsultationsSummary: string;
   instrumentalSummary: string;
   labSummary: string;
+  /** Лабораторні позиції без категорії опису (LAB_CATEGORY_BY_CODE): у labSummary не
+   *  виводяться. Для звіту і перевірки даних. */
+  labUncategorized: string[];
   /** Для Блоку 7 "Як це проходить". */
   visitCount: number;
   visit1Groups: CompositionGroup[];
@@ -72,14 +79,17 @@ function derivePreparationNotes(items: CompositionServiceItem[]): string[] {
   const names = items.map((i) => i.name.toLowerCase());
   const has = (needle: string) => names.some((n) => n.includes(needle));
   const notes: string[] = [];
-  if (has('глюкоза') || has('ліпідограма')) {
-    notes.push('Натще — у складі є аналіз глюкози або ліпідограма.');
+  // SPRINT-KHARKIV-v0: коротке тире замість довгого (TOV-STANDARD 2.6) і одне
+  // формулювання без «або» (підготовка одним варіантом).
+  const fasting = [has('глюкоза') ? 'аналіз глюкози' : '', has('ліпідограма') ? 'ліпідограма' : ''].filter(Boolean);
+  if (fasting.length > 0) {
+    notes.push(`Натще – у складі є ${joinWithAnd(fasting)}.`);
   }
   if (has('пап-тест')) {
-    notes.push('Урахуйте день циклу — у складі є ПАП-тест.');
+    notes.push('Урахуйте день циклу – у складі є ПАП-тест.');
   }
   if (has('урогенітал')) {
-    notes.push('Статевий спокій напередодні — у складі є урогенітальні дослідження.');
+    notes.push('Статевий спокій напередодні – у складі є урогенітальні дослідження.');
   }
   return notes;
 }
@@ -117,48 +127,48 @@ function buildConsultationsSummary(items: CompositionServiceItem[]): string {
   return specialties.join(', ');
 }
 
-/** Відома область УЗД із назви позиції ("УЗД органів черевної порожнини..." →
- *  "черевна порожнина"). Fallback — відсічення дужок і уточнень методики,
- *  коли назва не збігається з жодним відомим шаблоном. */
-const UZD_AREA_MAP: [string, string][] = [
-  ['органів черевної порожнини', 'черевна порожнина'],
-  ['органів малого тазу', 'малий таз'],
-  ['органів сечовидільної системи', 'сечовидільна система'],
-  ['молочних залоз', 'молочні залози'],
-  ['щитоподібної залози', 'щитоподібна залоза'],
+/** Область УЗД у родовому відмінку з назви позиції («УЗД органів малого тазу…» →
+ *  «малого таза»). Fallback – відсічення дужок, коли назва не збігається з відомим шаблоном.
+ *  Задача Cowork «Правки після v1» (23.09.2026): шаблон опису складу для всіх вікових сторінок. */
+const UZD_AREA_GENITIVE: [string, string][] = [
+  ['органів черевної порожнини', 'органів черевної порожнини'],
+  ['органів малого тазу', 'малого таза'],
+  ['органів сечовидільної системи', 'нирок і сечового міхура'],
+  ['молочних залоз', 'молочних залоз'],
+  ['щитоподібної залози', 'щитоподібної залози'],
 ];
 
-function shortenUzdArea(rest: string): string {
+function uzdAreaGenitive(rest: string): string {
   const lower = rest.toLowerCase();
-  for (const [key, label] of UZD_AREA_MAP) {
+  for (const [key, label] of UZD_AREA_GENITIVE) {
     if (lower.startsWith(key)) return label;
   }
-  return rest
-    .replace(/\([^)]*\)/g, '')
-    .replace(/\s+(з доплерометрією.*|жінок.*|трансвагінальне.*)$/i, '')
-    .trim()
-    .toLowerCase();
+  return rest.replace(/\([^)]*\)/g, '').trim().toLowerCase();
 }
 
-function shortenOtherInstrumental(name: string): string {
-  if (/^Електрокардіографія/i.test(name)) return 'ЕКГ';
-  if (/^Рентгенографія/i.test(name)) return 'рентген органів грудної клітини';
-  return name.toLowerCase();
-}
-
-const CARDINAL_WORDS: Record<number, string> = {
-  1: 'одне', 2: 'два', 3: 'три', 4: 'чотири', 5: "п'ять",
-  6: 'шість', 7: 'сім', 8: 'вісім', 9: "дев'ять", 10: 'десять',
-};
-
-function pluralDoslidzhennia(n: number): string {
-  return n >= 1 && n <= 4 ? 'дослідження' : 'досліджень';
+/** Пояснення в дужках – лише для ЕКГ і відеокольпоскопії; інші позиції без пояснень. */
+function otherInstrumental(name: string): string {
+  if (/^Електрокардіографія/i.test(name)) return 'електрокардіографія (ЕКГ, запис роботи серця)';
+  if (/^Відеокольпоскопія/i.test(name)) return 'відеокольпоскопія (огляд шийки матки під збільшенням)';
+  if (/^Рентгенографія органів грудної клітини/i.test(name)) return 'рентген органів грудної клітини';
+  return name.replace(/\s*\([^)]*\)/g, '').trim().toLowerCase();
 }
 
 /** "A, B і C" замість "A, B, C" — природніше для переліку 2+ елементів. */
 function joinWithAnd(items: string[]): string {
   if (items.length <= 1) return items.join('');
   return `${items.slice(0, -1).join(', ')} і ${items[items.length - 1]}`;
+}
+
+/** «молочних залоз» + «щитоподібної залози» → «молочних і щитоподібної залоз» (на місці першої з двох). */
+function mergeGlandAreas(areas: string[]): string[] {
+  const breast = areas.indexOf('молочних залоз');
+  const thyroid = areas.indexOf('щитоподібної залози');
+  if (breast === -1 || thyroid === -1) return areas;
+  const first = Math.min(breast, thyroid);
+  return areas
+    .map((a, i) => (i === first ? 'молочних і щитоподібної залоз' : a))
+    .filter((_, i) => i !== Math.max(breast, thyroid));
 }
 
 function buildInstrumentalSummary(items: CompositionServiceItem[]): string {
@@ -168,61 +178,128 @@ function buildInstrumentalSummary(items: CompositionServiceItem[]): string {
   for (const item of instrumental) {
     const m = item.name.match(/^УЗД\s+(.*)$/i);
     if (m) {
-      uzdAreas.push(shortenUzdArea(m[1]));
+      uzdAreas.push(uzdAreaGenitive(m[1]));
     } else {
-      other.push(shortenOtherInstrumental(item.name));
+      other.push(otherInstrumental(item.name));
     }
   }
   const parts: string[] = [];
   if (uzdAreas.length > 0) {
-    const word = CARDINAL_WORDS[uzdAreas.length] ?? String(uzdAreas.length);
-    const capitalized = word.charAt(0).toUpperCase() + word.slice(1);
-    parts.push(`${capitalized} ультразвукових ${pluralDoslidzhennia(uzdAreas.length)}: ${uzdAreas.join(', ')}.`);
+    // Задача v2 (24.09.2026), розділ 16.2: без числа ділянок; молочні і щитоподібна залози – одним пунктом.
+    parts.push(`Ультразвукове дослідження (УЗД) ${mergeGlandAreas(uzdAreas).join(', ')}.`);
   }
   if (other.length > 0) {
-    parts.push(`Плюс ${joinWithAnd(other)}.`);
+    const joined = joinWithAnd(other);
+    parts.push(uzdAreas.length > 0 ? `Також ${joined}.` : `${joined.charAt(0).toUpperCase()}${joined.slice(1)}.`);
   }
   return parts.join(' ');
 }
 
-/** Групування лабораторних позицій за призначенням (п.1 завдання). Закритий
- *  список ключових слів для позицій, що реально є в складі; невідома позиція
- *  потрапляє в "інші показники", а не губиться мовчки. */
-const LAB_CATEGORY_ORDER = [
-  'загальні аналізи крові й сечі',
-  'біохімія та функція печінки і нирок',
-  'ліпідний профіль і глюкоза',
-  'гормони щитоподібної залози',
-  'вітамін D',
-  'гінекологічні дослідження',
-] as const;
+/** Категорії опису аналізів – задача Cowork «Опис аналізів у складі програми
+ *  вираховується зі складу» (24.09.2026). Порядок – як у таблиці задачі. */
+type LabCategory =
+  | 'blood'
+  | 'urine'
+  | 'liver_kidney'
+  | 'coagulation'
+  | 'cholesterol'
+  | 'glucose'
+  | 'thyroid'
+  | 'vitamin_d'
+  | 'helicobacter'
+  | 'gyn_smears';
 
-function classifyLab(name: string): string {
-  const n = name.toLowerCase();
-  if (n.includes('клінічний аналіз крові') || n.includes('загальний аналіз сечі')) return 'загальні аналізи крові й сечі';
-  if (n.includes('ліпідограма') || n.includes('глюкоза')) return 'ліпідний профіль і глюкоза';
-  if (n.includes('тиреоїдний')) return 'гормони щитоподібної залози';
-  if (n.includes('вітамін d') || n.includes('25-он')) return 'вітамін D';
-  if (n.includes('урогенітал') || n.includes('пап-тест')) return 'гінекологічні дослідження';
-  if (
-    n.includes('алат') || n.includes('асат') || n.includes('гамма-глутамілтрансфераза') ||
-    n.includes('білірубін') || n.includes('загальний білок') || n.includes('лужна фосфатаза') ||
-    n.includes('альбумін') || n.includes('креатинін') || n.includes('сечовина') ||
-    n.includes('коагулограма') || n.includes('helicobacter')
-  ) {
-    return 'біохімія та функція печінки і нирок';
-  }
-  return 'інші показники';
+/** Зіставлення за кодом позиції (clinic_services.code, на яку посилається
+ *  program_services), не за назвою. Коди – ОН Клінік Харків. Позиція, якої тут
+ *  немає, в опис не виводиться, потрапляє в labUncategorized і дає попередження
+ *  в лозі білду (warnUncategorizedLab). */
+const LAB_CATEGORY_BY_CODE: Record<string, LabCategory> = {
+  '10003-OH': 'blood', // Клінічний аналіз крові (ЗАК + лейкоформула)
+  '10001-OH': 'urine', // Загальний аналіз сечі (ЗАС + мікроскопія осаду)
+  '10027-OH': 'liver_kidney', // АлАТ
+  '10028-OH': 'liver_kidney', // АсАТ
+  '10034-OH': 'liver_kidney', // ГГТ
+  '10031-OH': 'liver_kidney', // Білірубін
+  '10036-OH': 'liver_kidney', // Загальний білок
+  '10029-OH': 'liver_kidney', // Лужна фосфатаза
+  '10032-OH': 'liver_kidney', // Альбумін
+  '10037-OH': 'liver_kidney', // Креатинін
+  '10039-OH': 'liver_kidney', // Сечовина
+  '10051-OH': 'coagulation', // Пакет №50 «Коагулограма»
+  '10044-OH': 'cholesterol', // Пакет №36 Ліпідограма
+  '10033-OH': 'glucose', // Глюкоза (венозна кров)
+  '10063-OH': 'thyroid', // Пакет №01.15 «Тиреоїдний»
+  '11096-OH': 'vitamin_d', // 25-ОН вітамін D
+  '10096-OH': 'helicobacter', // Антитіла сумарні до Helicobacter pylori
+  '10010-OH': 'gyn_smears', // Мікроскопія урогенітального зішкрібу
+  '11221-OH': 'gyn_smears', // ПАП-тест на основі рідинної цитології
+  '11014-OH': 'gyn_smears', // ПЛР. Пакет №09.04 «Урогенітальний (повний)»
+};
+
+/** Тексти категорій у порядку таблиці; об'єднані пари (кров і сеча, холестерин
+ *  і глюкоза) будуються з тих категорій, що є в складі. */
+function labCategoryTexts(present: Set<LabCategory>): string[] {
+  const out: string[] = [];
+  if (present.has('blood') && present.has('urine')) out.push('загальні аналізи крові й сечі');
+  else if (present.has('blood')) out.push('загальний аналіз крові');
+  else if (present.has('urine')) out.push('загальний аналіз сечі');
+  if (present.has('liver_kidney')) out.push('показники роботи печінки і нирок');
+  if (present.has('coagulation')) out.push('згортання крові');
+  if (present.has('cholesterol') && present.has('glucose')) out.push('холестерин і глюкоза');
+  else if (present.has('cholesterol')) out.push('холестерин');
+  else if (present.has('glucose')) out.push('глюкоза');
+  if (present.has('thyroid')) out.push('гормони щитоподібної залози');
+  if (present.has('vitamin_d')) out.push('вітамін D');
+  if (present.has('helicobacter')) out.push('аналіз на бактерію Helicobacter pylori');
+  if (present.has('gyn_smears')) out.push('гінекологічні мазки');
+  return out;
 }
 
+function labCategory(item: CompositionServiceItem): LabCategory | null {
+  return item.code ? LAB_CATEGORY_BY_CODE[item.code] ?? null : null;
+}
+
+/** Задача v2 (24.09.2026), розділ 16.2: без «{N} аналізів:» – текст одразу з категорій, з великої літери.
+ *  Позиції без категорії в опис не виводяться (як і раніше); немає жодної категорії – рядок порожній. */
 function buildLabSummary(items: CompositionServiceItem[]): string {
   const lab = items.filter((i) => i.serviceType === 'lab');
   if (lab.length === 0) return '';
-  const present = new Set(lab.map((i) => classifyLab(i.name)));
-  const ordered = LAB_CATEGORY_ORDER.filter((c) => present.has(c));
-  const extra = [...present].filter((c) => !(LAB_CATEGORY_ORDER as readonly string[]).includes(c));
-  const categories = [...ordered, ...extra];
-  return `Лабораторна частина складу — ${lab.length} аналізів. Напрямки: ${joinWithAnd(categories)}.`;
+  const present = new Set(lab.map(labCategory).filter((c): c is LabCategory => c !== null));
+  const categories = labCategoryTexts(present);
+  if (categories.length === 0) return '';
+  const text = categories.join(', ');
+  return `${text.charAt(0).toUpperCase()}${text.slice(1)}.`;
+}
+
+function uncategorizedLab(items: CompositionServiceItem[]): string[] {
+  return items.filter((i) => i.serviceType === 'lab' && labCategory(i) === null).map((i) => i.name);
+}
+
+/** Контекст для попереджень у лозі: назви програми і клініки (з fetchClinicOffers). */
+export interface CompositionLogContext {
+  programName?: string | null;
+  clinicName?: string | null;
+}
+
+/** Уже виведені попередження – щоб одна позиція не дублювалась у лозі для кожної
+ *  сторінки, що показує ту саму програму (в межах одного процесу білду). */
+const warnedUncategorized = new Set<string>();
+
+/** Попередження в лог білду про лабораторні позиції без категорії опису.
+ *  Опис на сторінці при цьому будується як завжди, без цієї позиції. */
+function warnUncategorizedLab(items: CompositionServiceItem[], context?: CompositionLogContext): void {
+  const program = context?.programName || 'невідома програма';
+  const clinic = context?.clinicName || 'невідома клініка';
+  for (const item of items) {
+    if (item.serviceType !== 'lab' || labCategory(item) !== null) continue;
+    const key = `${clinic}|${program}|${item.code ?? item.name}`;
+    if (warnedUncategorized.has(key)) continue;
+    warnedUncategorized.add(key);
+    console.warn(
+      `[composition] Позиція без категорії опису аналізів: програма «${program}», клініка «${clinic}», ` +
+        `позиція «${item.name}» (код ${item.code ?? 'відсутній'}). В опис аналізів не виводиться.`,
+    );
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -232,21 +309,26 @@ const EMPTY: ProgramComposition = {
   counts: { consultations: 0, analyses: 0, diagnostics: 0 },
   summaryGroups: [],
   consultationsSummary: '',
+  visit2ConsultationsSummary: '',
   instrumentalSummary: '',
   labSummary: '',
+  labUncategorized: [],
   visitCount: 0,
   visit1Groups: [],
   visit2Items: [],
   preparationNotes: [],
 };
 
-export async function fetchProgramComposition(checkupProgramId: string | null | undefined): Promise<ProgramComposition> {
+export async function fetchProgramComposition(
+  checkupProgramId: string | null | undefined,
+  context?: CompositionLogContext,
+): Promise<ProgramComposition> {
   if (!checkupProgramId) return EMPTY;
   try {
     const sb = db() as any;
     const { data, error } = await sb
       .from('program_services')
-      .select('visit_number, clinic_services(name_ua, service_type)')
+      .select('visit_number, clinic_services(code, name_ua, service_type)')
       .eq('checkup_program_id', checkupProgramId)
       .order('created_at', { ascending: true });
 
@@ -255,6 +337,7 @@ export async function fetchProgramComposition(checkupProgramId: string | null | 
     const items: CompositionServiceItem[] = data
       .filter((row: any) => row.clinic_services)
       .map((row: any) => ({
+        code: (row.clinic_services.code as string | null) ?? null,
         name: row.clinic_services.name_ua as string,
         serviceType: row.clinic_services.service_type as CompositionServiceType,
         visitNumber: row.visit_number as number,
@@ -275,13 +358,17 @@ export async function fetchProgramComposition(checkupProgramId: string | null | 
     const visit2Items = items.filter((i) => i.visitNumber === 2).map((i) => i.name);
     const visitCount = items.reduce((max, i) => Math.max(max, i.visitNumber), 0);
 
+    warnUncategorizedLab(summaryItems, context);
+
     return {
       items,
       counts,
       summaryGroups: groupByType(summaryItems),
       consultationsSummary: buildConsultationsSummary(summaryItems),
+      visit2ConsultationsSummary: buildConsultationsSummary(items.filter((i) => i.visitNumber === 2)),
       instrumentalSummary: buildInstrumentalSummary(summaryItems),
       labSummary: buildLabSummary(summaryItems),
+      labUncategorized: uncategorizedLab(summaryItems),
       visitCount,
       visit1Groups: groupByType(visit1Items),
       visit2Items,

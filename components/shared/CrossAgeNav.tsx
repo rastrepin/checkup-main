@@ -5,6 +5,8 @@ interface CrossAgeNavProps {
   /** href поточної сторінки — рядок у переліку рендериться без посилання */
   currentHref: string;
   className?: string;
+  /** Задача v2 (24.09.2026): коротке тире в підписах («30–40 років»). За замовчуванням – як у реєстрі. */
+  typographicDash?: boolean;
 }
 
 const GENDER_LABEL: Record<AgeStepGender, string> = {
@@ -19,7 +21,8 @@ const GENDER_LABEL: Record<AgeStepGender, string> = {
 // заголовок полегшено (text-base замість text-lg, text-gray-700 замість -900) —
 // компонент відкриває "додаткову частину" сторінки, менша типографічна вага
 // сигналізує це без приховування контенту (він лишається повністю в DOM).
-export default function CrossAgeNav({ currentHref, className = '' }: CrossAgeNavProps) {
+export default function CrossAgeNav({ currentHref, className = '', typographicDash = false }: CrossAgeNavProps) {
+  const label = (s: string) => (typographicDash ? s.replace(/(\d)-(\d)/g, '$1–$2') : s);
   const genders: AgeStepGender[] = ['female', 'male'];
   const groups = genders
     .map((gender) => ({
@@ -46,11 +49,11 @@ export default function CrossAgeNav({ currentHref, className = '' }: CrossAgeNav
                   <li key={page.href}>
                     {isCurrent ? (
                       <span className="text-sm font-medium text-gray-900" aria-current="page">
-                        {page.ageStepLabel}
+                        {label(page.ageStepLabel)}
                       </span>
                     ) : (
                       <Link href={page.href} className="text-sm text-[#005485] hover:underline">
-                        {page.ageStepLabel}
+                        {label(page.ageStepLabel)}
                       </Link>
                     )}
                   </li>

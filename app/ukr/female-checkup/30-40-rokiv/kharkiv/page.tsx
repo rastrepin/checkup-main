@@ -30,7 +30,7 @@ import {
 } from '@/lib/programs/age-page-shared';
 
 // Вікова сторінка міста – чернетка SPRINT-KHARKIV-v0, каркас 5.2 (12 блоків).
-// Контент: content/kharkiv/female-do-30-rokiv.md (v0.1) дослівно; файл згенеровано з того самого джерела, що й MD.
+// Контент: content/kharkiv/female-30-40-rokiv.md (v0.1) дослівно; файл згенеровано з того самого джерела, що й MD.
 // Програма, ціна, дата ціни, склад, філії – тільки з Supabase (fetchClinicOffers):
 // platform_program_offers → checkup_programs (program_type = 'clinic') → onclinic-kharkiv.
 // Hero, «Двері», GEO, автор і рецензент – верстка в сторінці (рішення спринту, без нових спільних компонентів).
@@ -39,14 +39,14 @@ import {
 
 export const revalidate = 3600;
 
-const PAGE_PATH = '/ukr/female-checkup/do-30-rokiv/kharkiv';
+const PAGE_PATH = '/ukr/female-checkup/30-40-rokiv/kharkiv';
 const PAGE_URL = `https://check-up.in.ua${PAGE_PATH}`;
-const PLATFORM_PROGRAM = 'female-checkup-do-30';
+const PLATFORM_PROGRAM = 'female-checkup-30-40';
 const CLINIC_SLUG = 'onclinic-kharkiv';
-const SOURCE_CTA = 'age_page_female_do_30_kharkiv';
+const SOURCE_CTA = 'age_page_female_30_40_kharkiv';
 // SEO-STANDARD р.4, Тип 5a. X (мінімальна ціна програм клініки для сторінки) – з Supabase у generateMetadata.
-const TITLE = "Чекап для жінок до 30 років: які обстеження проходити, програми в Харкові | check-up.in.ua";
-const DESCRIPTION_BASE = "Які обстеження потрібні жінкам до 30 років. 4 цілі скринінгу.";
+const TITLE = "Чекап для жінок 30–40 років: які обстеження проходити, програми в Харкові | check-up.in.ua";
+const DESCRIPTION_BASE = "Які обстеження потрібні жінкам 30–40 років. 5 цілей скринінгу.";
 const UPDATED_ISO = '2026-09-24';
 const UPDATED_LABEL = '24.09.2026';
 const REVIEWER = { name: 'Удовиченко Олена Олександрівна', jobTitle: 'лікар акушер-гінеколог', org: 'ОН Клінік Харків' };
@@ -81,7 +81,6 @@ export async function generateMetadata(): Promise<Metadata> {
 const SOURCES: string[] = [
   "МОЗ України. Наказ №504 (2018), яким скасовано диспансеризацію; замінив наказ №728.",
   "МОЗ України. Стандарт медичної допомоги «Скринінг раку шийки матки. Ведення пацієнток з аномальними результатами скринінгу та передраковими станами шийки матки», наказ №1057 від 18.06.2024.",
-  "МОЗ України. Наказ №1368 від 05.08.2024: порядки скринінгу і ранньої діагностики раку молочної залози, раку шийки матки і колоректального раку.",
   "Mayo Clinic Family Health Book, 5th Edition.",
   "USPSTF. Prediabetes and Type 2 Diabetes: Screening, 2021. Дорослі 35–70 років з надлишковою вагою або ожирінням, кожні 3 роки.",
 ];
@@ -90,6 +89,7 @@ const SOURCES: string[] = [
 const TARGETS: { label: string; keywords: string[] }[] = [
   { label: "ПАП-тест", keywords: ["пап-тест", "цервікальн", "впл"] },
   { label: "Холестерин (ліпідограма)", keywords: ["ліпідограм"] },
+  { label: "Глюкоза", keywords: ["глюкоз"] },
 ];
 
 const LIST_HEADING = "Що вам потрібно в цьому віці";
@@ -105,11 +105,11 @@ const ADDITIONS: AgeAddition[] = [
 /** FAQ: видимий текст і FAQPage Schema будуються з одного масиву. */
 function buildFaq(programName: string | null): { q: string; a: string }[] {
   return [
-    { q: "Мені до 30 і нічого не турбує. Навіщо обстеження?", a: "Щоб мати точку відліку і не пропустити того, що в цьому віці шукають за настановами: передракові зміни шийки матки, підвищений тиск, рівень холестерину. Перелік і частота – у блоці «Що вам потрібно в цьому віці»." },
+    { q: "Чи змінюється щось у переліку після 35?", a: "Так. З 35 років людям із надлишковою вагою додають скринінг переддіабету і діабету 2 типу раз на 3 роки. Для скринінгу раку шийки матки з 35 з'являється інший спосіб – тест на ВПЛ раз на 10 років." },
     faqOtherClinic(),
     faqMissingInProgram(programName),
-    { q: "Чи потрібна мамографія до 30 років?", a: "Якщо немає скарг і раку молочної залози в родині, найімовірніше ні. Якщо рак був у матері, сестри або доньки, обстеження починають за 5–10 років до віку, у якому діагноз поставили родичці. Це рішення ухвалюють разом з лікарем." },
-    { q: "Як часто повторювати ПАП-тест?", a: "За стандартом МОЗ мазок на клітини повторюють раз на 3 роки, якщо попередній результат нормальний. Інший графік можливий за імуносупресії або після аномального результату, його визначає гінеколог." },
+    { q: "Чи потрібна мамографія до 40 років?", a: "Якщо немає скарг і раку молочної залози в родині, найімовірніше ні. Якщо рак був у матері, сестри або доньки, обстеження починають за 5–10 років до віку, у якому діагноз поставили родичці. Це рішення ухвалюють разом з лікарем." },
+    { q: "Як часто перевіряти тиск?", a: "До 40 років – раз на 3–5 років, за наявності факторів ризику – щороку. Тиск вимірюють на прийомі." },
     { q: "Що взяти з собою на обстеження?", a: "Результати попередніх аналізів і обстежень, якщо вони є: лікар порівнює нові показники з попередніми. Про підготовку до аналізів – у блоці «Як це проходить»." },
   ];
 }
@@ -180,7 +180,7 @@ function Section({ bg, eyebrow, children }: { bg: string; eyebrow: string; child
   );
 }
 
-export default async function FemaleAgeDo30KharkivPage() {
+export default async function FemaleAge3040KharkivPage() {
   const { clinic, branches, clinicServiceNames, offers } = await getOffers();
   const offer = offers[0] ?? null;
   const program = offer?.program ?? null;
@@ -214,7 +214,7 @@ export default async function FemaleAgeDo30KharkivPage() {
     {
       '@context': 'https://schema.org',
       '@type': 'MedicalWebPage',
-      name: "Чекап для жінок до 30 років – що перевіряти і де пройти в Харкові",
+      name: "Чекап для жінок 30–40 років – що перевіряти і де пройти в Харкові",
       url: PAGE_URL,
       dateModified: UPDATED_ISO,
       reviewedBy: {
@@ -231,7 +231,7 @@ export default async function FemaleAgeDo30KharkivPage() {
         { '@type': 'ListItem', position: 1, name: 'check-up.in.ua', item: 'https://check-up.in.ua' },
         { '@type': 'ListItem', position: 2, name: 'Харків', item: 'https://check-up.in.ua/ukr/kharkiv' },
         { '@type': 'ListItem', position: 3, name: 'Жінкам', item: 'https://check-up.in.ua/ukr/female-checkup/kharkiv' },
-        { '@type': 'ListItem', position: 4, name: "До 30 років", item: PAGE_URL },
+        { '@type': 'ListItem', position: 4, name: "30–40 років", item: PAGE_URL },
       ],
     },
     {
@@ -269,16 +269,16 @@ export default async function FemaleAgeDo30KharkivPage() {
                 <span className="mx-1.5">/</span>
                 <Link href="/ukr/female-checkup/kharkiv" className="hover:underline">Жінкам</Link>
                 <span className="mx-1.5">/</span>
-                <span className="text-gray-700">До 30 років</span>
+                <span className="text-gray-700">30–40 років</span>
               </nav>
               <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#005485] mb-6">Жіночий чекап · Харків</p>
               <h1
                 className="font-bold leading-tight mb-6"
                 style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: 'clamp(32px, 5.5vw, 56px)' }}
               >
-                Чекап для жінок до 30 років – що перевіряти і де пройти в Харкові
+                Чекап для жінок 30–40 років – що перевіряти і де пройти в Харкові
               </h1>
-              <p className="text-lg text-gray-700 leading-relaxed mt-2">Сторінка для жінок до 30 років без скарг, які хочуть зрозуміти, що варто перевірити зараз. Спочатку перелік за клінічними настановами, потім готова програма клініки в Харкові і що до неї додати.</p>
+              <p className="text-lg text-gray-700 leading-relaxed mt-2">Сторінка для жінок 30–40 років без скарг. Спочатку перелік за клінічними настановами, потім готова програма клініки в Харкові і що до неї додати.</p>
             </div>
           </div>
         </section>
@@ -286,17 +286,19 @@ export default async function FemaleAgeDo30KharkivPage() {
         {/* 2. Що вам потрібно в цьому віці – не залежить від партнера */}
         <Section bg={BG_WHITE} eyebrow="За клінічними настановами">
           <H2 id="shcho-potribno">Що вам потрібно в цьому віці</H2>
-          <p className={P}>До 30 років на обстеження зазвичай приходять не через скарги, а щоб мати точку відліку: з нею порівнюють наступні результати.</p>
+          <p className={P}>Між 30 і 40 з&apos;являються перші перевірки, які залежать не лише від віку, а й від ваги і сімейної історії.</p>
           <p className={P}>Єдиного українського протоколу профілактичного обстеження для цього віку немає. Диспансеризацію скасовано 2018 року<S n={[1]} />. Тому перелік нижче складений за українськими порядками скринінгу окремих хвороб і за міжнародними рекомендаціями.</p>
-          <h3 className="text-lg font-semibold text-[#0b1a24] mt-8">Рак шийки матки: ПАП-тест</h3>
-          <p className={P}>За стандартом МОЗ мазок на клітини можна робити з 21 року, раз на 3 роки<S n={[2]} />. Порядок скринінгу називає популяційний вік 25–65 років<S n={[3]} />. Коли починати саме вам, обговоріть з гінекологом.</p>
+          <h3 className="text-lg font-semibold text-[#0b1a24] mt-8">Рак шийки матки: ПАП-тест або тест на ВПЛ</h3>
+          <p className={P}>Мазок на клітини роблять раз на 3 роки<S n={[2]} />. З 35 років стандарт МОЗ допускає інший спосіб – тест на вірус папіломи людини (ВПЛ) раз на 10 років<S n={[2]} />. Який підходить вам, обговоріть з гінекологом.</p>
           <p className="mt-3 text-sm"><Link href="/ukr/screening/pap-test" className="font-semibold text-[#005485] hover:underline">Докладніше про ПАП-тест →</Link></p>
           <h3 className="text-lg font-semibold text-[#0b1a24] mt-8">Артеріальний тиск</h3>
-          <p className={P}>До 40 років тиск вимірюють раз на 3–5 років, а за наявності факторів ризику – щороку<S n={[4]} />. Це вимірювання на прийомі, окремого аналізу для нього не потрібно.</p>
+          <p className={P}>До 40 років тиск вимірюють раз на 3–5 років, а за наявності факторів ризику – щороку<S n={[3]} />. Це вимірювання на прийомі, окремого аналізу для нього не потрібно.</p>
           <h3 className="text-lg font-semibold text-[#0b1a24] mt-8">Холестерин</h3>
-          <p className={P}>Перше вимірювання холестерину роблять у 20 років. Якщо показники в нормі, його повторюють раз на 4–6 років<S n={[4]} />.</p>
+          <p className={P}>Якщо показники в нормі, холестерин повторюють раз на 4–6 років від першого вимірювання у 20 років<S n={[3]} />.</p>
+          <h3 className="text-lg font-semibold text-[#0b1a24] mt-8">Цукровий діабет 2 типу</h3>
+          <p className={P}>З 35 років людям із надлишковою вагою або ожирінням, тобто з індексом маси тіла 25 і більше, рекомендують скринінг переддіабету і діабету 2 типу раз на 3 роки<S n={[4]} />. Показанням є поєднання віку і ваги: за нормальної ваги рутинна перевірка не потрібна, якщо лікар не бачить інших підстав.</p>
           <h3 className="text-lg font-semibold text-[#0b1a24] mt-8">Молочні залози</h3>
-          <p className={P}>Якщо вам менше 40 і немає скарг чи раку молочної залози в родині, мамографія найімовірніше не потрібна<S n={[4]} />. Вона стає потрібною раніше, якщо рак був у матері, сестри або доньки: про це в наступному блоці.</p>
+          <p className={P}>Якщо вам менше 40 і немає скарг чи раку молочної залози в родині, мамографія найімовірніше не потрібна<S n={[3]} />. Вона стає потрібною раніше, якщо рак був у матері, сестри або доньки: про це в наступному блоці.</p>
           <p className="mt-3 text-sm"><Link href="/ukr/screening/mamografiia" className="font-semibold text-[#005485] hover:underline">Докладніше про мамографію →</Link></p>
         </Section>
 
@@ -305,11 +307,9 @@ export default async function FemaleAgeDo30KharkivPage() {
           <H2 id="istoriia">Що залежить від вашої історії</H2>
           <p className={P}>Перелік вище розрахований на жінку без скарг і без особливої історії. Він змінюється, якщо:</p>
           <h3 className="text-lg font-semibold text-[#0b1a24] mt-8">Рак молочної залози в матері, сестри або доньки</h3>
-          <p className={P}>Мамографію починають за 5–10 років до віку, у якому діагноз поставили родичці<S n={[4]} />. З якого віку починати вам, обговоріть з лікарем.</p>
+          <p className={P}>Мамографію починають за 5–10 років до віку, у якому діагноз поставили родичці<S n={[3]} />. З якого віку починати вам, обговоріть з лікарем.</p>
           <h3 className="text-lg font-semibold text-[#0b1a24] mt-8">Фактори серцево-судинного ризику</h3>
-          <p className={P}>Тиск вимірюють щороку, а не раз на 3–5 років<S n={[4]} />. Які фактори ризику є саме у вас, оцінює лікар.</p>
-          <h3 className="text-lg font-semibold text-[#0b1a24] mt-8">Надлишкова вага</h3>
-          <p className={P}>Якщо індекс маси тіла 25 або більше, з 35 років додають скринінг переддіабету і діабету 2 типу раз на 3 роки<S n={[5]} />.</p>
+          <p className={P}>Тиск вимірюють щороку, а не раз на 3–5 років<S n={[3]} />. Які фактори ризику є саме у вас, оцінює лікар.</p>
           <h3 className="text-lg font-semibold text-[#0b1a24] mt-8">ВІЛ або інший стан, що пригнічує імунітет</h3>
           <p className={P}>Графік ПАП-тесту інший: після першого нормального мазка наступний роблять через 12 місяців, а скринінг з віком не припиняють<S n={[2]} />.</p>
         </Section>
@@ -548,7 +548,7 @@ export default async function FemaleAgeDo30KharkivPage() {
               <div className="max-w-3xl text-[14px] text-gray-600 leading-relaxed">
                 <p>
                   {geoText({
-                    subject: 'Чекап для жінок до 30 років',
+                    subject: 'Чекап для жінок 30–40 років',
                     clinicName: clinic.name,
                     branches,
                     programName: program?.name_ua,
