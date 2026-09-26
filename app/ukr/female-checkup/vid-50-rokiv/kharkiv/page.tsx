@@ -212,12 +212,17 @@ function H2({ children, id, className = '' }: { children: React.ReactNode; id?: 
   );
 }
 
-/** Блок основної колонки: білий фон, розділювач зверху (макет v2). */
+/** Блок основної колонки: білий або сірий фон смуги, розділювач зверху (макет v2). */
 // Відступ для переходу за якорем (scroll-mt): з 1024 px – під закріплене меню 1a; на mobile меню не закріплене,
 // тому заголовок розділу стає біля верху екрана (25.09.2026).
-function Block({ eyebrow, children, id }: { eyebrow?: string; children: React.ReactNode; id?: string }) {
+// Фони смуг (правка Ігоря 26.09.2026): блоки чергують білий і сірий фон; блок-продовження має фон попереднього.
+// Сіра смуга на desktop тягнеться на всю ширину екрана, під правою колонкою теж (тінь + clip-path, без зміни розмітки);
+// картка програм у правій колонці закріплена (sticky) і малюється поверх смуги.
+const BAND_GRAY = 'bg-[#f4f6f8] shadow-[0_0_0_100vmax_#f4f6f8] [clip-path:inset(0_-100vmax)]';
+
+function Block({ eyebrow, children, id, gray = false, className = '' }: { eyebrow?: string; children: React.ReactNode; id?: string; gray?: boolean; className?: string }) {
   return (
-    <section id={id} className="px-5 sm:px-6 lg:px-0 py-10 lg:py-14 border-t border-[#eef0f2] -scroll-mt-6 lg:scroll-mt-16">
+    <section id={id} className={`px-5 sm:px-6 lg:px-0 py-10 lg:py-14 border-t border-[#eef0f2] -scroll-mt-6 lg:scroll-mt-16 ${gray ? BAND_GRAY : ''} ${className}`}>
       <div className="max-w-3xl">
         {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
         {children}
@@ -257,6 +262,7 @@ export default async function FemaleAgeVid50KharkivPage() {
   const showVisits = Boolean(program && composition && visitCount > 0);
 
   const notice = program?.price_date ? priceDateNotice(program.price_date) : undefined;
+  const showComposition = Boolean(program && clinic && composition);
 
   const navItems: InPageNavItem[] = [
     { id: ID.list, label: 'Що перевірити' },
@@ -310,7 +316,7 @@ export default async function FemaleAgeVid50KharkivPage() {
 
   return (
     <>
-      <main className="text-[#0b1a24] pb-24 md:pb-0">
+      <main className="text-[#0b1a24]">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
         {/* 1. Hero – без ціни */}
@@ -380,9 +386,9 @@ export default async function FemaleAgeVid50KharkivPage() {
         {/* 1a. Внутрішнє меню */}
         <InPageNav items={navItems} />
 
-        <div className="max-w-[1200px] mx-auto lg:px-14 lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-x-12">
+        <div className="relative max-w-[1200px] mx-auto lg:px-14 lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-x-12">
           {/* 1b. Доступні програми в Харкові: mobile – одразу після меню, desktop – права колонка, sticky */}
-          <aside id={ID.programs} className="lg:col-start-2 lg:row-start-1 -scroll-mt-3 lg:scroll-mt-16" aria-labelledby="prohramy-h2">
+          <aside id={showComposition ? undefined : ID.programs} className="lg:col-start-2 lg:row-start-1 -scroll-mt-3 lg:scroll-mt-16 bg-[#f4f6f8] lg:bg-transparent" aria-labelledby="prohramy-h2">
             <div className="px-5 sm:px-6 lg:px-0 pt-7 pb-10 lg:pt-14 lg:sticky lg:top-16">
               <H2 id="prohramy-h2" className="mb-4 lg:!text-[22px]">Доступні програми в Харкові</H2>
               {program && clinic ? (
@@ -489,13 +495,17 @@ export default async function FemaleAgeVid50KharkivPage() {
 
             {/* 4. Що входить у програму */}
             {program && clinic && composition && (
-              <Block eyebrow="Програма клініки" id={ID.composition}>
+              <Block eyebrow="Програма клініки" id={ID.composition} gray className="lg:relative">
+                {/* Якір «Програми» (меню 1a і кнопка Hero), правка Ігоря 26.09.2026: на mobile найближчий позиціонований
+                    предок – контейнер колонок, тому якір стоїть на початку картки програм 1b; на desktop блок 4 relative,
+                    і якір веде на «Що входить у програму» (картка 1b там закріплена праворуч і видна весь час). */}
+                <span id={ID.programs} aria-hidden="true" className="absolute top-0 left-0 w-px h-px -scroll-mt-3 lg:scroll-mt-16" />
                 <H2>Що входить у програму</H2>
                 <p className="font-semibold text-[#0b1a24] mt-2">
                   {program.name_ua} · {clinic.name}
                 </p>
                 {(inProgram.length > 0 || missingText) && (
-                  <div className="mt-5 bg-[#f4f6f8] rounded-[12px] p-4 flex flex-col gap-3">
+                  <div className="mt-5 bg-white rounded-[12px] p-4 flex flex-col gap-3">
                     {inProgram.length > 0 && (
                       <div className="flex gap-2.5 items-start">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#04b5ba" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="shrink-0 mt-0.5">
@@ -576,7 +586,7 @@ export default async function FemaleAgeVid50KharkivPage() {
 
             {/* 5. Що варто додати – без цін і без кнопки: доповнення додаються на етапі форми запису */}
             {showAdditions && program && (
-              <Block eyebrow="Доповнення" id={ID.additions}>
+              <Block eyebrow="Доповнення" id={ID.additions} gray>
                 <H2>Що варто додати</H2>
                 <p className={P}>{additionsIntro(program.name_ua)}</p>
                 <div className="mt-5">
@@ -595,8 +605,8 @@ export default async function FemaleAgeVid50KharkivPage() {
               </Block>
             )}
 
-            {/* 6. Дисклеймер і будь-яка клініка */}
-            <div className="px-5 sm:px-6 lg:px-0 pb-10">
+            {/* 6. Дисклеймер і будь-яка клініка – продовження блоків 4 і 5, та сама сіра смуга */}
+            <div className={`px-5 sm:px-6 lg:px-0 pb-10 ${BAND_GRAY}`}>
               <div className="max-w-3xl bg-[#e8f9fa] rounded-[12px] p-4" role="note">
                 <p className="text-[#0b1a24] leading-relaxed">{DOCTOR_DECIDES_TEXT}</p>
                 <p className="text-[15px] text-[#374151] leading-relaxed mt-2">{ANY_CLINIC_TEXT}</p>
@@ -647,7 +657,7 @@ export default async function FemaleAgeVid50KharkivPage() {
 
             {/* 7a. Контакти клініки */}
             {clinic && (
-              <Block eyebrow="Контакти" id={ID.contacts}>
+              <Block eyebrow="Контакти" id={ID.contacts} gray>
                 <H2>Контакти клініки</H2>
                 <p className={P}>
                   {clinic.name}
@@ -709,8 +719,16 @@ export default async function FemaleAgeVid50KharkivPage() {
               </div>
             </Block>
 
+          </div>
+        </div>
+
+        {/* Другорядна інформація (правка Ігоря 26.09.2026): окрема смуга на всю ширину, поза колонками –
+            картка програм сюди вже не заходить. Нижній відступ під закріплену кнопку запису на mobile – тут, а не в main,
+            щоб під смугою не лишалося білої полоси. */}
+        <section aria-label="Додаткова інформація" className="bg-[#e9edf1] border-t border-[#dde2e8] pb-24 md:pb-0">
+          <div className="max-w-[1200px] mx-auto lg:px-14">
             {/* 8a. Інші вікові групи */}
-            <div className="px-5 sm:px-6 lg:px-0 pb-8">
+            <div className="px-5 sm:px-6 lg:px-0 pt-10 pb-8">
               <div className="max-w-3xl">
                 <CrossAgeNav currentHref={PAGE_PATH} typographicDash />
                 <p className="text-[15px] mt-2">
@@ -723,7 +741,7 @@ export default async function FemaleAgeVid50KharkivPage() {
 
             {/* 9. GEO – статичний текст з даних */}
             {clinic && branches.length > 0 && (
-              <div className="px-5 sm:px-6 py-6 bg-[#f4f6f8] lg:rounded-[12px]">
+              <div className="mx-5 sm:mx-6 lg:mx-0 lg:max-w-3xl px-5 sm:px-6 py-6 bg-white rounded-[12px]">
                 <p className="max-w-3xl text-sm text-[#4a5a6b] leading-relaxed">
                   {geoText({
                     subject: 'Чекап для жінок після 50 років',
@@ -761,7 +779,7 @@ export default async function FemaleAgeVid50KharkivPage() {
               </div>
             </div>
           </div>
-        </div>
+        </section>
       </main>
 
       {program && clinic && composition && (
