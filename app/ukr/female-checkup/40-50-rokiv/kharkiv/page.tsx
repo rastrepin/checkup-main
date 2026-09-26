@@ -11,7 +11,8 @@ import InPageNav, { type InPageNavItem } from '@/components/shared/InPageNav';
 import BookingFlow, { BookCta } from '@/components/city/BookingFlow';
 import {
   type AgeAddition,
-  ADDITIONS_ASK_DOCTOR,
+  additionsAskDoctor,
+  askDoctorOrAdd,
   ANY_CLINIC_TEXT,
   DOCTOR_DECIDES_TEXT,
   EDITORIAL_TEXT_V2,
@@ -26,6 +27,7 @@ import {
   hoursDash,
   missingTestsSentence,
   preparationItems,
+  ucFirst,
   programAgeShort,
   visitsText,
 } from '@/lib/programs/age-page-shared';
@@ -130,20 +132,19 @@ const ADDITIONS: Addition[] = [
   { id: "fit", name: "Аналіз калу на приховану кров", keywords: ["прихован", "імунохімічн"], explanation: <>У 40–49 років його призначає лікар, якщо є фактори ризику колоректального раку або симптоми<S n={[4]} />.</>, why: <>У 40–49 років його призначає лікар, якщо є фактори ризику колоректального раку або симптоми<S n={[4]} />.</>, forAll: false, riskName: "аналіз калу на приховану кров" },
 ];
 
-/** Абзац під групою «…не проводять», коли в ній одне обстеження (для кількох – ADDITIONS_ASK_DOCTOR). */
-const ADDITIONS_ASK_DOCTOR_ONE =
-  'Запитайте про це обстеження лікаря на консультації: він призначить його, навіть якщо в клініці його не роблять. Результат лікар врахує на другому візиті.';
-
 /** Другий рядок мосту блоку 4, коли {missingTests} порожній, але в програмі немає обстежень, які в цьому віці
- *  роблять за факторів ризику. Назви – у знахідному відмінку (riskName). */
-function riskBasedSentence(names: string[]): string | null {
-  if (names.length === 0) return null;
+ *  роблять за факторів ризику. Назви – у знахідному відмінку (riskName). «Додайте до запису» – лише для тих,
+ *  які клініка проводить (askDoctorOrAdd, задача 26.09.2026, п. 1). */
+function riskBasedSentence(items: { name: string; available: boolean }[]): string | null {
+  if (items.length === 0) return null;
+  const names = items.map((i) => i.name);
   const joined = names.length === 1 ? names[0] : `${names.slice(0, -1).join(', ')} й ${names[names.length - 1]}`;
-  const head = joined.charAt(0).toUpperCase() + joined.slice(1);
-  if (names.length === 1) {
-    return `${head} у цьому віці роблять за факторів ризику, до програми це обстеження не входить. Запитайте про нього лікаря на консультації або додайте до запису.`;
+  const head = ucFirst(joined);
+  const tail = items.map((i) => ({ nameAcc: i.name, available: i.available }));
+  if (items.length === 1) {
+    return `${head} у цьому віці роблять за факторів ризику, до програми це обстеження не входить. ${askDoctorOrAdd('Запитайте про нього лікаря на консультації', tail)}`;
   }
-  return `${head} у цьому віці роблять за факторів ризику, у програму вони не входять. Запитайте про них лікаря на консультації або додайте до запису.`;
+  return `${head} у цьому віці роблять за факторів ризику, у програму вони не входять. ${askDoctorOrAdd('Запитайте про них лікаря на консультації', tail)}`;
 }
 
 /** FAQ: видимий текст і FAQPage Schema будуються з одного масиву. */
@@ -262,9 +263,12 @@ export default async function FemaleAge4050KharkivPage() {
   const showAdditions = Boolean(program) && additions.length > 0;
 
   // {missingTests}: з того самого зіставлення, що й блок «Що варто додати»; лише forAll (спільний модуль).
-  const missingText = program ? missingTestsSentence(additions) : null;
+  const missingText = program ? missingTestsSentence(additions, (a) => additionsAvailable.includes(a)) : null;
   // Другий рядок мосту: {missingTests} порожній, але немає обстежень, які в цьому віці роблять за факторів ризику.
-  const riskText = program && !missingText ? riskBasedSentence(additions.filter((a) => a.riskName).map((a) => a.riskName as string)) : null;
+  const riskText =
+    program && !missingText
+      ? riskBasedSentence(additions.filter((a) => a.riskName).map((a) => ({ name: a.riskName as string, available: additionsAvailable.includes(a) })))
+      : null;
   const bridgeSecond = missingText ?? riskText;
   const ageShort = programAgeShort(program?.name_ua, PAGE_MIN_AGE);
   const FAQ = buildFaq(program?.name_ua ?? null);
@@ -620,7 +624,7 @@ export default async function FemaleAge4050KharkivPage() {
                   />
                 </div>
                 {additionsUnavailable.length > 0 && (
-                  <p className={P}>{additionsUnavailable.length === 1 ? ADDITIONS_ASK_DOCTOR_ONE : ADDITIONS_ASK_DOCTOR}</p>
+                  <p className={P}>{additionsAskDoctor(additionsUnavailable.length)}</p>
                 )}
               </Block>
             )}
