@@ -11,7 +11,7 @@ import InPageNav, { type InPageNavItem } from '@/components/shared/InPageNav';
 import BookingFlow, { BookCta } from '@/components/city/BookingFlow';
 import {
   type AgeAddition,
-  ADDITIONS_ASK_DOCTOR,
+  additionsAskDoctor,
   ANY_CLINIC_TEXT,
   DOCTOR_DECIDES_TEXT,
   EDITORIAL_TEXT_V2,
@@ -128,7 +128,7 @@ const ANSWER_ITEMS: { label: string; id: string }[] = [
 const ADDITIONS: AgeAddition[] = [
   { id: "pap", name: "ПАП-тест", keywords: ["пап-тест", "цервікальн", "впл"], explanation: "Мазок на клітини шийки матки роблять раз на 3 роки. Його можна пройти окремо в гінеколога.", why: "Мазок на клітини шийки матки роблять раз на 3 роки. Його можна пройти окремо в гінеколога.", forAll: true, missingName: "ПАП-тест" },
   { id: "lipid", name: "Холестерин (ліпідограма)", keywords: ["ліпідограм"], explanation: "Якщо ви не перевіряли холестерин після 20 років або з останнього аналізу минуло понад 4–6 років, його можна здати окремо.", why: "Якщо ви не перевіряли холестерин після 20 років або з останнього аналізу минуло понад 4–6 років, його можна здати окремо.", forAll: false },
-  { id: "mammo", name: "Мамографія", keywords: ["мамограф"], explanation: "У 50–69 років кожні 2 роки для всіх жінок.", why: <>У 50–69 років її роблять кожні 2 роки всім жінкам. УЗД молочних залоз не замінює мамографію: для скринінгу раку молочної залози після 50 років використовують саме мамографію<S n={[1]} />. Лікар може призначити УЗД додатково, якщо тканина молочних залоз щільна або потрібно уточнити зміни, знайдені на мамограмі: наприклад, відрізнити кісту від пухлини<S n={[6]} />.</>, forAll: true, missingName: "мамографія" },
+  { id: "mammo", name: "Мамографія", keywords: ["мамограф"], explanation: "У 50–69 років кожні 2 роки для всіх жінок.", why: <>У 50–69 років її роблять кожні 2 роки всім жінкам. УЗД молочних залоз не замінює мамографію: для скринінгу раку молочної залози після 50 років використовують саме мамографію<S n={[1]} />. Лікар може призначити УЗД додатково, якщо тканина молочних залоз щільна або потрібно уточнити зміни, знайдені на мамограмі: наприклад, відрізнити кісту від пухлини<S n={[6]} />.</>, forAll: true, missingName: "мамографія", missingNameAcc: "мамографію" },
   { id: "dxa", name: "Денситометрія (DXA)", keywords: ["денситометр", "dxa", "абсорбціометр"], explanation: "Її роблять з 65 років, а до 65, якщо менопауза вже настала і є фактори ризику перелому.", why: "Її роблять з 65 років, а до 65, якщо менопауза вже настала і є фактори ризику перелому.", forAll: false },
   { id: "fit", name: "Аналіз калу на приховану кров", keywords: ["прихован", "імунохімічн"], explanation: "З 50 до 75 років раз на 2 роки, за факторів ризику щороку.", why: "З 50 до 75 років раз на 2 роки, за факторів ризику щороку.", forAll: true, missingName: "аналіз калу на приховану кров" },
 ];
@@ -249,7 +249,7 @@ export default async function FemaleAgeVid50KharkivPage() {
   const showAdditions = Boolean(program) && additions.length > 0;
 
   // {missingTests}: з того самого зіставлення, що й блок «Що варто додати»; лише forAll (спільний модуль).
-  const missingText = program ? missingTestsSentence(additions) : null;
+  const missingText = program ? missingTestsSentence(additions, (a) => additionsAvailable.includes(a)) : null;
   const ageShort = programAgeShort(program?.name_ua, PAGE_MIN_AGE);
   const FAQ = buildFaq(program?.name_ua ?? null);
   const preparation = preparationItems(items);
@@ -591,7 +591,7 @@ export default async function FemaleAgeVid50KharkivPage() {
                     unavailableTitle={additionsUnavailableTitle(clinic?.name)}
                   />
                 </div>
-                {additionsUnavailable.length > 0 && <p className={P}>{ADDITIONS_ASK_DOCTOR}</p>}
+                {additionsUnavailable.length > 0 && <p className={P}>{additionsAskDoctor(additionsUnavailable.length)}</p>}
               </Block>
             )}
 
