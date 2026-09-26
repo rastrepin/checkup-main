@@ -35,17 +35,47 @@ export interface AgeAddition {
   forAll: boolean;
   /** Назва в реченні {missingTests}; обов'язкова, якщо forAll = true. */
   missingName?: string;
+  /** Назва в знахідному відмінку для речення «… можна також додати до запису», якщо відрізняється від missingName
+   *  («мамографія» → «мамографію»). */
+  missingNameAcc?: string;
+}
+
+/** Велика перша літера (початок речення). */
+export function ucFirst(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+/**
+ * Кінцівка речення про відсутні обстеження (задача 26.09.2026, п. 1): «додайте до запису» – лише для обстежень,
+ * які клініка проводить. Ознака та сама, що розподіляє картки блоку 5 на групи (clinic_services).
+ * - усі проводить: «{ask} або додайте до запису.»;
+ * - частину: «{ask}. {назви тих, що проводить} можна також додати до запису.»;
+ * - жодного: «{ask}.»
+ * ask – «Запитайте про них лікаря на консультації» (множина) або форма однини; names – у знахідному відмінку.
+ */
+export function askDoctorOrAdd(ask: string, items: { nameAcc: string; available: boolean }[]): string {
+  const avail = items.filter((i) => i.available).map((i) => i.nameAcc);
+  if (avail.length === items.length) return `${ask} або додайте до запису.`;
+  if (avail.length === 0) return `${ask}.`;
+  return `${ask}. ${ucFirst(joinWithAnd(avail))} можна також додати до запису.`;
 }
 
 /** Речення {missingTests} (Hero, картка програми, GEO) з доповнень, яких немає в програмі; null – не виводиться.
  *  Конструкція Б – задача v2 (24.09.2026), розділ 16.1, діє на всіх сторінках. */
-export function missingTestsSentence(missingAdditions: AgeAddition[]): string | null {
-  const names = missingAdditions.filter((a) => a.forAll && a.missingName).map((a) => a.missingName as string);
-  if (names.length === 0) return null;
+export function missingTestsSentence(
+  missingAdditions: AgeAddition[],
+  /** Ознака «клініка проводить» (група «Можна додати до запису» блоку 5). Усі сторінки передають її;
+   *  без неї кожне обстеження вважається доступним. */
+  isAvailable: (a: AgeAddition) => boolean = () => true,
+): string | null {
+  const items = missingAdditions.filter((a) => a.forAll && a.missingName);
+  if (items.length === 0) return null;
+  const tail = items.map((a) => ({ nameAcc: a.missingNameAcc ?? (a.missingName as string), available: isAvailable(a) }));
+  const names = items.map((a) => a.missingName as string);
   if (names.length === 1) {
-    return `До програми не входить ${names[0]}. Запитайте про це обстеження лікаря на консультації або додайте до запису.`;
+    return `До програми не входить ${names[0]}. ${askDoctorOrAdd('Запитайте про це обстеження лікаря на консультації', tail)}`;
   }
-  return `До програми не входять ${joinWithAnd(names)}. Запитайте про них лікаря на консультації або додайте до запису.`;
+  return `До програми не входять ${joinWithAnd(names)}. ${askDoctorOrAdd('Запитайте про них лікаря на консультації', tail)}`;
 }
 
 /** Нижня вікова межа з назви програми («… після 40» → 40); null – у назві віку немає. */
@@ -147,17 +177,27 @@ export function faqMissingInProgram(programName: string | null | undefined): { q
   };
 }
 
-/** Задача v2 (сторінка після 50): FAQ «чого немає в програмі» – нова відповідь. Питання те саме. */
+/** Задача v2 (сторінка після 50): FAQ «чого немає в програмі» – нова відповідь. Питання те саме.
+ *  Задача 26.09.2026, п. 2: лікар вирішує, чи потрібне обстеження; де його пройти, не вказуємо. */
 export function faqMissingInProgramV2(programName: string | null | undefined): { q: string; a: string } {
   return {
     q: faqMissingInProgram(programName).q,
-    a: 'Запитайте про нього лікаря на консультації: він призначить його, навіть якщо в клініці його не роблять. Результат лікар врахує на другому візиті.',
+    a: 'Запитайте про нього лікаря на консультації: він вирішить, чи потрібне воно вам, і призначить його. Результат лікар врахує на другому візиті.',
   };
 }
 
-/** Задача v2, блок 5: абзац під картками групи «…не проводять». */
+/** Задача v2, блок 5: абзац під картками групи «…не проводять» (кілька обстежень; задача 26.09.2026, п. 2). */
 export const ADDITIONS_ASK_DOCTOR =
-  'Запитайте про ці обстеження лікаря на консультації: він призначить їх, навіть якщо в клініці їх не роблять. Результат лікар врахує на другому візиті.';
+  'Запитайте про ці обстеження лікаря на консультації: він вирішить, чи потрібні вони вам, і призначить їх. Результат лікар врахує на другому візиті.';
+
+/** Те саме, коли в групі одне обстеження. */
+export const ADDITIONS_ASK_DOCTOR_ONE =
+  'Запитайте про це обстеження лікаря на консультації: він вирішить, чи потрібне воно вам, і призначить його. Результат лікар врахує на другому візиті.';
+
+/** Абзац під групою «…не проводять»: однина або множина за кількістю карток. */
+export function additionsAskDoctor(count: number): string {
+  return count === 1 ? ADDITIONS_ASK_DOCTOR_ONE : ADDITIONS_ASK_DOCTOR;
+}
 
 /** Задача v2, блок 5: заголовок групи недоступних у клініці обстежень. */
 export function additionsUnavailableTitle(clinicName: string | null | undefined): string {
