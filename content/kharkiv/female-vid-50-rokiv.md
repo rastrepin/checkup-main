@@ -4,7 +4,7 @@ h1: "Чекап для жінок після 50 років – що переві
 description: "Які обстеження потрібні жінкам після 50 років. 7 цілей скринінгу. Програми в Харкові від {X} грн."
 path: /ukr/female-checkup/vid-50-rokiv/kharkiv
 version: v0.2
-updated: 2026-09-24
+updated: 2026-09-26
 platform_program: female-checkup-vid-50
 clinic: onclinic-kharkiv
 reviewer: Удовиченко Олена Олександрівна, лікар акушер-гінеколог, ОН Клінік Харків
