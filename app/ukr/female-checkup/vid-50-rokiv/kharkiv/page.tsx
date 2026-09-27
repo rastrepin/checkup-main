@@ -51,8 +51,8 @@ const SOURCE_CTA = 'age_page_female_vid_50_kharkiv';
 // SEO-STANDARD р.4, Тип 5a. X (мінімальна ціна програм клініки для сторінки) – з Supabase у generateMetadata.
 const TITLE = "Чекап для жінок після 50 років: які обстеження проходити, програми в Харкові | check-up.in.ua";
 const DESCRIPTION_BASE = "Які обстеження потрібні жінкам після 50 років. 7 цілей скринінгу.";
-const UPDATED_ISO = '2026-09-24';
-const UPDATED_LABEL = '24.09.2026';
+const UPDATED_ISO = '2026-09-26';
+const UPDATED_LABEL = '26.09.2026';
 const REVIEWER = { name: 'Удовиченко Олена Олександрівна', jobTitle: 'лікар акушер-гінеколог', org: 'ОН Клінік Харків' };
 
 const TEXT = 'text-[#374151] leading-relaxed';
