@@ -98,7 +98,7 @@ export function programAgeShort(programName: string | null | undefined, pageMinA
   if (!programName) return null;
   const age = programMinAge(programName);
   if (age === null || age >= pageMinAge) return null;
-  return `Програма розрахована на ${audience} від ${age} років`;
+  return `Для ${audience} від ${age} років, підходить після ${pageMinAge}`;
 }
 
 const VISIT_COUNT_WORDS: Record<number, string> = { 1: 'один', 2: 'два', 3: 'три', 4: 'чотири' };
@@ -199,6 +199,21 @@ export function additionsAskDoctor(count: number): string {
   return count === 1 ? ADDITIONS_ASK_DOCTOR_ONE : ADDITIONS_ASK_DOCTOR;
 }
 
+/** Латка тексту 2 (A4): причина групи «Запитати у лікаря» – перше речення абзацу під групою. */
+export function additionsUnavailableReason(count: number, riskBased: boolean): string {
+  if (riskBased) {
+    return count === 1
+      ? 'Це обстеження в цьому віці роблять за факторів ризику.'
+      : 'Ці обстеження в цьому віці роблять за факторів ризику.';
+  }
+  return count === 1
+    ? 'Клініка цього обстеження не проводить, тож до запису його не додати.'
+    : 'Клініка цих обстежень не проводить, тож до запису їх не додати.';
+}
+
+/** Латка тексту 2 (A1): абзац під групою «Можна додати до запису». */
+export const ADDITIONS_ADD_VIA_MANAGER = "Щоб додати обстеження до запису, скажіть про це менеджеру, коли він зв'яжеться з вами після заявки: він назве вартість.";
+
 /** Задача v2, блок 5: заголовок групи недоступних у клініці обстежень. */
 export function additionsUnavailableTitle(clinicName: string | null | undefined): string {
   void clinicName; // Сигнатуру збережено (латка етапу 1, п. 1.4): заголовок групи однаковий для будь-якої клініки.
@@ -225,7 +240,7 @@ export const EDITORIAL_TEXT_V2 =
 /** Розкриття (жіночі вікові сторінки; задача «три спільні блоки», 26.09.2026): підзаголовок у стилі підписів груп і абзац. */
 export const DISCLOSURE_TITLE = 'Як ми заробляємо';
 export const DISCLOSURE_TEXT =
-  'Клініка-партнер платить нам, коли ви записуєтеся через сайт: за запис, пояснення і підготовку до візиту. Ціни на сайті такі самі, як у клініці. Рекомендації на цій сторінці взято з клінічних настанов, тож вони не залежать від складу програм клінік.';
+  'Клініка-партнер платить нам, коли ви записуєтеся через сайт: за запис, пояснення і підготовку до візиту. Ціни на сайті такі самі, як у клініці. Медичний рецензент сторінки працює в клініці-партнері. Рекомендації на цій сторінці взято з клінічних настанов, тож вони не залежать від складу програм клінік.';
 
 /** Кількість філій словом, узгоджена з «філія / філії / філій». */
 const BRANCH_COUNT_WORDS: Record<number, string> = {

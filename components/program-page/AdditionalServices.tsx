@@ -67,6 +67,8 @@ export interface AdditionalServicesProps {
   mode?: 'select' | 'info';
   /** Заголовок групи недоступних обстежень; без нього – як раніше. */
   unavailableTitle?: string;
+  /** Абзац під картками групи «Можна додати до запису» (лише mode 'info'); без нього – як раніше. */
+  availableNote?: string;
 }
 
 function fmt(n: number) {
@@ -82,6 +84,7 @@ export default function AdditionalServices({
   showPrices = true,
   mode = 'select',
   unavailableTitle,
+  availableNote,
 }: AdditionalServicesProps) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
@@ -122,6 +125,7 @@ export default function AdditionalServices({
                 </div>
               ))}
             </div>
+            {availableNote && <p className="text-gray-700 leading-relaxed mt-3">{availableNote}</p>}
           </div>
         )}
         {unavailable.length > 0 && (
