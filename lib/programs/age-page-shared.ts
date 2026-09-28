@@ -201,12 +201,13 @@ export function additionsAskDoctor(count: number): string {
 
 /** Задача v2, блок 5: заголовок групи недоступних у клініці обстежень. */
 export function additionsUnavailableTitle(clinicName: string | null | undefined): string {
-  return clinicName ? `В ${clinicName} не проводять` : 'У цій клініці не проводять';
+  void clinicName; // Сигнатуру збережено (латка етапу 1, п. 1.4): заголовок групи однаковий для будь-якої клініки.
+  return 'Запитати у лікаря';
 }
 
 /** Задача v2, блок 6: дисклеймер і рядок про будь-яку клініку. */
 export const DOCTOR_DECIDES_TEXT =
-  'Повний перелік обстежень визначає лікар за результатами огляду і розмови з вами. Програма дає лікарю ширші дані для висновку.';
+  'Повний комплекс обстеження визначає лікар разом з вами на консультації.';
 export const ANY_CLINIC_TEXT =
   'Перелік обстежень із цієї сторінки складено за клінічними настановами, тож його можна пройти в будь-якій клініці.';
 
@@ -219,12 +220,12 @@ export const EDITORIAL_TEXT =
 
 /** E-E-A-T: текст редакції (жіночі вікові сторінки; задача «три спільні блоки», 26.09.2026). Одразу після нього – рядок «Медичний рецензент». */
 export const EDITORIAL_TEXT_V2 =
-  'Ми не лікарі і не клініка. Цей перелік склала редакція check-up.in.ua за клінічними настановами, джерела вказані нижче, а медичний зміст перевірила лікарка.';
+  'Ми не лікарі і не клініка. Рекомендації на цій сторінці зібрала редакція check-up.in.ua з клінічних настанов, джерела вказані нижче, а медичний зміст перевірила лікарка.';
 
 /** Розкриття (жіночі вікові сторінки; задача «три спільні блоки», 26.09.2026): підзаголовок у стилі підписів груп і абзац. */
 export const DISCLOSURE_TITLE = 'Як ми заробляємо';
 export const DISCLOSURE_TEXT =
-  'Клініка-партнер платить нам, коли ви записуєтеся через сайт: за те, що ми пояснюємо, що варто перевірити, і готуємо вас до візиту. Ціни на сайті такі самі, як у клініці. Перелік обстежень вище ми склали за клінічними настановами, тож він не залежить від складу програм клінік.';
+  'Клініка-партнер платить нам, коли ви записуєтеся через сайт: за запис, пояснення і підготовку до візиту. Ціни на сайті такі самі, як у клініці. Рекомендації на цій сторінці взято з клінічних настанов, тож вони не залежать від складу програм клінік.';
 
 /** Кількість філій словом, узгоджена з «філія / філії / філій». */
 const BRANCH_COUNT_WORDS: Record<number, string> = {
@@ -257,11 +258,13 @@ export function geoText(params: {
   branches: { address_ua: string; metro_ua: string | null }[];
   programName?: string | null;
   missingText?: string | null;
+  /** clinics.phone (латка етапу 1, п. 2.7); порожній – фраза про телефон не виводиться. */
+  phone?: string | null;
 }): string {
-  const { subject, cityIn = 'у Харкові', clinicName, branches, programName, missingText } = params;
+  const { subject, cityIn = 'у Харкові', clinicName, branches, programName, missingText, phone } = params;
   const count = BRANCH_COUNT_WORDS[branches.length] ?? String(branches.length);
   const list = branches.map((b) => `${b.address_ua}${b.metro_ua ? ` (${b.metro_ua})` : ''}`).join('; ');
-  let text = `${subject} ${cityIn} можна пройти в ${clinicName}: ${count} ${branchesWord(branches.length)}, ${list}.`;
+  let text = `${subject} ${cityIn} можна пройти в ${clinicName}: ${count} ${branchesWord(branches.length)}, ${list}${phone?.trim() ? `, телефон ${phone.trim()}` : ''}.`;
   if (programName) text += ` Програма клініки: «${programName}».`;
   if (missingText) text += ` ${missingText}`;
   return text;
