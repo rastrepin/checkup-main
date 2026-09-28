@@ -240,7 +240,7 @@ export default async function FemaleAgeDo30KharkivPage() {
   const additionsUnavailable = additions.filter((a) => !additionsAvailable.includes(a));
   const showAdditions = Boolean(program) && additions.length > 0;
 
-  // {missingTests}: з того самого зіставлення, що й блок «Що варто додати»; лише forAll (спільний модуль).
+  // {missingTests}: з того самого зіставлення, що й блок «Чого немає в програмі»; лише forAll (спільний модуль).
   // Це другий рядок мосту блоку 4.
   const missingText = program ? missingTestsSentence(additions, (a) => additionsAvailable.includes(a)) : null;
   const FAQ = buildFaq(program?.name_ua ?? null);
@@ -329,9 +329,8 @@ export default async function FemaleAgeDo30KharkivPage() {
                 Чекап для жінок до 30 років – що перевіряти і де пройти в Харкові
               </h1>
               <p className="text-[#4a5a6b] leading-relaxed mb-4">
-                Якщо вам до 30 років і нічого не турбує, клінічні настанови радять пройти кілька обстежень. Для ширшого
-                обстеження зверніться до свого лікаря або оберіть комплексну програму в Харкові, розраховану на жінок
-                вашого віку.
+                Якщо вам до 30 років і нічого не турбує, клінічні настанови радять пройти кілька обстежень.
+                Нижче – які саме і де їх пройти в Харкові.
               </p>
               <div className="bg-white border-[1.5px] border-[#e5e7eb] rounded-[12px] px-4 pt-4 pb-3 mb-4">
                 <p className="font-semibold text-[#0b1a24] mb-2">До 30 років жінкам без скарг рекомендують три обстеження:</p>
@@ -378,8 +377,29 @@ export default async function FemaleAgeDo30KharkivPage() {
         <InPageNav items={navItems} />
 
         <div className="relative max-w-[1200px] mx-auto lg:px-14 lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-x-12">
-          {/* 1b. Доступні програми в Харкові: mobile – одразу після меню, desktop – права колонка, sticky */}
-          <aside id={showComposition ? undefined : ID.programs} className="lg:col-start-2 lg:row-start-1 -scroll-mt-3 lg:scroll-mt-16 bg-[#f4f6f8] lg:bg-transparent" aria-labelledby="prohramy-h2">
+          <div className="lg:col-start-1 lg:row-start-1 min-w-0">
+            {/* 2. Які обстеження рекомендують жінкам до 30 років – не залежить від партнера */}
+            <Block eyebrow="За клінічними настановами" id={ID.list}>
+              <H2>Які обстеження рекомендують жінкам до 30 років</H2>
+              <p className={P}>Єдиного українського протоколу профілактичного обстеження для цього віку немає. Диспансеризацію скасовано 2018 року<S n={[1]} />. Тому перелік нижче складений за українськими порядками скринінгу окремих хвороб і за міжнародними рекомендаціями.</p>
+              <h3 id={ID.cervix} className={H3}>Рак шийки матки</h3>
+              <p className={P}>Мазок на клітини шийки матки (ПАП-тест) роблять з 21 року, раз на 3 роки<S n={[2]} />. Коли починати саме вам, обговоріть з гінекологом. Детальніше на сторінці «<Link href="/ukr/screening/pap-test" className={LINK}>ПАП-тест: що показує і коли потрібен</Link>».</p>
+              <h3 id={ID.pressure} className={H3}>Артеріальний тиск</h3>
+              <p className={P}>До 40 років тиск вимірюють раз на 3–5 років, а за наявності факторів ризику – щороку<S n={[4]} />. Для цього достатньо вимірювання на прийомі, окремий аналіз не потрібен.</p>
+              <h3 id={ID.cholesterol} className={H3}>Холестерин</h3>
+              <p className={P}>Ліпідограма, тобто аналіз крові на холестерин і його фракції, показує, чи не підвищений ризик для серця і судин. Уперше її роблять у 20 років<S n={[4]} />. Якщо ви її ще не здавали, аналіз варто зробити зараз. Якщо попередній результат був у нормі, його повторюють раз на 4–6 років<S n={[4]} />. Якщо результат відхиляється від норми, разом із лікарем ви визначаєте, коли повторити аналіз і що робити далі, з огляду на ваш загальний ризик.</p>
+              <h3 id={ID.breast} className={H3}>Молочні залози</h3>
+              <p className={P}>Якщо вам менше 40 і немає скарг чи раку молочної залози в родині, мамографія найімовірніше не потрібна<S n={[4]} />. Вона стає потрібною раніше, якщо рак був у матері, сестри або доньки: про це в розділі «<a href={`#${ID.history}`} className={LINK}>Що залежить від вашої історії</a>». Детальніше на сторінці «<Link href="/ukr/screening/mamografiia" className={LINK}>Мамографія: що показує і коли потрібна</Link>».</p>
+              <p className={P}>Якщо з&apos;явилося ущільнення в грудях чи під пахвою, зміни шкіри, втягнення соска або виділення із соска, до лікаря звертаються одразу, не чекаючи планової мамографії<S n={[3]} />.</p>
+            </Block>
+          </div>
+
+          {/* Латка етапу 1, п. 2.6: на mobile картка 1b стоїть одразу після блоку 2. Обгортка на mobile – найближчий
+              позиціонований предок якоря «Програми» (він веде на картку 1b); з 1024 px вона display: contents,
+              і картка 1b – права колонка на обидва рядки сітки, sticky, як і раніше. */}
+          <div className="relative lg:contents">
+          {/* 1b. Доступні програми в Харкові: mobile – одразу після блоку 2, desktop – права колонка, sticky */}
+          <aside id={showComposition ? undefined : ID.programs} className="lg:col-start-2 lg:row-start-1 lg:row-end-3 -scroll-mt-3 lg:scroll-mt-16 bg-[#f4f6f8] lg:bg-transparent" aria-labelledby="prohramy-h2">
             <div className="px-5 sm:px-6 lg:px-0 pt-7 pb-10 lg:pt-14 lg:sticky lg:top-16 lg:z-10 lg:bg-white">
               <H2 id="prohramy-h2" className="mb-4 lg:!text-[22px]">Доступні програми в Харкові</H2>
               {program && clinic ? (
@@ -431,22 +451,7 @@ export default async function FemaleAgeDo30KharkivPage() {
             </div>
           </aside>
 
-          <div className="lg:col-start-1 lg:row-start-1 min-w-0">
-            {/* 2. Які обстеження потрібні жінці до 30 років – не залежить від партнера */}
-            <Block eyebrow="За клінічними настановами" id={ID.list}>
-              <H2>Які обстеження потрібні жінці до 30 років</H2>
-              <p className={P}>Єдиного українського протоколу профілактичного обстеження для цього віку немає. Диспансеризацію скасовано 2018 року<S n={[1]} />. Тому перелік нижче складений за українськими порядками скринінгу окремих хвороб і за міжнародними рекомендаціями.</p>
-              <h3 id={ID.cervix} className={H3}>Рак шийки матки</h3>
-              <p className={P}>Мазок на клітини шийки матки (ПАП-тест) роблять з 21 року, раз на 3 роки<S n={[2]} />. Коли починати саме вам, обговоріть з гінекологом. Детальніше на сторінці «<Link href="/ukr/screening/pap-test" className={LINK}>ПАП-тест: що показує і коли потрібен</Link>».</p>
-              <h3 id={ID.pressure} className={H3}>Артеріальний тиск</h3>
-              <p className={P}>До 40 років тиск вимірюють раз на 3–5 років, а за наявності факторів ризику – щороку<S n={[4]} />. Для цього достатньо вимірювання на прийомі, окремий аналіз не потрібен.</p>
-              <h3 id={ID.cholesterol} className={H3}>Холестерин</h3>
-              <p className={P}>Ліпідограма, тобто аналіз крові на холестерин і його фракції, показує, чи не підвищений ризик для серця і судин. Уперше її роблять у 20 років<S n={[4]} />. Якщо ви її ще не здавали, аналіз варто зробити зараз. Якщо попередній результат був у нормі, його повторюють раз на 4–6 років<S n={[4]} />. Якщо результат відхиляється від норми, разом із лікарем ви визначаєте, коли повторити аналіз і що робити далі, з огляду на ваш загальний ризик.</p>
-              <h3 id={ID.breast} className={H3}>Молочні залози</h3>
-              <p className={P}>Якщо вам менше 40 і немає скарг чи раку молочної залози в родині, мамографія найімовірніше не потрібна<S n={[4]} />. Вона стає потрібною раніше, якщо рак був у матері, сестри або доньки: про це в розділі «<a href={`#${ID.history}`} className={LINK}>Що залежить від вашої історії</a>». Детальніше на сторінці «<Link href="/ukr/screening/mamografiia" className={LINK}>Мамографія: що показує і коли потрібна</Link>».</p>
-              <p className={P}>Якщо з&apos;явилося ущільнення в грудях чи під пахвою, зміни шкіри, втягнення соска або виділення із соска, до лікаря звертаються одразу, не чекаючи планової мамографії<S n={[3]} />.</p>
-            </Block>
-
+          <div className="lg:col-start-1 lg:row-start-2 min-w-0">
             {/* 2b. Що залежить від вашої історії – порядок за задачею v1 для до 30, розділ 5 */}
             <Block eyebrow="Ваша історія" id={ID.history}>
               <H2>Що залежить від вашої історії</H2>
@@ -465,7 +470,7 @@ export default async function FemaleAgeDo30KharkivPage() {
             {program && clinic && composition && (
               <Block eyebrow="Програма клініки" id={ID.composition} gray className="lg:relative">
                 {/* Якір «Програми» (меню 1a і кнопка Hero), правка Ігоря 26.09.2026: на mobile найближчий позиціонований
-                    предок – контейнер колонок, тому якір стоїть на початку картки програм 1b; на desktop блок 4 relative,
+                    предок – обгортка картки 1b і решти колонки, тому якір стоїть на початку картки програм 1b; на desktop блок 4 relative,
                     і якір веде на «Що входить у програму» (картка 1b там закріплена праворуч і видна весь час). */}
                 <span id={ID.programs} aria-hidden="true" className="absolute top-0 left-0 w-px h-px -scroll-mt-3 lg:scroll-mt-16" />
                 <H2>Що входить у програму</H2>
@@ -552,10 +557,10 @@ export default async function FemaleAgeDo30KharkivPage() {
               </Block>
             )}
 
-            {/* 5. Що варто додати – без цін і без кнопки: доповнення додаються на етапі форми запису */}
+            {/* 5. Чого немає в програмі – без цін і без кнопки: доповнення додаються на етапі форми запису */}
             {showAdditions && program && (
               <Block eyebrow="Доповнення" id={ID.additions} gray>
-                <H2>Що варто додати</H2>
+                <H2>Чого немає в програмі</H2>
                 <p className={P}>{additionsIntro(program.name_ua)}</p>
                 <div className="mt-5">
                   <AdditionalServices
@@ -686,6 +691,7 @@ export default async function FemaleAgeDo30KharkivPage() {
             </Block>
 
           </div>
+          </div>
         </div>
 
         {/* Другорядна інформація (правка Ігоря 26.09.2026): окрема смуга на всю ширину, поза колонками –
@@ -713,6 +719,7 @@ export default async function FemaleAgeDo30KharkivPage() {
                     subject: 'Чекап для жінок до 30 років',
                     clinicName: clinic.name,
                     branches,
+                    phone: clinic.phone,
                     programName: program?.name_ua,
                     missingText,
                   })}
