@@ -12,6 +12,8 @@ import BookingFlow, { BookCta } from '@/components/city/BookingFlow';
 import {
   type AgeAddition,
   additionsAskDoctor,
+  additionsUnavailableReason,
+  ADDITIONS_ADD_VIA_MANAGER,
   askDoctorOrAdd,
   ANY_CLINIC_TEXT,
   DISCLOSURE_TEXT,
@@ -22,7 +24,6 @@ import {
   SECOND_VISIT_TEXT_V2,
   additionsIntro,
   additionsUnavailableTitle,
-  faqMissingInProgramV2,
   faqOtherClinic,
   geoText,
   hoursDash,
@@ -52,7 +53,7 @@ const CLINIC_SLUG = 'onclinic-kharkiv';
 const SOURCE_CTA = 'age_page_female_40_50_kharkiv';
 // SEO-STANDARD р.4, Тип 5a. X (мінімальна ціна програм клініки для сторінки) – з Supabase у generateMetadata.
 const TITLE = "Чекап для жінок 40–50 років: які обстеження проходити, програми в Харкові | check-up.in.ua";
-const DESCRIPTION_BASE = "Які обстеження потрібні жінкам 40–50 років. 6 цілей скринінгу.";
+const DESCRIPTION_BASE = "У 40–50 років жінкам рекомендують вимірювання тиску, аналізи на холестерин і цукор, ПАП-тест, а за факторів ризику – мамографію.";
 const UPDATED_ISO = '2026-09-26';
 const UPDATED_LABEL = '26.09.2026';
 const REVIEWER = { name: 'Удовиченко Олена Олександрівна', jobTitle: 'лікар акушер-гінеколог', org: 'ОН Клінік Харків' };
@@ -73,7 +74,9 @@ function minPrice(offers: ClinicOffer[]): number | null {
 export async function generateMetadata(): Promise<Metadata> {
   const { offers } = await getOffers();
   const x = minPrice(offers);
-  const description = x ? `${DESCRIPTION_BASE} Програми в Харкові від ${fmt(x)} грн.` : DESCRIPTION_BASE;
+  const description = x
+    ? `${DESCRIPTION_BASE} ${offers.length === 1 ? `Програма в Харкові – ${fmt(x)} грн.` : `Програми в Харкові від ${fmt(x)} грн.`}`
+    : DESCRIPTION_BASE;
   return {
     title: { absolute: TITLE },
     description,
@@ -155,7 +158,6 @@ function buildFaq(programName: string | null): { q: string; a: string }[] {
     { q: "Що змінюється в переліку після 40?", a: "Тиск вимірюють щороку, а не раз на 3–5 років. Якщо є фактори ризику раку молочної залози, мамографію роблять кожні 2 роки. Про фактори ризику колоректального раку лікар щороку розпитує, а аналіз калу на приховану кров призначає, якщо вони є." },
     { q: "Чи потрібна мамографія в 40–49 років?", a: "Якщо є хоча б один фактор ризику, так: кожні 2 роки за українським порядком скринінгу. Без факторів ризику єдиної думки немає, тож рішення ви ухвалюєте разом із лікарем. Детальніше на сторінці «Мамографія: що показує і коли потрібна»." },
     faqOtherClinic(),
-    faqMissingInProgramV2(programName),
     { q: "Що взяти з собою на обстеження?", a: "Результати попередніх аналізів і обстежень, якщо вони є: лікар порівнює нові показники з попередніми. Про підготовку до аналізів – у блоці «Як це проходить»." },
   ];
 }
@@ -394,7 +396,7 @@ export default async function FemaleAge4050KharkivPage() {
                 href={`#${ID.programs}`}
                 className="flex sm:inline-flex items-center justify-center gap-2 min-h-[52px] px-7 rounded-full bg-[#005485] text-white text-[15px] font-semibold hover:bg-[#003a5e] transition-colors"
               >
-                Доступні програми в Харкові
+                Як пройти обстеження в Харкові
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M12 5v14M6 13l6 6 6-6" />
                 </svg>
@@ -439,10 +441,10 @@ export default async function FemaleAge4050KharkivPage() {
               позиціонований предок якоря «Програми» (він веде на картку 1b); з 1024 px вона display: contents,
               і картка 1b – права колонка на обидва рядки сітки, sticky, як і раніше. */}
           <div className="relative lg:contents">
-          {/* 1b. Доступні програми в Харкові: mobile – одразу після блоку 2, desktop – права колонка, sticky */}
+          {/* 1b. Як пройти обстеження в Харкові: mobile – одразу після блоку 2, desktop – права колонка, sticky */}
           <aside id={showComposition ? undefined : ID.programs} className="lg:col-start-2 lg:row-start-1 lg:row-end-3 -scroll-mt-3 lg:scroll-mt-16 bg-[#f4f6f8] lg:bg-transparent" aria-labelledby="prohramy-h2">
             <div className="px-5 sm:px-6 lg:px-0 pt-7 pb-10 lg:pt-14 lg:sticky lg:top-16 lg:z-10 lg:bg-white">
-              <H2 id="prohramy-h2" className="mb-4 lg:!text-[22px]">Доступні програми в Харкові</H2>
+              <H2 id="prohramy-h2" className="mb-4 lg:!text-[22px]">Як пройти обстеження в Харкові</H2>
               {program && clinic ? (
                 <>
                   <div className="border-[1.5px] border-[#e5e7eb] rounded-[12px] px-4 pt-[18px] pb-4 bg-white">
@@ -636,10 +638,11 @@ export default async function FemaleAge4050KharkivPage() {
                     showPrices={false}
                     mode="info"
                     unavailableTitle={additionsUnavailableTitle(clinic?.name)}
+                    availableNote={ADDITIONS_ADD_VIA_MANAGER}
                   />
                 </div>
                 {additionsUnavailable.length > 0 && (
-                  <p className={P}>{additionsAskDoctor(additionsUnavailable.length)}</p>
+                  <p className={P}>{additionsUnavailableReason(additionsUnavailable.length, additionsUnavailable.some((a) => a.riskName))} {additionsAskDoctor(additionsUnavailable.length)}</p>
                 )}
               </Block>
             )}
