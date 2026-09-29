@@ -12,6 +12,8 @@ import BookingFlow, { BookCta } from '@/components/city/BookingFlow';
 import {
   type AgeAddition,
   additionsAskDoctor,
+  additionsUnavailableReason,
+  ADDITIONS_ADD_VIA_MANAGER,
   ANY_CLINIC_TEXT,
   DISCLOSURE_TEXT,
   DISCLOSURE_TITLE,
@@ -21,7 +23,6 @@ import {
   SECOND_VISIT_TEXT_V2,
   additionsIntro,
   additionsUnavailableTitle,
-  faqMissingInProgramV2,
   faqOtherClinic,
   geoText,
   hoursDash,
@@ -50,7 +51,7 @@ const CLINIC_SLUG = 'onclinic-kharkiv';
 const SOURCE_CTA = 'age_page_female_30_40_kharkiv';
 // SEO-STANDARD р.4, Тип 5a. X (мінімальна ціна програм клініки для сторінки) – з Supabase у generateMetadata.
 const TITLE = "Чекап для жінок 30–40 років: які обстеження проходити, програми в Харкові | check-up.in.ua";
-const DESCRIPTION_BASE = "Які обстеження потрібні жінкам 30–40 років. 5 цілей скринінгу.";
+const DESCRIPTION_BASE = "У 30–40 років жінкам рекомендують ПАП-тест, вимірювання тиску й аналіз на холестерин, а з 35 років – аналіз на цукор.";
 const UPDATED_ISO = '2026-09-26';
 const UPDATED_LABEL = '26.09.2026';
 const REVIEWER = { name: 'Удовиченко Олена Олександрівна', jobTitle: 'лікар акушер-гінеколог', org: 'ОН Клінік Харків' };
@@ -71,7 +72,9 @@ function minPrice(offers: ClinicOffer[]): number | null {
 export async function generateMetadata(): Promise<Metadata> {
   const { offers } = await getOffers();
   const x = minPrice(offers);
-  const description = x ? `${DESCRIPTION_BASE} Програми в Харкові від ${fmt(x)} грн.` : DESCRIPTION_BASE;
+  const description = x
+    ? `${DESCRIPTION_BASE} ${offers.length === 1 ? `Програма в Харкові – ${fmt(x)} грн.` : `Програми в Харкові від ${fmt(x)} грн.`}`
+    : DESCRIPTION_BASE;
   return {
     title: { absolute: TITLE },
     description,
@@ -131,7 +134,6 @@ function buildFaq(programName: string | null): { q: string; a: string }[] {
   return [
     { q: "Чи змінюється щось у переліку після 35?", a: "Так. З 35 років рівень цукру в крові рекомендують перевіряти всім, щонайменше раз на 3 роки. Для скринінгу раку шийки матки з 35 з'являється інший спосіб: тест на ВПЛ раз на 5–10 років." },
     faqOtherClinic(),
-    faqMissingInProgramV2(programName),
     { q: "Чи потрібна мамографія до 40 років?", a: "Якщо немає скарг і раку молочної залози в родині, найімовірніше ні. Якщо рак був у матері, сестри або доньки, обстеження починають за 5–10 років до віку, у якому діагноз поставили родичці. Це рішення ухвалюють разом з лікарем." },
     { q: "Як часто перевіряти тиск?", a: "До 40 років – раз на 3–5 років, за наявності факторів ризику – щороку. Тиск вимірюють на прийомі." },
     { q: "Що взяти з собою на обстеження?", a: "Результати попередніх аналізів і обстежень, якщо вони є: лікар порівнює нові показники з попередніми. Про підготовку до аналізів – у блоці «Як це проходить»." },
@@ -248,7 +250,7 @@ export default async function FemaleAge3040KharkivPage() {
   const additionsUnavailable = additions.filter((a) => !additionsAvailable.includes(a));
   const showAdditions = Boolean(program) && additions.length > 0;
 
-  // {missingTests}: з того самого зіставлення, що й блок «Що варто додати»; лише forAll (спільний модуль).
+  // {missingTests}: з того самого зіставлення, що й блок «Чого немає в програмі»; лише forAll (спільний модуль).
   // Це другий рядок мосту блоку 4.
   const missingText = program ? missingTestsSentence(additions, (a) => additionsAvailable.includes(a)) : null;
   const ageShort = programAgeShort(program?.name_ua, PAGE_MIN_AGE);
@@ -336,9 +338,8 @@ export default async function FemaleAge3040KharkivPage() {
                 Чекап для жінок 30–40 років – що перевіряти і де пройти в Харкові
               </h1>
               <p className="text-[#4a5a6b] leading-relaxed mb-4">
-                Якщо вам від 30 до 40 років і нічого не турбує, клінічні настанови радять пройти кілька обстежень. Для
-                ширшого обстеження зверніться до свого лікаря або оберіть комплексну програму в Харкові, розраховану на
-                жінок вашого віку.
+                Якщо вам від 30 до 40 років і нічого не турбує, клінічні настанови радять пройти кілька обстежень.
+                Нижче – які саме і де їх пройти в Харкові.
               </p>
               <div className="bg-white border-[1.5px] border-[#e5e7eb] rounded-[12px] px-4 pt-4 pb-3 mb-4">
                 <p className="font-semibold text-[#0b1a24] mb-2">У 30–40 років жінкам без скарг рекомендують три обстеження:</p>
@@ -369,7 +370,7 @@ export default async function FemaleAge3040KharkivPage() {
                 href={`#${ID.programs}`}
                 className="flex sm:inline-flex items-center justify-center gap-2 min-h-[52px] px-7 rounded-full bg-[#005485] text-white text-[15px] font-semibold hover:bg-[#003a5e] transition-colors"
               >
-                Доступні програми в Харкові
+                Як пройти обстеження в Харкові
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M12 5v14M6 13l6 6 6-6" />
                 </svg>
@@ -389,10 +390,34 @@ export default async function FemaleAge3040KharkivPage() {
         <InPageNav items={navItems} />
 
         <div className="relative max-w-[1200px] mx-auto lg:px-14 lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-x-12">
-          {/* 1b. Доступні програми в Харкові: mobile – одразу після меню, desktop – права колонка, sticky */}
-          <aside id={showComposition ? undefined : ID.programs} className="lg:col-start-2 lg:row-start-1 -scroll-mt-3 lg:scroll-mt-16 bg-[#f4f6f8] lg:bg-transparent" aria-labelledby="prohramy-h2">
+          <div className="lg:col-start-1 lg:row-start-1 min-w-0">
+            {/* 2. Які обстеження рекомендують жінкам у 30–40 років – не залежить від партнера */}
+            <Block eyebrow="За клінічними настановами" id={ID.list}>
+              <H2>Які обстеження рекомендують жінкам у 30–40 років</H2>
+              <p className={P}>Єдиного українського протоколу профілактичного обстеження для цього віку немає. Диспансеризацію скасовано 2018 року<S n={[1]} />. Тому перелік нижче складений за українськими порядками скринінгу окремих хвороб і за міжнародними рекомендаціями.</p>
+              <h3 id={ID.cervix} className={H3}>Рак шийки матки</h3>
+              <p className={P}>Мазок на клітини шийки матки (ПАП-тест) роблять раз на 3 роки<S n={[2]} />. З 35 років можна обрати інший спосіб: тест на вірус папіломи людини (ВПЛ) раз на 5–10 років. Спосіб та інтервал ви обираєте разом із гінекологом<S n={[2]} />. Державний порядок скринінгу передбачає мінімум: тест раз на 10 років з 30–35 до 55 років<S n={[5]} />. Детальніше на сторінці «<Link href="/ukr/screening/pap-test" className={LINK}>ПАП-тест: що показує і коли потрібен</Link>».</p>
+              <h3 id={ID.pressure} className={H3}>Артеріальний тиск</h3>
+              <p className={P}>До 40 років тиск вимірюють раз на 3–5 років, а за наявності факторів ризику – щороку<S n={[3]} />. Для цього достатньо вимірювання на прийомі, окремий аналіз не потрібен.</p>
+              <h3 id={ID.cholesterol} className={H3}>Холестерин</h3>
+              <p className={P}>Ліпідограма, тобто аналіз крові на холестерин і його фракції, показує, чи не підвищений ризик для серця і судин. Якщо ви її ще не здавали, аналіз варто зробити зараз. Якщо попередній результат був у нормі, його повторюють раз на 4–6 років<S n={[3]} />. Якщо результат відхиляється від норми, разом із лікарем ви визначаєте, коли повторити аналіз і що робити далі, з огляду на ваш загальний ризик.</p>
+              <h3 id={ID.diabetes} className={H3}>Цукровий діабет 2 типу</h3>
+              <p className={P}>З 35 років рівень цукру в крові рекомендують перевіряти всім, навіть за нормальної ваги: якщо результат у нормі, аналіз повторюють щонайменше раз на 3 роки<S n={[6]} />. Перевіряють аналізом крові на глюкозу натще або на глікований гемоглобін (HbA1c, середній рівень цукру за останні 2–3 місяці)<S n={[4]} />. Аналіз показує діабет 2 типу і переддіабет: стан, коли рівень цукру вже вищий за норму, але ще не досягає рівня діабету.</p>
+              <p className={P}>Особливо важливо не пропускати аналіз, якщо є надлишкова вага (індекс маси тіла 25 і більше), діабет 2 типу був у батьків, братів чи сестер, під час вагітності був гестаційний діабет або є синдром полікістозних яєчників<S n={[4]} />.</p>
+              <h3 id={ID.breast} className={H3}>Молочні залози</h3>
+              <p className={P}>Якщо вам менше 40 і немає скарг чи раку молочної залози в родині, мамографія найімовірніше не потрібна<S n={[3]} />. Вона стає потрібною раніше, якщо рак був у матері, сестри або доньки: про це в розділі «<a href={`#${ID.history}`} className={LINK}>Що залежить від вашої історії</a>». Детальніше на сторінці «<Link href="/ukr/screening/mamografiia" className={LINK}>Мамографія: що показує і коли потрібна</Link>».</p>
+              <p className={P}>Якщо з&apos;явилося ущільнення в грудях чи під пахвою, зміни шкіри, втягнення соска або виділення із соска, до лікаря звертаються одразу, не чекаючи планової мамографії<S n={[5]} />.</p>
+            </Block>
+          </div>
+
+          {/* Латка етапу 1, п. 2.6: на mobile картка 1b стоїть одразу після блоку 2. Обгортка на mobile – найближчий
+              позиціонований предок якоря «Програми» (він веде на картку 1b); з 1024 px вона display: contents,
+              і картка 1b – права колонка на обидва рядки сітки, sticky, як і раніше. */}
+          <div className="relative lg:contents">
+          {/* 1b. Як пройти обстеження в Харкові: mobile – одразу після блоку 2, desktop – права колонка, sticky */}
+          <aside id={showComposition ? undefined : ID.programs} className="lg:col-start-2 lg:row-start-1 lg:row-end-3 -scroll-mt-3 lg:scroll-mt-16 bg-[#f4f6f8] lg:bg-transparent" aria-labelledby="prohramy-h2">
             <div className="px-5 sm:px-6 lg:px-0 pt-7 pb-10 lg:pt-14 lg:sticky lg:top-16 lg:z-10 lg:bg-white">
-              <H2 id="prohramy-h2" className="mb-4 lg:!text-[22px]">Доступні програми в Харкові</H2>
+              <H2 id="prohramy-h2" className="mb-4 lg:!text-[22px]">Як пройти обстеження в Харкові</H2>
               {program && clinic ? (
                 <>
                   <div className="border-[1.5px] border-[#e5e7eb] rounded-[12px] px-4 pt-[18px] pb-4 bg-white">
@@ -442,25 +467,7 @@ export default async function FemaleAge3040KharkivPage() {
             </div>
           </aside>
 
-          <div className="lg:col-start-1 lg:row-start-1 min-w-0">
-            {/* 2. Які обстеження потрібні жінці у 30–40 років – не залежить від партнера */}
-            <Block eyebrow="За клінічними настановами" id={ID.list}>
-              <H2>Які обстеження потрібні жінці у 30–40 років</H2>
-              <p className={P}>Єдиного українського протоколу профілактичного обстеження для цього віку немає. Диспансеризацію скасовано 2018 року<S n={[1]} />. Тому перелік нижче складений за українськими порядками скринінгу окремих хвороб і за міжнародними рекомендаціями.</p>
-              <h3 id={ID.cervix} className={H3}>Рак шийки матки</h3>
-              <p className={P}>Мазок на клітини шийки матки (ПАП-тест) роблять раз на 3 роки<S n={[2]} />. З 35 років можна обрати інший спосіб: тест на вірус папіломи людини (ВПЛ) раз на 5–10 років. Спосіб та інтервал ви обираєте разом із гінекологом<S n={[2]} />. Державний порядок скринінгу передбачає мінімум: тест раз на 10 років з 30–35 до 55 років<S n={[5]} />. Детальніше на сторінці «<Link href="/ukr/screening/pap-test" className={LINK}>ПАП-тест: що показує і коли потрібен</Link>».</p>
-              <h3 id={ID.pressure} className={H3}>Артеріальний тиск</h3>
-              <p className={P}>До 40 років тиск вимірюють раз на 3–5 років, а за наявності факторів ризику – щороку<S n={[3]} />. Для цього достатньо вимірювання на прийомі, окремий аналіз не потрібен.</p>
-              <h3 id={ID.cholesterol} className={H3}>Холестерин</h3>
-              <p className={P}>Ліпідограма, тобто аналіз крові на холестерин і його фракції, показує, чи не підвищений ризик для серця і судин. Якщо ви її ще не здавали, аналіз варто зробити зараз. Якщо попередній результат був у нормі, його повторюють раз на 4–6 років<S n={[3]} />. Якщо результат відхиляється від норми, разом із лікарем ви визначаєте, коли повторити аналіз і що робити далі, з огляду на ваш загальний ризик.</p>
-              <h3 id={ID.diabetes} className={H3}>Цукровий діабет 2 типу</h3>
-              <p className={P}>З 35 років рівень цукру в крові рекомендують перевіряти всім, навіть за нормальної ваги: якщо результат у нормі, аналіз повторюють щонайменше раз на 3 роки<S n={[6]} />. Перевіряють аналізом крові на глюкозу натще або на глікований гемоглобін (HbA1c, середній рівень цукру за останні 2–3 місяці)<S n={[4]} />. Аналіз показує діабет 2 типу і переддіабет: стан, коли рівень цукру вже вищий за норму, але ще не досягає рівня діабету.</p>
-              <p className={P}>Особливо важливо не пропускати аналіз, якщо є надлишкова вага (індекс маси тіла 25 і більше), діабет 2 типу був у батьків, братів чи сестер, під час вагітності був гестаційний діабет або є синдром полікістозних яєчників<S n={[4]} />.</p>
-              <h3 id={ID.breast} className={H3}>Молочні залози</h3>
-              <p className={P}>Якщо вам менше 40 і немає скарг чи раку молочної залози в родині, мамографія найімовірніше не потрібна<S n={[3]} />. Вона стає потрібною раніше, якщо рак був у матері, сестри або доньки: про це в розділі «<a href={`#${ID.history}`} className={LINK}>Що залежить від вашої історії</a>». Детальніше на сторінці «<Link href="/ukr/screening/mamografiia" className={LINK}>Мамографія: що показує і коли потрібна</Link>».</p>
-              <p className={P}>Якщо з&apos;явилося ущільнення в грудях чи під пахвою, зміни шкіри, втягнення соска або виділення із соска, до лікаря звертаються одразу, не чекаючи планової мамографії<S n={[5]} />.</p>
-            </Block>
-
+          <div className="lg:col-start-1 lg:row-start-2 min-w-0">
             {/* 2b. Що залежить від вашої історії – у порядку переліку */}
             <Block eyebrow="Ваша історія" id={ID.history}>
               <H2>Що залежить від вашої історії</H2>
@@ -477,7 +484,7 @@ export default async function FemaleAge3040KharkivPage() {
             {program && clinic && composition && (
               <Block eyebrow="Програма клініки" id={ID.composition} gray className="lg:relative">
                 {/* Якір «Програми» (меню 1a і кнопка Hero), правка Ігоря 26.09.2026: на mobile найближчий позиціонований
-                    предок – контейнер колонок, тому якір стоїть на початку картки програм 1b; на desktop блок 4 relative,
+                    предок – обгортка картки 1b і решти колонки, тому якір стоїть на початку картки програм 1b; на desktop блок 4 relative,
                     і якір веде на «Що входить у програму» (картка 1b там закріплена праворуч і видна весь час). */}
                 <span id={ID.programs} aria-hidden="true" className="absolute top-0 left-0 w-px h-px -scroll-mt-3 lg:scroll-mt-16" />
                 <H2>Що входить у програму</H2>
@@ -564,10 +571,10 @@ export default async function FemaleAge3040KharkivPage() {
               </Block>
             )}
 
-            {/* 5. Що варто додати – без цін і без кнопки: доповнення додаються на етапі форми запису */}
+            {/* 5. Чого немає в програмі – без цін і без кнопки: доповнення додаються на етапі форми запису */}
             {showAdditions && program && (
               <Block eyebrow="Доповнення" id={ID.additions} gray>
-                <H2>Що варто додати</H2>
+                <H2>Чого немає в програмі</H2>
                 <p className={P}>{additionsIntro(program.name_ua)}</p>
                 <div className="mt-5">
                   <AdditionalServices
@@ -579,10 +586,11 @@ export default async function FemaleAge3040KharkivPage() {
                     showPrices={false}
                     mode="info"
                     unavailableTitle={additionsUnavailableTitle(clinic?.name)}
+                    availableNote={ADDITIONS_ADD_VIA_MANAGER}
                   />
                 </div>
                 {additionsUnavailable.length > 0 && (
-                  <p className={P}>{additionsAskDoctor(additionsUnavailable.length)}</p>
+                  <p className={P}>{additionsUnavailableReason(additionsUnavailable.length, false)} {additionsAskDoctor(additionsUnavailable.length)}</p>
                 )}
               </Block>
             )}
@@ -698,6 +706,7 @@ export default async function FemaleAge3040KharkivPage() {
             </Block>
 
           </div>
+          </div>
         </div>
 
         {/* Другорядна інформація (правка Ігоря 26.09.2026): окрема смуга на всю ширину, поза колонками –
@@ -725,6 +734,7 @@ export default async function FemaleAge3040KharkivPage() {
                     subject: 'Чекап для жінок 30–40 років',
                     clinicName: clinic.name,
                     branches,
+                    phone: clinic.phone,
                     programName: program?.name_ua,
                     missingText,
                   })}
