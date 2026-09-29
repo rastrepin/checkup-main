@@ -82,10 +82,6 @@
 | status | text | | 'new' | |
 | created_at | timestamptz | | now() | |
 | utm_source, utm_medium, utm_campaign | text | | | |
-| quiz_answers | jsonb | | | дані про здоров'я; прибирається A9 (0 рядків із значенням) |
-| selected_criteria | text[] | | '{}' | дані про здоров'я; прибирається A9 (2 рядки) |
-| recommended_purpose | text | | | дані про здоров'я; прибирається A9 |
-| recommended_method | text | | | legacy квізу; у PLATFORM-LINE 7.1 не названо [УТОЧНИТИ: прибирати разом] |
 
 RLS live: `Public insert leads` (INSERT, public, WITH true); `leads_select_by_id` (SELECT, anon, USING true). Друга політика, попри назву, відкриває анонімному ключу всі рядки з іменами і телефонами. Прибирається першим кроком A9.
 
@@ -329,6 +325,8 @@ drop policy "Public insert leads" on public.leads;
 Після цього писати в `leads` можна лише через /api/leads (honeypot і consent не обійти прямою вставкою з браузера).
 
 ### 6.5 Крок 5 – прибрати дані про здоров'я з leads (до публікації Харкова)
+
+Виконано 29.09.2026 разом з recommended_method (рішення Ігоря 27.09), до кроків 3–4 (рішення Координатора: /api/leads у ці колонки не пише).
 
 Умова: кроки 1–4 виконано; у коді затверджених сторінок немає записів у ці колонки (grep).
 
