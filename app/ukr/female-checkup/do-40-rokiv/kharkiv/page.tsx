@@ -33,7 +33,7 @@ import {
 } from '@/lib/programs/age-page-shared';
 
 // Вікова сторінка міста – SPRINT-KHARKIV-v0, тип 5a.
-// Контент: content/kharkiv/female-30-40-rokiv.md дослівно.
+// Контент: content/kharkiv/female-do-40-rokiv.md дослівно.
 // Задача Cowork «Нова структура сторінки 30–40» (v1, 26.09.2026): порядок блоків і компоненти – як на сторінках
 // 40–50 і після 50; холестерин тут – обстеження для всіх (forAll), тому міст блоку 4 називає його, якщо його немає
 // в програмі. Джерела 1–6. Сторінка до 30 лишається в попередньому вигляді.
@@ -43,7 +43,7 @@ import {
 
 export const revalidate = 3600;
 
-const PAGE_PATH = '/ukr/female-checkup/30-40-rokiv/kharkiv';
+const PAGE_PATH = '/ukr/female-checkup/do-40-rokiv/kharkiv';
 const PAGE_URL = `https://check-up.in.ua${PAGE_PATH}`;
 const PLATFORM_PROGRAM = 'female-checkup-30-40';
 const CLINIC_SLUG = 'onclinic-kharkiv';

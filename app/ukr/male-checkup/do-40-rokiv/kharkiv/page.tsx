@@ -12,7 +12,7 @@ import CrossAgeNav from '@/components/shared/CrossAgeNav';
 import BookingFlow, { BookCta } from '@/components/city/BookingFlow';
 
 // Вікова сторінка міста – чернетка SPRINT-KHARKIV-v0, каркас 5.2 (12 блоків).
-// Контент: content/kharkiv/male-30-40-rokiv.md (v0) дослівно; файл згенеровано з того самого джерела, що й MD.
+// Контент: content/kharkiv/male-do-40-rokiv.md (v0) дослівно; файл згенеровано з того самого джерела, що й MD.
 // Програма, ціна, дата ціни, склад, філії – тільки з Supabase (fetchClinicOffers):
 // platform_program_offers → checkup_programs (program_type = 'clinic') → onclinic-kharkiv.
 // Hero, «Двері», GEO, автор – верстка в сторінці (рішення спринту, без нових спільних компонентів).
@@ -21,7 +21,7 @@ import BookingFlow, { BookCta } from '@/components/city/BookingFlow';
 
 export const revalidate = 3600;
 
-const PAGE_PATH = '/ukr/male-checkup/30-40-rokiv/kharkiv';
+const PAGE_PATH = '/ukr/male-checkup/do-40-rokiv/kharkiv';
 const PAGE_URL = `https://check-up.in.ua${PAGE_PATH}`;
 const PLATFORM_PROGRAM = 'male-checkup-30-40';
 const CLINIC_SLUG = 'onclinic-kharkiv';

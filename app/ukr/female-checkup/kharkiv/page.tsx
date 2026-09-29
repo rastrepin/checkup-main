@@ -38,7 +38,7 @@ const AGE_CARD_EXTRA: Record<string, { line: string; platformSlug: string }> = {
     line: 'ПАП-тест, тиск і перше вимірювання холестерину.',
     platformSlug: 'female-checkup-do-30',
   },
-  '/ukr/female-checkup/30-40-rokiv/kharkiv': {
+  '/ukr/female-checkup/do-40-rokiv/kharkiv': {
     line: 'Додаються тест на ВПЛ і, за надлишкової ваги, перевірка на діабет 2 типу.',
     platformSlug: 'female-checkup-30-40',
   },
@@ -324,7 +324,7 @@ export default async function FemaleHubKharkivPage() {
             <S n={[2]} />. Людям із надлишковою вагою з 35 років рекомендують скринінг переддіабету і діабету 2 типу раз
             на 3 роки<S n={[4]} />.
           </p>
-          <AgeLinks links={[{ href: '/ukr/female-checkup/30-40-rokiv/kharkiv', label: 'Чекап для жінок 30–40 років' }]} />
+          <AgeLinks links={[{ href: '/ukr/female-checkup/do-40-rokiv/kharkiv', label: 'Чекап для жінок 30–40 років' }]} />
           <h3 className="text-lg font-semibold text-[#0b1a24] mt-8">40–50 років</h3>
           <p className={P}>
             Від 40 років тиск вимірюють щороку<S n={[3]} />. Мамографію і скринінг колоректального раку в цьому віці роблять, якщо є
