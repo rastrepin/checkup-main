@@ -37,7 +37,7 @@ const AGE_CARD_EXTRA: Record<string, { line: string; platformSlug: string }> = {
     line: 'Тиск і перше вимірювання холестерину.',
     platformSlug: 'male-checkup-do-30',
   },
-  '/ukr/male-checkup/30-40-rokiv/kharkiv': {
+  '/ukr/male-checkup/do-40-rokiv/kharkiv': {
     line: 'Додається, за надлишкової ваги, перевірка на діабет 2 типу.',
     platformSlug: 'male-checkup-30-40',
   },
@@ -310,7 +310,7 @@ export default async function MaleHubKharkivPage() {
             Людям із надлишковою вагою з 35 років рекомендують скринінг переддіабету і діабету 2 типу раз на 3 роки
             <S n={[3]} />. За нормальної ваги рутинна перевірка не потрібна, якщо лікар не бачить інших підстав.
           </p>
-          <AgeLinks links={[{ href: '/ukr/male-checkup/30-40-rokiv/kharkiv', label: 'Чекап для чоловіків 30–40 років' }]} />
+          <AgeLinks links={[{ href: '/ukr/male-checkup/do-40-rokiv/kharkiv', label: 'Чекап для чоловіків 30–40 років' }]} />
           <h3 className="text-lg font-semibold text-[#0b1a24] mt-8">40–50 років</h3>
           <p className={P}>
             Від 40 років тиск вимірюють щороку<S n={[2]} />. Скринінг колоректального раку в цьому віці роблять, якщо є фактори ризику:
