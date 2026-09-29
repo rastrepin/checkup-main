@@ -12,12 +12,12 @@ UA:
 /ukr/kharkiv                              → загальна сторінка міста
 /ukr/female-checkup/kharkiv               → агрегатор жіночих вікових сторінок
 /ukr/female-checkup/do-30-rokiv/kharkiv   → жіночий чекап до 30
-/ukr/female-checkup/30-40-rokiv/kharkiv   → жіночий чекап 30-40
+/ukr/female-checkup/do-40-rokiv/kharkiv   → жіночий чекап 30-40
 /ukr/female-checkup/40-50-rokiv/kharkiv   → жіночий чекап 40-50
 /ukr/female-checkup/vid-50-rokiv/kharkiv  → жіночий чекап від 50
 /ukr/male-checkup/kharkiv                 → агрегатор чоловічих вікових сторінок
 /ukr/male-checkup/do-30-rokiv/kharkiv     → чоловічий чекап до 30
-/ukr/male-checkup/30-40-rokiv/kharkiv     → чоловічий чекап 30-40
+/ukr/male-checkup/do-40-rokiv/kharkiv     → чоловічий чекап 30-40
 /ukr/male-checkup/40-50-rokiv/kharkiv     → чоловічий чекап 40-50
 /ukr/male-checkup/vid-50-rokiv/kharkiv    → чоловічий чекап від 50
 /ukr/materynstvo/planuvannya-vahitnosti/kharkiv → планування вагітності (останнє в черзі)
