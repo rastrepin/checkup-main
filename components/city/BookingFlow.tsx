@@ -417,7 +417,11 @@ export default function BookingFlow({ programs, branches, clinicId, clinicSlug, 
                 <label className="flex items-start gap-3 mb-5 cursor-pointer">
                   <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-1" />
                   <span className="text-xs text-gray-500">
-                    Погоджуюся на обробку персональних даних для запису на обстеження
+                    Погоджуюся на{' '}
+                    <a href="/ukr/policy" target="_blank" rel="noopener" className="text-[#005485] underline">
+                      обробку персональних даних
+                    </a>{' '}
+                    для запису на обстеження
                   </span>
                 </label>
 
