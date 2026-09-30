@@ -161,13 +161,13 @@ CTA: [Записатися]
 ```
 Для жінок:
 [До 30 років]  → /ukr/female-checkup/do-30-rokiv/kharkiv
-[30-40 років]  → /ukr/female-checkup/30-40-rokiv/kharkiv
+[30-40 років]  → /ukr/female-checkup/do-40-rokiv/kharkiv
 [40-50 років]  → /ukr/female-checkup/40-50-rokiv/kharkiv
 [Від 50 років] → /ukr/female-checkup/vid-50-rokiv/kharkiv
 
 Для чоловіків:
 [До 30 років]  → /ukr/male-checkup/do-30-rokiv/kharkiv
-[30-40 років]  → /ukr/male-checkup/30-40-rokiv/kharkiv
+[30-40 років]  → /ukr/male-checkup/do-40-rokiv/kharkiv
 [40-50 років]  → /ukr/male-checkup/40-50-rokiv/kharkiv
 [Від 50 років] → /ukr/male-checkup/vid-50-rokiv/kharkiv
 ```
