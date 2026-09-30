@@ -1,5 +1,12 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import {
+  REVIEWER as SHARED_REVIEWER,
+  REVIEWER_PARTNER_NOTE,
+  SCREENING_EDITORIAL_TEXT,
+  pageDatesText,
+  reviewerDetails,
+} from '@/lib/programs/age-page-shared';
 
 // Контент: content/screening/mamografiia.md дослівно (v3.1, updated 2026-09-12)
 // Layout: layout-standards-v2 (py-14, borderTop, Eyebrow перед H2, чергування фонів)
@@ -11,14 +18,18 @@ const BORDER = '1px solid #e8edf3';
 const BG_GRAY = '#f8fafc';
 const BG_WHITE = '#ffffff';
 
-// Рецензент: null поки немає профілю в реєстрі (Supabase doctors).
-// Коли зʼявиться – замінити на { name: '...', jobTitle: '...' }.
-const REVIEWER: { name: string; jobTitle: string } | null = null;
+// Рецензент – спільний об'єкт REVIEWER (lib/programs/age-page-shared.ts, латка етапу 1, №3).
+// Поки в ньому порожній reviewDate – null: блок редакції і рецензента та reviewedBy не виводяться.
+const REVIEWER = SHARED_REVIEWER.reviewDate ? SHARED_REVIEWER : null;
+
+// Латка етапу 1, №3, п. 3: рядок дат (ДД.ММ.РРРР).
+const PUBLISHED_LABEL = '29.09.2026';
+const UPDATED_LABEL = '29.09.2026';
 
 export const metadata: Metadata = {
   title: { absolute: 'Мамографія: що показує і коли потрібна | check-up.in.ua' },
   description:
-    'Мамографія – рентгенівський знімок молочних залоз. Що показує і чого не показує, коли скринінг обґрунтований за віком і ризиком, як підготуватися. Джерела: МОЗ України, USPSTF, Mayo Clinic.',
+    'Мамографія – рентгенівський знімок молочних залоз: що показує і чого не показує, кому і як часто її роблять, як підготуватися. Джерела: МОЗ, USPSTF.',
   robots: { index: true, follow: true },
   alternates: { canonical: PAGE_URL },
   openGraph: {
@@ -30,14 +41,14 @@ export const metadata: Metadata = {
   },
 };
 
-/* Джерела: [n] у тексті → пункт n */
-const SOURCES = [
-  'МОЗ України. Порядок скринінгу і ранньої діагностики раку молочної залози, наказ №1368 від 05.08.2024, чинний з 01.01.2025.',
-  'МОЗ України. Стандарт медичної допомоги «Рак молочної залози», наказ №195 від 03.02.2025.',
-  'ДЕЦ МОЗ України. Клінічна настанова «Рак молочної залози на ранніх стадіях», 2024, адаптація ESMO 2023.',
-  'Duodecim, guidelines.moz.gov.ua. Настанова 00543 «Рак грудної залози», доказовий огляд 00810, 2017.',
-  'USPSTF. Breast Cancer: Screening, Final Recommendation Statement, 2024. uspreventiveservicestaskforce.org/uspstf/recommendation/breast-cancer-screening',
-  'Mayo Clinic Family Health Book, 5th Edition, розд. 24, 35.',
+/* Джерела: [n] у тексті → пункт n. url – офіційна сторінка документа (латка етапу 1, №3, п. 2); книга – без посилання. */
+const SOURCES: { text: string; url?: string }[] = [
+  { text: 'МОЗ України. Порядок скринінгу і ранньої діагностики раку молочної залози, наказ №1368 від 05.08.2024, чинний з 01.01.2025.', url: 'https://moz.gov.ua/uk/decrees/nakaz-moz-ukrayini-vid-05-08-2024-1368-pro-zabezpechennya-skriningu-i-rannoyi-diagnostiki-okremih-vidiv-raku-ta-monitoringu-stanu-zdorov-ya-paciyentiv-z-grup-riziku' },
+  { text: 'МОЗ України. Стандарт медичної допомоги «Рак молочної залози», наказ №195 від 03.02.2025.', url: 'https://www.dec.gov.ua/mtd/rak-molochnoyi-zalozy/' },
+  { text: 'ДЕЦ МОЗ України. Клінічна настанова, заснована на доказах, «Рак молочної залози на ранніх стадіях», КН 2025-195-1 від 03.02.2025, адаптація ESMO 2023.', url: 'https://www.dec.gov.ua/mtd/rak-molochnoyi-zalozy/' },
+  { text: 'Duodecim, guidelines.moz.gov.ua. Настанова 00543 «Рак грудної залози», доказовий огляд 00810, 2017.', url: 'https://guidelines.moz.gov.ua/documents/3374' },
+  { text: 'USPSTF. Breast Cancer: Screening, Final Recommendation Statement, 2024. uspreventiveservicestaskforce.org/uspstf/recommendation/breast-cancer-screening', url: 'https://www.uspreventiveservicestaskforce.org/uspstf/recommendation/breast-cancer-screening' },
+  { text: 'Mayo Clinic Family Health Book, 5th Edition, розд. 24, 35.' },
 ];
 
 function S({ n }: { n: number[] }) {
@@ -275,7 +286,15 @@ export default function ScreeningMamografiiaPage() {
           {SOURCES.map((s, i) => (
             <li key={i} id={`source-${i + 1}`} className="flex gap-3 text-sm text-gray-600 leading-relaxed scroll-mt-24">
               <span className="font-semibold text-[#0b1a24] shrink-0">{i + 1}.</span>
-              <span>{s}</span>
+              <span>
+                {s.url ? (
+                  <a href={s.url} target="_blank" rel="noopener" className="text-[#005485] underline hover:no-underline">
+                    {s.text}
+                  </a>
+                ) : (
+                  s.text
+                )}
+              </span>
             </li>
           ))}
         </ol>
@@ -284,17 +303,18 @@ export default function ScreeningMamografiiaPage() {
       {/* author_reviewer (E-E-A-T, py-12) */}
       <section style={{ backgroundColor: BG_GRAY, borderTop: BORDER }}>
         <div className="max-w-[1200px] mx-auto px-6 lg:px-14 py-12">
-          <div className="max-w-3xl text-xs text-gray-500 leading-relaxed">
-            <p>
-              Текст підготувала редакція check-up.in.ua; ми не лікарі.
-              {REVIEWER && (
-                <>
-                  {' '}Медичну частину перевірив: <strong className="text-gray-700">{REVIEWER.name}</strong>,{' '}
-                  {REVIEWER.jobTitle}.
-                </>
-              )}
-            </p>
-            <p className="mt-1">Оновлено: 12.09.2026</p>
+          {/* Латка етапу 1, №3: рядки 1–3 – лише коли в спільному REVIEWER заповнений reviewDate; стиль – як на вікових сторінках. */}
+          <div className="max-w-3xl text-[#374151] leading-relaxed space-y-3">
+            {REVIEWER && (
+              <>
+                <p className="text-[#0b1a24]">{SCREENING_EDITORIAL_TEXT}</p>
+                <p className="text-[15px]">
+                  <span className="font-semibold text-[#0b1a24]">Медичний рецензент:</span> {reviewerDetails(REVIEWER)}
+                </p>
+                <p className="text-sm text-gray-500">{REVIEWER_PARTNER_NOTE}</p>
+              </>
+            )}
+            <p className="text-[13px] text-gray-500">{pageDatesText(PUBLISHED_LABEL, UPDATED_LABEL)}</p>
           </div>
         </div>
       </section>
