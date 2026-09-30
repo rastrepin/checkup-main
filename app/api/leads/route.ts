@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { db } from '@/lib/supabase';
 
 export const runtime = 'nodejs';
@@ -30,11 +30,14 @@ interface LeadPayload {
   website?: string;
 }
 
-/** Telegram-нотифікація: fire-and-forget, ніколи не блокує відповідь користувачу */
-function notifyTelegram(lead: LeadPayload) {
+/** Telegram-нотифікація: викликається через after() – виконується після відповіді користувачу, функція дочікується відправлення */
+function notifyTelegram(lead: LeadPayload): Promise<void> {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_CHAT_ID;
-  if (!token || !chatId) return;
+  if (!token || !chatId) {
+    console.error('[leads] telegram env missing');
+    return Promise.resolve();
+  }
 
   const lines = [
     '🟢 Нова заявка (check-up.in.ua)',
@@ -50,11 +53,18 @@ function notifyTelegram(lead: LeadPayload) {
     lead.source_cta ? `CTA: ${lead.source_cta}` : null,
   ].filter(Boolean);
 
-  fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+  return fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ chat_id: chatId, text: lines.join('\n') }),
-  }).catch(() => { /* fire-and-forget */ });
+  })
+    .then((res) => {
+      if (!res.ok) console.error('[leads] telegram', res.status);
+    })
+    .catch((err: unknown) => {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error('[leads] telegram', msg.split(token).join('***'));
+    });
 }
 
 export async function POST(req: NextRequest) {
@@ -109,6 +119,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'db error' }, { status: 500 });
   }
 
-  notifyTelegram(body);
+  after(() => notifyTelegram(body));
   return NextResponse.json({ ok: true });
 }
