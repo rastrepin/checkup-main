@@ -1,5 +1,12 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import {
+  REVIEWER as SHARED_REVIEWER,
+  REVIEWER_PARTNER_NOTE,
+  SCREENING_EDITORIAL_TEXT,
+  pageDatesText,
+  reviewerDetails,
+} from '@/lib/programs/age-page-shared';
 
 // Контент: content/screening/pap-test.md дослівно (v0, SPRINT-KHARKIV-v0, сторінка 2)
 // Структура і верстка – за app/ukr/screening/mamografiia/page.tsx (еталон скринінгової сторінки).
@@ -10,11 +17,14 @@ const PAGE_URL = 'https://check-up.in.ua/ukr/screening/pap-test';
 const BORDER = '1px solid #e8edf3';
 const BG_GRAY = '#f8fafc';
 const BG_WHITE = '#ffffff';
-const UPDATED_ISO = '2026-09-23';
-const UPDATED_LABEL = '23.09.2026';
+const UPDATED_ISO = '2026-09-29';
+// Латка етапу 1, №3, п. 3: рядок дат (ДД.ММ.РРРР).
+const PUBLISHED_LABEL = '29.09.2026';
+const UPDATED_LABEL = '29.09.2026';
 
-// Рецензент: null, доки не визначено рецензента національних сторінок.
-const REVIEWER: { name: string; jobTitle: string } | null = null;
+// Рецензент – спільний об'єкт REVIEWER (lib/programs/age-page-shared.ts, латка етапу 1, №3).
+// Поки в ньому порожній reviewDate – null: блок редакції і рецензента та reviewedBy не виводяться.
+const REVIEWER = SHARED_REVIEWER.reviewDate ? SHARED_REVIEWER : null;
 
 const TITLE = 'ПАП-тест: що показує і коли потрібен | check-up.in.ua';
 const DESCRIPTION =
@@ -28,11 +38,12 @@ export const metadata: Metadata = {
   openGraph: { title: TITLE, description: DESCRIPTION, url: PAGE_URL, type: 'website' },
 };
 
-/* Джерела: [n] у тексті → пункт n */
-const SOURCES = [
-  'МОЗ України. Стандарт медичної допомоги «Скринінг раку шийки матки. Ведення пацієнток з аномальними результатами скринінгу та передраковими станами шийки матки», наказ №1057 від 18.06.2024.',
-  'МОЗ України. Порядок скринінгу і ранньої діагностики раку шийки матки, наказ №1368 від 05.08.2024.',
-  'Duodecim, guidelines.moz.gov.ua. Настанова 00533 «Пап-тест (шийки матки) та біопсія ендометрію», оновлення 09.08.2017.',
+/* Джерела: [n] у тексті → пункт n. url – офіційна сторінка документа (латка етапу 1, №3, п. 2). */
+const SOURCES: { text: string; url?: string }[] = [
+  { text: 'МОЗ України. Стандарт медичної допомоги «Скринінг раку шийки матки. Ведення пацієнток з аномальними результатами скринінгу та передраковими станами шийки матки», наказ №1057 від 18.06.2024.', url: 'https://moz.gov.ua/uk/decrees/nakaz-moz-ukrayini-vid-18-06-2024-1057-pro-zatverdzhennya-standartu-medichnoyi-dopomogi-skrining-raku-shijki-matki-vedennya-paciyentok-z-anomalnimi-rezultatami-skriningu-ta-peredrakovimi-stanami-shijki-matki' },
+  { text: 'МОЗ України. Порядок скринінгу і ранньої діагностики раку шийки матки, наказ №1368 від 05.08.2024.', url: 'https://moz.gov.ua/uk/decrees/nakaz-moz-ukrayini-vid-05-08-2024-1368-pro-zabezpechennya-skriningu-i-rannoyi-diagnostiki-okremih-vidiv-raku-ta-monitoringu-stanu-zdorov-ya-paciyentiv-z-grup-riziku' },
+  // Пряма адреса настанови 00533 не уточнена – поки каталог настанов МОЗ (див. службовий блок MD).
+  { text: 'Duodecim, guidelines.moz.gov.ua. Настанова 00533 «Пап-тест (шийки матки) та біопсія ендометрію», оновлення 09.08.2017.', url: 'https://guidelines.moz.gov.ua/documents' },
 ];
 
 function S({ n }: { n: number[] }) {
@@ -271,7 +282,15 @@ export default function ScreeningPapTestPage() {
           {SOURCES.map((s, i) => (
             <li key={i} id={`source-${i + 1}`} className="flex gap-3 text-sm text-gray-600 leading-relaxed scroll-mt-24">
               <span className="font-semibold text-[#0b1a24] shrink-0">{i + 1}.</span>
-              <span>{s}</span>
+              <span>
+                {s.url ? (
+                  <a href={s.url} target="_blank" rel="noopener" className="text-[#005485] underline hover:no-underline">
+                    {s.text}
+                  </a>
+                ) : (
+                  s.text
+                )}
+              </span>
             </li>
           ))}
         </ol>
@@ -280,17 +299,18 @@ export default function ScreeningPapTestPage() {
       {/* author_reviewer */}
       <section style={{ backgroundColor: BG_GRAY, borderTop: BORDER }}>
         <div className="max-w-[1200px] mx-auto px-6 lg:px-14 py-12">
-          <div className="max-w-3xl text-xs text-gray-500 leading-relaxed">
-            <p>
-              Текст підготувала редакція check-up.in.ua; ми не лікарі.
-              {REVIEWER && (
-                <>
-                  {' '}Медичну частину перевірив: <strong className="text-gray-700">{REVIEWER.name}</strong>,{' '}
-                  {REVIEWER.jobTitle}.
-                </>
-              )}
-            </p>
-            <p className="mt-1">Оновлено: {UPDATED_LABEL}</p>
+          {/* Латка етапу 1, №3: рядки 1–3 – лише коли в спільному REVIEWER заповнений reviewDate; стиль – як на вікових сторінках. */}
+          <div className="max-w-3xl text-[#374151] leading-relaxed space-y-3">
+            {REVIEWER && (
+              <>
+                <p className="text-[#0b1a24]">{SCREENING_EDITORIAL_TEXT}</p>
+                <p className="text-[15px]">
+                  <span className="font-semibold text-[#0b1a24]">Медичний рецензент:</span> {reviewerDetails(REVIEWER)}
+                </p>
+                <p className="text-sm text-gray-500">{REVIEWER_PARTNER_NOTE}</p>
+              </>
+            )}
+            <p className="text-[13px] text-gray-500">{pageDatesText(PUBLISHED_LABEL, UPDATED_LABEL)}</p>
           </div>
         </div>
       </section>

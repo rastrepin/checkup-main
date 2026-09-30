@@ -12,6 +12,8 @@ import BookingFlow, { BookCta } from '@/components/city/BookingFlow';
 import {
   type AgeAddition,
   additionsAskDoctor,
+  REVIEWER,
+  pageDatesText,
   additionsUnavailableReason,
   ADDITIONS_ADD_VIA_MANAGER,
   ANY_CLINIC_TEXT,
@@ -51,9 +53,10 @@ const SOURCE_CTA = 'age_page_female_do_30_kharkiv';
 // SEO-STANDARD р.4, Тип 5a. X (мінімальна ціна програм клініки для сторінки) – з Supabase у generateMetadata.
 const TITLE = "Чекап для жінок до 30 років: які обстеження проходити, програми в Харкові | check-up.in.ua";
 const DESCRIPTION_BASE = "До 30 років жінкам рекомендують ПАП-тест, вимірювання тиску й аналіз на холестерин.";
-const UPDATED_ISO = '2026-09-26';
-const UPDATED_LABEL = '26.09.2026';
-const REVIEWER = { name: 'Удовиченко Олена Олександрівна', jobTitle: 'лікар акушер-гінеколог', org: 'ОН Клінік Харків' };
+const UPDATED_ISO = '2026-09-29';
+// Латка етапу 1, №3: рядок дат (ДД.ММ.РРРР); рецензент – спільний REVIEWER з lib/programs/age-page-shared.ts.
+const PUBLISHED_LABEL = '29.09.2026';
+const UPDATED_LABEL = '29.09.2026';
 
 const TEXT = 'text-[#374151] leading-relaxed';
 const P = `${TEXT} mt-4`;
@@ -749,7 +752,7 @@ export default async function FemaleAgeDo30KharkivPage() {
                     </li>
                   ))}
                 </ol>
-                <p className="text-[13px] text-gray-500 pt-2">Оновлено: {UPDATED_LABEL}</p>
+                <p className="text-[13px] text-gray-500 pt-2">{pageDatesText(PUBLISHED_LABEL, UPDATED_LABEL)}</p>
               </div>
             </div>
           </div>
