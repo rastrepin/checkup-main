@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import SiteHeader from '@/components/shared/SiteHeader';
 import {
   REVIEWER as SHARED_REVIEWER,
   REVIEWER_PARTNER_NOTE,
@@ -118,6 +119,8 @@ export default function ScreeningMamografiiaPage() {
   ];
 
   return (
+    <>
+    <SiteHeader city={null} />
     <main className="text-[#0b1a24]">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
@@ -319,5 +322,6 @@ export default function ScreeningMamografiiaPage() {
         </div>
       </section>
     </main>
+    </>
   );
 }
