@@ -8,6 +8,7 @@ import AdditionalServices from '@/components/program-page/AdditionalServices';
 import AccordionSection from '@/components/shared/AccordionSection';
 import CrossAgeNav from '@/components/shared/CrossAgeNav';
 import InPageNav, { type InPageNavItem } from '@/components/shared/InPageNav';
+import SiteHeader from '@/components/shared/SiteHeader';
 import BookingFlow, { BookCta } from '@/components/city/BookingFlow';
 import {
   type AgeAddition,
@@ -317,6 +318,7 @@ export default async function FemaleAge3040KharkivPage() {
 
   return (
     <>
+      <SiteHeader city="kharkiv" section="female" />
       <main className="text-[#0b1a24]">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
