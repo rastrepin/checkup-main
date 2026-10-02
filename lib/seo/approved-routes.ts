@@ -18,6 +18,7 @@ export const SYSTEM_ROUTES: readonly string[] = [
   '/sitemap.xml',
   '/sitemap-next.xml',
   '/sitemap-tilda.xml',
+  '/brand/logo-checkup.svg',
 ];
 
 export const SITE_URL = 'https://check-up.in.ua';
