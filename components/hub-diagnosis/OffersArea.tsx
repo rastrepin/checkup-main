@@ -1,38 +1,20 @@
 'use client';
 
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useMemo, useState, type FormEvent } from 'react';
 import { Modal } from '@/components/ui/Modal';
 import {
   CITY_LABELS,
   CITY_ORDER,
-  METHODS,
-  METHOD_BUTTON_LABEL,
-  METHOD_EVENT,
-  OFFERS_ANCHOR,
   UNSURE_LABEL,
   type HubOffer,
-  type MethodKey,
 } from '@/lib/hub/prolaps-content';
 
-// Область пропозицій хабу діагнозу: лікарі за методом і містом, запис із картки.
+// Область пропозицій хабу діагнозу: лікарі за містом, запис із картки.
 // Усі картки є в статичному HTML; фільтри лише ховають зайві. Новий компонент (не спільний):
 // наявні форми репо пишуть у таблицю leads потоку чекапів, а заявки хабу йдуть у потік клінік.
 
 const FOCUS = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#005485]';
 const UNSURE = 'unsure';
-
-/** Кнопка картки операції: вмикає фільтр методу і веде до області пропозицій. */
-export function MethodOffersLink({ method }: { method: MethodKey }) {
-  return (
-    <a
-      href={`#${OFFERS_ANCHOR}`}
-      onClick={() => window.dispatchEvent(new CustomEvent(METHOD_EVENT, { detail: method }))}
-      className={`${FOCUS} inline-flex items-center justify-center min-h-[44px] px-5 py-2.5 rounded-[10px] border-2 border-[#005485] text-[#005485] text-[15px] font-semibold hover:bg-[#e8f4fd] transition-colors`}
-    >
-      {METHOD_BUTTON_LABEL}
-    </a>
-  );
-}
 
 function Chip({ active, onClick, children }: { active: boolean; onClick: () => void; children: string }) {
   return (
@@ -51,13 +33,8 @@ function Chip({ active, onClick, children }: { active: boolean; onClick: () => v
   );
 }
 
-function BookingForm({ offer, initialMethod }: { offer: HubOffer; initialMethod: MethodKey | null }) {
-  const preset =
-    initialMethod && offer.methods.some((m) => m.key === initialMethod)
-      ? initialMethod
-      : offer.methods.length === 1
-        ? offer.methods[0].key
-        : '';
+function BookingForm({ offer }: { offer: HubOffer }) {
+  const preset = offer.methods.length === 1 ? offer.methods[0].key : '';
   const [choice, setChoice] = useState<string>(preset);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('+380');
@@ -114,6 +91,10 @@ function BookingForm({ offer, initialMethod }: { offer: HubOffer; initialMethod:
         <p className="text-[17px] font-bold text-[#0b1a24] uppercase tracking-[0.04em]">Заявку надіслано</p>
         <p className="text-[15px] text-gray-600 leading-relaxed mt-3">
           Адміністратор клініки зателефонує вам протягом робочого дня та підтвердить час прийому.
+        </p>
+        <p className="text-[14px] text-[#0b1a24] leading-relaxed mt-4 bg-[#fff4e5] border border-[#f5d9a8] rounded-[10px] px-4 py-3 text-left">
+          Якщо не вдається помочитися або на випинанні з&apos;явилася виразка, не чекайте дзвінка: зверніться до лікаря
+          терміново.
         </p>
       </div>
     );
@@ -218,57 +199,23 @@ function BookingForm({ offer, initialMethod }: { offer: HubOffer; initialMethod:
 }
 
 export default function OffersArea({ offers }: { offers: HubOffer[] }) {
-  const [method, setMethod] = useState<MethodKey | null>(null);
+  // Фільтр міст (v3, 6): жодне місто не обране – видно всіх; повторне натискання знімає вибір.
   const [city, setCity] = useState<string | null>(null);
   const [booking, setBooking] = useState<HubOffer | null>(null);
 
-  useEffect(() => {
-    const onMethod = (e: Event) => {
-      const key = (e as CustomEvent<MethodKey>).detail;
-      if (METHODS.some((m) => m.key === key)) setMethod(key);
-    };
-    window.addEventListener(METHOD_EVENT, onMethod);
-    return () => window.removeEventListener(METHOD_EVENT, onMethod);
-  }, []);
-
-  const methodOptions = useMemo(
-    () => METHODS.filter((m) => offers.some((o) => o.methods.some((x) => x.key === m.key))),
-    [offers],
-  );
   const cityOptions = useMemo(() => CITY_ORDER.filter((c) => offers.some((o) => o.cityKey === c)), [offers]);
-
-  const visible = (o: HubOffer) =>
-    (!method || o.methods.some((m) => m.key === method)) && (!city || o.cityKey === city);
-  const anyVisible = offers.some(visible);
+  const visible = (o: HubOffer) => !city || o.cityKey === city;
 
   return (
     <div>
-      <div className="mt-8 space-y-4">
-        <div>
-          <p className="text-[13px] font-semibold text-gray-500 mb-2">Метод</p>
-          <div className="flex flex-wrap gap-2">
-            <Chip active={method === null} onClick={() => setMethod(null)}>
-              Усі методи
+      <div className="mt-8">
+        <p className="text-[13px] font-semibold text-gray-500 mb-2">Місто</p>
+        <div className="flex flex-wrap gap-2">
+          {cityOptions.map((c) => (
+            <Chip key={c} active={city === c} onClick={() => setCity(city === c ? null : c)}>
+              {CITY_LABELS[c]}
             </Chip>
-            {methodOptions.map((m) => (
-              <Chip key={m.key} active={method === m.key} onClick={() => setMethod(m.key)}>
-                {m.short}
-              </Chip>
-            ))}
-          </div>
-        </div>
-        <div>
-          <p className="text-[13px] font-semibold text-gray-500 mb-2">Місто</p>
-          <div className="flex flex-wrap gap-2">
-            <Chip active={city === null} onClick={() => setCity(null)}>
-              Усі міста
-            </Chip>
-            {cityOptions.map((c) => (
-              <Chip key={c} active={city === c} onClick={() => setCity(c)}>
-                {CITY_LABELS[c]}
-              </Chip>
-            ))}
-          </div>
+          ))}
         </div>
       </div>
 
@@ -292,7 +239,7 @@ export default function OffersArea({ offers }: { offers: HubOffer[] }) {
 
             <ul className="mt-4 space-y-3 list-none">
               {o.methods.map((m) => (
-                <li key={m.key} hidden={Boolean(method) && m.key !== method}>
+                <li key={m.key}>
                   <p className="text-[14px] font-semibold text-[#0b1a24]">{m.short}</p>
                   <a href={m.href} className={`${FOCUS} text-[14px] text-[#005485] underline hover:no-underline`}>
                     Детальніше на сторінці «{m.linkLabel}»
@@ -315,14 +262,8 @@ export default function OffersArea({ offers }: { offers: HubOffer[] }) {
         ))}
       </ul>
 
-      {!anyVisible && (
-        <p className="mt-6 text-[15px] text-gray-600">
-          У цьому місті поки немає лікарів, які виконують цю операцію. Оберіть інше місто або метод.
-        </p>
-      )}
-
       <Modal open={booking !== null} onClose={() => setBooking(null)} title="Записатися на консультацію">
-        {booking && <BookingForm key={booking.id} offer={booking} initialMethod={method} />}
+        {booking && <BookingForm key={booking.id} offer={booking} />}
       </Modal>
     </div>
   );

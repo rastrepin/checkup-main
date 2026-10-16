@@ -1,58 +1,27 @@
 // Хаб діагнозу «Пролапс тазових органів» (агрегатор, тип 1).
-// Тексти – дослівно з content/hub/prolaps-tazovykh-orhaniv.md (v2).
+// Тексти – дослівно з content/hub/prolaps-tazovykh-orhaniv.md (v3).
 // Файл без серверних залежностей: його імпортують і сторінка, і клієнтські компоненти.
 
 export const HUB_PATH = '/ukr/prolaps-tazovykh-orhaniv';
 export const HUB_URL = `https://check-up.in.ua${HUB_PATH}`;
-export const OFFERS_ANCHOR = 'likari';
-export const HUB_SOURCE_CTA = 'agg_hub_offer_card';
-/** Подія «обрано метод у картці операції» – область пропозицій вмикає фільтр. */
-export const METHOD_EVENT = 'hub:method';
+export const OFFERS_ANCHOR = 'obrati-likaria';
+export const HUB_SOURCE_CTA = 'aggregator_hub_prolaps';
 
 export type MethodKey = 'laparoscopic' | 'colporrhaphy' | 'vaginal_fixation' | 'sling';
 
 export interface HubMethod {
   key: MethodKey;
-  /** Назва у фільтрі і в списку вибору у формі. */
+  /** Коротка назва у списку вибору у формі запису. */
   short: string;
-  /** Назва картки операції (розділ 6.3). */
-  title: string;
-  context?: string;
-  teaser: string;
 }
 
 export const METHODS: HubMethod[] = [
-  {
-    key: 'laparoscopic',
-    short: 'Лапароскопічне лікування',
-    title: 'Лапароскопічна сакрокольпопексія і сакрогістеропексія',
-    teaser:
-      'Через проколи на животі матку або верхівку піхви закріплюють сіткою до міцних зв\'язок таза. Матку можна зберегти.',
-  },
-  {
-    key: 'colporrhaphy',
-    short: 'Кольпорафія',
-    title: 'Кольпорафія',
-    teaser: 'Через піхву зміцнюють опущену передню або задню стінку власними тканинами жінки.',
-  },
-  {
-    key: 'vaginal_fixation',
-    short: 'Вагінальна фіксація',
-    title: 'Вагінальна фіксація матки і купола піхви',
-    teaser:
-      'Через піхву матку або верхівку піхви підшивають до зв\'язок таза власними тканинами жінки.',
-  },
-  {
-    key: 'sling',
-    short: 'Слінгова операція',
-    title: 'Слінгова операція',
-    context: 'Якщо разом з опущенням підтікає сеча при кашлі чи навантаженні',
-    teaser:
-      'Під сечівник встановлюють тонку синтетичну стрічку, яка підтримує його під час навантаження. За потреби це роблять під час операції з приводу опущення.',
-  },
+  { key: 'laparoscopic', short: 'Лапароскопічне лікування' },
+  { key: 'colporrhaphy', short: 'Кольпорафія' },
+  { key: 'vaginal_fixation', short: 'Вагінальна фіксація' },
+  { key: 'sling', short: 'Слінгова операція' },
 ];
 
-export const METHOD_BUTTON_LABEL = 'Лікарі, які виконують цю операцію';
 export const UNSURE_LABEL = 'Ще не знаю, потрібна консультація';
 
 /**
@@ -72,7 +41,7 @@ export const OFFER_SOURCES: OfferSource[] = [
     method: 'laparoscopic',
     clinicSlug: 'bondaruk',
     serviceSlug: 'laparoskopichne-likuvannia-prolapsu',
-    linkLabel: 'Лапароскопічне лікування опущення та випадіння матки і піхви',
+    linkLabel: 'Лапароскопічне лікування опущення матки і піхви',
   },
   {
     method: 'laparoscopic',
@@ -84,7 +53,7 @@ export const OFFER_SOURCES: OfferSource[] = [
     method: 'colporrhaphy',
     clinicSlug: 'bondaruk',
     serviceSlug: 'kolporafiia',
-    linkLabel: 'Кольпорафія: передня і задня пластика стінок піхви',
+    linkLabel: 'Кольпорафія, пластика стінок піхви',
   },
   {
     method: 'colporrhaphy',
@@ -96,19 +65,19 @@ export const OFFER_SOURCES: OfferSource[] = [
     method: 'vaginal_fixation',
     clinicSlug: 'bondaruk',
     serviceSlug: 'vahinalna-fiksatsiia-matky',
-    linkLabel: 'Вагінальна фіксація матки і купола піхви при опущенні',
+    linkLabel: 'Вагінальна фіксація матки і купола піхви',
   },
   {
     method: 'sling',
     clinicSlug: 'bondaruk',
     serviceSlug: 'slinhova-operatsiia',
-    linkLabel: 'Слінгова операція при стресовому нетриманні сечі',
+    linkLabel: 'Слінгова операція при нетриманні сечі',
   },
 ];
 
 export const HUB_CLINIC_SLUGS = [...new Set(OFFER_SOURCES.map((s) => s.clinicSlug))];
 
-/** Порядок міст у фільтрі і в GEO-блоці. */
+/** Порядок міст у фільтрі. */
 export const CITY_ORDER = ['kyiv', 'kharkiv', 'mykolaiv'];
 export const CITY_LABELS: Record<string, string> = {
   kyiv: 'Київ',
@@ -133,22 +102,29 @@ export const DOCTOR_CONTENT: Record<string, { expertise: string; experience?: st
 
 export const BOOKING_NOTES: Record<string, string> = {
   bondaruk:
-    'Прийом у порядку живої черги. Після заявки асистент лікаря зателефонує і узгодить день візиту.',
+    'Попередній запис до лікаря можливий лише через заявку. Після заявки асистент лікаря зателефонує і узгодить день і час прийому. Без заявки лікар приймає в порядку живої черги за графіком.',
 };
 export const BOOKING_NOTE_DEFAULT =
   'Перший крок: консультація гінеколога. Після заявки адміністратор клініки зателефонує і підтвердить час прийому.';
 
-/**
- * GEO-блок: {doctors} і {clinic}, {address} підставляються з реєстру.
- * У реченні про Київ назва закладу стоїть у родовому відмінку, тому вона в тексті.
- */
-export const GEO_TITLE = 'Де оперують пролапс тазових органів: Київ, Харків, Миколаїв';
-export const GEO_TEMPLATES: Record<string, string> = {
-  kyiv:
-    'У Києві лапароскопічні операції, кольпорафію, вагінальну фіксацію матки і слінгові операції виконує {doctors}, завідувач відділення ендоскопічної гінекології Київського міського центру репродуктивної та перинатальної медицини: проспект Володимира Івасюка, 16, Оболонь.',
-  kharkiv: 'У Харкові кольпорафію виконують {doctors} в {clinic}: {address}.',
-  mykolaiv: 'У Миколаєві лапароскопічне лікування опущення матки виконує {doctors} в {clinic}: {address}.',
-};
+/** GEO-блоки (v3, 6.3): статичний текст, по одному на місто. Перед релізом звіряти з реєстром. */
+export const GEO_BLOCKS: { city: string; title: string; text: string }[] = [
+  {
+    city: 'kyiv',
+    title: 'Лікування опущення матки і піхви в Києві',
+    text: 'У Києві опущення матки і піхви лікує Володимир Петрович Бондарук, завідувач відділення ендоскопічної гінекології Київського міського центру репродуктивної та перинатальної медицини (КМЦРПМ), проспект Володимира Івасюка, 16. Володимир Петрович виконує лапароскопічне лікування, кольпорафію, вагінальну фіксацію матки і купола піхви та слінгову операцію при нетриманні сечі.',
+  },
+  {
+    city: 'kharkiv',
+    title: 'Лікування опущення матки і піхви в Харкові',
+    text: 'У Харкові опущення матки і піхви лікують Ігор Володимирович Афанасьєв і Дмитро Владиславович Стрюков в ОН Клінік Харків Левада, вулиця Молочна, 48. Ігор Володимирович і Дмитро Владиславович виконують кольпорафію.',
+  },
+  {
+    city: 'mykolaiv',
+    title: 'Лікування опущення матки і піхви в Миколаєві',
+    text: 'У Миколаєві опущення матки і піхви лікує Наталія Миколаївна Лапа в ОН Клінік Миколаїв Аркасівська, вулиця Аркасівська, 8. Наталія Миколаївна виконує лапароскопічне лікування опущення матки.',
+  },
+];
 
 /** Пропозиція в області пропозицій: лікар у клініці з переліком методів. */
 export interface HubOfferMethod {
