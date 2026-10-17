@@ -1,4 +1,5 @@
 import { db } from '@/lib/supabase';
+import { formatDoctorName, formatRegalia } from '@/lib/format/doctor';
 import {
   BOOKING_NOTES,
   BOOKING_NOTE_DEFAULT,
@@ -22,22 +23,13 @@ interface DoctorServiceRow { doctor_slug: string; service_slug: string; branch_i
 interface DoctorRow {
   slug: string;
   full_name: string;
+  photo_url: string | null;
   regalia_line: string | null;
   experience_verb: string | null;
   experience_since: number | null;
   clinic_id: string | null;
 }
 interface BranchRow { id: string; name_ua: string | null; address_ua: string | null; city: string | null }
-
-function ucFirst(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1);
-}
-
-/** Регалії без скорочень: «к.м.н.» → «кандидат медичних наук». */
-function levelLine(regalia: string | null): string | null {
-  if (!regalia?.trim()) return null;
-  return ucFirst(regalia.trim().replace(/к\.\s?м\.\s?н\./gi, 'кандидат медичних наук'));
-}
 
 function yearsWord(n: number): string {
   const d10 = n % 10;
@@ -100,7 +92,7 @@ export async function fetchProlapsOffers(): Promise<HubOffer[]> {
         .eq('is_active', true),
       sb
         .from('doctors')
-        .select('slug, full_name, regalia_line, experience_verb, experience_since, clinic_id')
+        .select('slug, full_name, photo_url, regalia_line, experience_verb, experience_since, clinic_id')
         .in('clinic_id', clinicIds)
         .eq('is_active', true),
     ]);
@@ -142,18 +134,28 @@ export async function fetchProlapsOffers(): Promise<HubOffer[]> {
         const id = `${d.slug}@${clinic.slug}`;
         let offer = offers.get(id);
         if (!offer) {
+          const content = DOCTOR_CONTENT[d.slug] ?? {};
+          const name = formatDoctorName(d.full_name);
+          const label = clinicLabel(clinic, branch);
+          const street = streetOnly(branch?.address_ua, cityLabel);
           offer = {
             id,
             doctorSlug: d.slug,
-            fullName: d.full_name,
-            level: levelLine(d.regalia_line),
-            expertise: DOCTOR_CONTENT[d.slug]?.expertise ?? null,
+            fullName: name,
+            level: formatRegalia(d.regalia_line),
+            expertise: content.expertise ?? null,
             experience: experienceLine(d),
             clinicSlug: clinic.slug,
-            clinicLabel: clinicLabel(clinic, branch),
+            clinicLabel: label,
+            clinicName: content.location ? null : label,
+            location: content.location ?? (street ? `${cityLabel}, ${street}` : cityLabel),
+            photo:
+              content.photo && d.photo_url
+                ? { src: d.photo_url.startsWith('http') ? d.photo_url : `${site}${d.photo_url}`, alt: name }
+                : null,
+            profileLink: content.profileLink ? { label: name, href: `${site}/` } : null,
             cityKey,
             cityLabel,
-            street: streetOnly(branch?.address_ua, cityLabel),
             bookingNote: BOOKING_NOTES[clinic.slug] ?? BOOKING_NOTE_DEFAULT,
             methods: [],
           };
@@ -170,7 +172,7 @@ export async function fetchProlapsOffers(): Promise<HubOffer[]> {
       return i === -1 ? CITY_ORDER.length : i;
     };
     return [...offers.values()].sort(
-      (a, b) => cityRank(a.cityKey) - cityRank(b.cityKey) || a.fullName.localeCompare(b.fullName, 'uk'),
+      (a, b) => cityRank(a.cityKey) - cityRank(b.cityKey) || a.doctorSlug.localeCompare(b.doctorSlug),
     );
   } catch {
     return [];

@@ -2,6 +2,7 @@
 
 import { useMemo, useState, type FormEvent } from 'react';
 import { Modal } from '@/components/ui/Modal';
+import OfferDoctorCard from '@/components/hub-diagnosis/OfferDoctorCard';
 import {
   CITY_LABELS,
   CITY_ORDER,
@@ -93,8 +94,8 @@ function BookingForm({ offer }: { offer: HubOffer }) {
           Адміністратор клініки зателефонує вам протягом робочого дня та підтвердить час прийому.
         </p>
         <p className="text-[14px] text-[#0b1a24] leading-relaxed mt-4 bg-[#fff4e5] border border-[#f5d9a8] rounded-[10px] px-4 py-3 text-left">
-          Якщо не вдається помочитися або на випинанні з&apos;явилася виразка, не чекайте дзвінка: зверніться до лікаря
-          терміново.
+          Якщо не вдається помочитися або на випинанні з&apos;явилася виразка, зверніться до лікаря терміново, не
+          чекаючи дзвінка.
         </p>
       </div>
     );
@@ -221,43 +222,20 @@ export default function OffersArea({ offers }: { offers: HubOffer[] }) {
 
       <ul className="mt-8 grid gap-5 lg:grid-cols-2 list-none">
         {offers.map((o) => (
-          <li
-            key={o.id}
-            hidden={!visible(o)}
-            className="bg-white border border-[#e8edf3] rounded-[14px] p-6 flex flex-col"
-          >
-            <h3 className="text-[20px] font-bold text-[#0b1a24] leading-snug">{o.fullName}</h3>
-            {o.level && <p className="text-[15px] text-gray-700 mt-2">{o.level}</p>}
-            {o.expertise && <p className="text-[15px] text-gray-700 mt-1">{o.expertise}</p>}
-            {o.experience && <p className="text-[15px] text-gray-700 mt-1">{o.experience}</p>}
-
-            <p className="text-[15px] text-[#0b1a24] font-semibold mt-4">{o.clinicLabel}</p>
-            <p className="text-[14px] text-gray-600 mt-1">
-              {o.cityLabel}
-              {o.street ? `, ${o.street}` : ''}
-            </p>
-
-            <ul className="mt-4 space-y-3 list-none">
-              {o.methods.map((m) => (
-                <li key={m.key}>
-                  <p className="text-[14px] font-semibold text-[#0b1a24]">{m.short}</p>
-                  <a href={m.href} className={`${FOCUS} text-[14px] text-[#005485] underline hover:no-underline`}>
-                    Детальніше на сторінці «{m.linkLabel}»
-                  </a>
-                </li>
-              ))}
-            </ul>
-
-            <p className="text-[13px] text-gray-500 leading-relaxed mt-4">{o.bookingNote}</p>
-            <div className="mt-auto pt-5">
-            <button
-              type="button"
-              onClick={() => setBooking(o)}
-              className={`${FOCUS} w-full sm:w-auto min-h-[48px] px-6 py-3 rounded-[10px] bg-[#005485] text-white text-[16px] font-semibold hover:bg-[#003a5e] transition-colors`}
-            >
-              Записатися на консультацію
-            </button>
-            </div>
+          <li key={o.id} hidden={!visible(o)}>
+            <OfferDoctorCard
+              fullName={o.fullName}
+              regalia={o.level}
+              expertise={o.expertise}
+              experienceLine={o.experience}
+              clinicName={o.clinicName}
+              location={o.location}
+              photo={o.photo}
+              bookingNote={o.bookingNote}
+              profileLink={o.profileLink}
+              methodLinks={o.methods.map((m) => ({ label: m.linkLabel, href: m.href }))}
+              onBook={() => setBooking(o)}
+            />
           </li>
         ))}
       </ul>

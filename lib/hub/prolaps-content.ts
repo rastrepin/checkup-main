@@ -86,14 +86,25 @@ export const CITY_LABELS: Record<string, string> = {
 };
 
 /**
- * Рядки картки, яких немає в реєстрі. experience задається лише там, де реєстр порожній
- * (рішення 11А: рік диплома; у реєстр не пишемо – див. журнал спрощень).
+ * Рядки картки, яких немає в реєстрі (content v3.1, 6.1–6.2).
+ * experience – лише там, де реєстр порожній (рішення 11А: рік диплома; у реєстр не пишемо).
+ * location – замість «місто, адреса» з реєстру; тоді назва клініки окремим рядком не виводиться.
+ * photo, profileLink – лише для доктор-бренду (рішення 14А): фото doctors.photo_url, профіль – clinics.website.
  */
-export const DOCTOR_CONTENT: Record<string, { expertise: string; experience?: string }> = {
+export interface DoctorCardContent {
+  expertise?: string;
+  experience?: string;
+  location?: string;
+  photo?: boolean;
+  profileLink?: boolean;
+}
+
+export const DOCTOR_CONTENT: Record<string, DoctorCardContent> = {
   'bondaruk-volodymyr': {
-    expertise:
-      'Завідувач відділення ендоскопічної гінекології. Лапароскопічні й вагінальні операції при опущенні матки і піхви',
     experience: 'У професії з 2001 року',
+    location: 'Київ, КМЦРПМ, проспект Володимира Івасюка, 16',
+    photo: true,
+    profileLink: true,
   },
   'lapa-nataliia': { expertise: 'Малоінвазивна хірургія' },
   afanasiev: { expertise: 'Гінеколог-хірург' },
@@ -137,16 +148,21 @@ export interface HubOfferMethod {
 export interface HubOffer {
   id: string;
   doctorSlug: string;
+  /** ПІБ через formatDoctorName: «Ім'я По батькові Прізвище». */
   fullName: string;
   level: string | null;
   expertise: string | null;
   experience: string | null;
   clinicSlug: string;
+  /** Назва клініки для форми запису. */
   clinicLabel: string;
+  /** Назва клініки окремим рядком у картці; null, якщо місце задане контентом. */
+  clinicName: string | null;
+  location: string;
+  photo: { src: string; alt: string } | null;
+  profileLink: { label: string; href: string } | null;
   cityKey: string;
   cityLabel: string;
-  /** Адреса без міста, як у реєстрі. */
-  street: string;
   bookingNote: string;
   methods: HubOfferMethod[];
 }
