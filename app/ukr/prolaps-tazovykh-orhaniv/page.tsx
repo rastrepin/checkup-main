@@ -10,7 +10,7 @@ import { GEO_BLOCKS, HUB_URL, OFFERS_ANCHOR } from '@/lib/hub/prolaps-content';
 // Контент: content/hub/prolaps-tazovykh-orhaniv.md (v3.1) дослівно. Примітки «> …» з MD не рендеряться.
 // Інформаційна частина – без імен лікарів і клінік, без цін. Лікарі, клініки і посилання на сторінки
 // операцій – лише в області пропозицій (розділ 6), дані карток – з реєстру (Supabase).
-// noindex до тест-ліда і погодження текстів PO (рішення 10.10). Верстка – за app/ukr/screening/*.
+// Індексується з 17.10.2026 (реліз після перевірки редактором на проді). Верстка – за app/ukr/screening/*.
 
 export const revalidate = 3600;
 
@@ -42,7 +42,7 @@ const lcFirst = (s: string) => s.charAt(0).toLowerCase() + s.slice(1);
 export const metadata: Metadata = {
   title: { absolute: TITLE },
   description: DESCRIPTION,
-  robots: { index: false, follow: true },
+  robots: { index: true, follow: true },
   alternates: { canonical: HUB_URL },
   openGraph: { title: TITLE, description: DESCRIPTION, url: HUB_URL, type: 'website' },
   twitter: { card: 'summary', title: TITLE, description: DESCRIPTION },
