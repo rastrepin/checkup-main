@@ -6,7 +6,6 @@ import OfferDoctorCard from '@/components/hub-diagnosis/OfferDoctorCard';
 import {
   CITY_LABELS,
   CITY_ORDER,
-  UNSURE_LABEL,
   type HubOffer,
 } from '@/lib/hub/prolaps-content';
 
@@ -15,7 +14,6 @@ import {
 // наявні форми репо пишуть у таблицю leads потоку чекапів, а заявки хабу йдуть у потік клінік.
 
 const FOCUS = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#005485]';
-const UNSURE = 'unsure';
 
 function Chip({ active, onClick, children }: { active: boolean; onClick: () => void; children: string }) {
   return (
@@ -35,8 +33,6 @@ function Chip({ active, onClick, children }: { active: boolean; onClick: () => v
 }
 
 function BookingForm({ offer }: { offer: HubOffer }) {
-  const preset = offer.methods.length === 1 ? offer.methods[0].key : '';
-  const [choice, setChoice] = useState<string>(preset);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('+380');
   const [consent, setConsent] = useState(false);
@@ -47,9 +43,7 @@ function BookingForm({ offer }: { offer: HubOffer }) {
 
   const digits = phone.replace(/\D/g, '');
   const phoneOk = (digits.length === 12 && digits.startsWith('380')) || (digits.length === 10 && digits.startsWith('0'));
-  const valid = name.trim().length >= 2 && phoneOk && consent && choice !== '';
-
-  const chosen = offer.methods.find((m) => m.key === choice);
+  const valid = name.trim().length >= 2 && phoneOk && consent;
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -67,7 +61,6 @@ function BookingForm({ offer }: { offer: HubOffer }) {
           consent_given: true,
           clinic_slug: offer.clinicSlug,
           preferred_doctor: offer.doctorSlug,
-          method: choice === UNSURE ? null : choice,
           utm_source: params.get('utm_source'),
           utm_medium: params.get('utm_medium'),
           utm_campaign: params.get('utm_campaign'),
@@ -107,8 +100,7 @@ function BookingForm({ offer }: { offer: HubOffer }) {
   return (
     <form onSubmit={submit} noValidate>
       <p className="text-[14px] text-gray-600 leading-relaxed">
-        {offer.fullName} · {chosen ? `${chosen.short} · ` : ''}
-        {offer.clinicLabel}, {offer.cityLabel}
+        {offer.fullName} · {offer.clinicLabel}, {offer.cityLabel}
       </p>
 
       {/* Honeypot – прихований */}
@@ -122,32 +114,6 @@ function BookingForm({ offer }: { offer: HubOffer }) {
         autoComplete="off"
         aria-hidden="true"
       />
-
-      <fieldset className="mt-5">
-        <legend className="text-[14px] font-semibold text-[#0b1a24] mb-2">Операція, яка вас цікавить</legend>
-        <div className="space-y-2">
-          {[...offer.methods.map((m) => ({ value: m.key as string, label: m.short })), { value: UNSURE, label: UNSURE_LABEL }].map(
-            (o) => (
-              <label
-                key={o.value}
-                className={`flex items-center gap-3 min-h-[44px] px-3 py-2 rounded-[10px] border-2 cursor-pointer text-[15px] ${
-                  choice === o.value ? 'border-[#005485] bg-[#e8f4fd] text-[#005485] font-semibold' : 'border-gray-200 text-gray-700'
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="method"
-                  value={o.value}
-                  checked={choice === o.value}
-                  onChange={() => setChoice(o.value)}
-                  className="accent-[#005485] w-4 h-4 shrink-0"
-                />
-                {o.label}
-              </label>
-            ),
-          )}
-        </div>
-      </fieldset>
 
       <div className="mt-5 space-y-3">
         <label className="block">

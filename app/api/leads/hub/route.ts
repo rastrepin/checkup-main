@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { HUB_PATH, HUB_SOURCE_CTA, OFFER_SOURCES, type MethodKey } from '@/lib/hub/prolaps-content';
+import { HUB_PATH, HUB_SOURCE_CTA, OFFER_SOURCES } from '@/lib/hub/prolaps-content';
 
 export const runtime = 'nodejs';
 
@@ -17,8 +17,6 @@ interface HubLeadPayload {
   consent_given?: boolean;
   clinic_slug?: string;
   preferred_doctor?: string;
-  /** Ключ методу або null – «Ще не знаю, потрібна консультація». */
-  method?: MethodKey | null;
   session_id?: string | null;
   utm_source?: string | null;
   utm_medium?: string | null;
@@ -53,15 +51,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'validation failed' }, { status: 422 });
   }
 
-  // Клініка і метод – лише з переліку пропозицій хабу; case_slug визначає сервер.
+  // Клініка – лише з переліку пропозицій хабу.
   const clinicSlug = (body.clinic_slug ?? '').trim();
-  const clinicSources = OFFER_SOURCES.filter((s) => s.clinicSlug === clinicSlug);
-  if (clinicSources.length === 0) {
+  if (!OFFER_SOURCES.some((s) => s.clinicSlug === clinicSlug)) {
     return NextResponse.json({ error: 'unknown clinic' }, { status: 422 });
-  }
-  const source = body.method ? clinicSources.find((s) => s.method === body.method) : undefined;
-  if (body.method && !source) {
-    return NextResponse.json({ error: 'unknown method' }, { status: 422 });
   }
   const doctor = (body.preferred_doctor ?? '').trim();
   if (!/^[a-z0-9-]{2,80}$/.test(doctor)) {
@@ -73,12 +66,16 @@ export async function POST(req: NextRequest) {
     phone,
     contact_channels: ['call'],
     consent_given: true,
-    consultation_intent: source ? 'case_confirmed' : 'diagnosis_clarification',
-    case_slug: source?.serviceSlug ?? null,
+    // Хаб діагнозу: операцію не обрано, лікар підбирає метод на консультації.
+    // case_slug = null, тому платформа не пише quoted_price і не виводить рядок «Операція».
+    consultation_intent: 'method_selection',
+    case_slug: null,
     preferred_doctor: doctor,
     clinic_slug: clinicSlug,
     source_cta: HUB_SOURCE_CTA,
     source_page: HUB_PATH,
+    // Домен сторінки-джерела: посилання в Telegram веде на хаб, а не на сайт клініки.
+    source_origin: 'https://check-up.in.ua',
     session_id: body.session_id ?? null,
     utm_source: body.utm_source ?? null,
     utm_medium: body.utm_medium ?? null,
