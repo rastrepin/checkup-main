@@ -29,13 +29,15 @@ const H1 = `${H1_MAIN} ${H1_EM}`;
 const DESCRIPTION =
   'Яку операцію обрати при опущенні матки: лапароскопічну чи через піхву? Від чого залежить вибір і до якого лікаря звернутися в Києві, Харкові, Миколаєві.';
 
-// Рецензент (v3, розділ 9): НЕ рендериться до згоди лікаря. Увімкнути: SHOW_REVIEWER = true.
-// Тоді рендеряться рядок рецензента і розкриття про рецензента, а в Schema додаються reviewedBy і lastReviewed.
-const SHOW_REVIEWER = false;
-const REVIEWER_LINE = 'Медичний рецензент: Бондарук Володимир Петрович, лікар вищої категорії, кандидат медичних наук';
+// Рецензент (v3.1, розділ 9): лікар погодив 17.10. ПІБ і регалії – з реєстру через formatDoctorName і
+// formatRegalia (картка пропозиції bondaruk-volodymyr). Немає даних у реєстрі – рядок не рендериться.
+const REVIEWER_SLUG = 'bondaruk-volodymyr';
+const REVIEWER_URL = 'https://bondaruk.check-up.in.ua/';
+const REVIEWED_ISO = '2026-10-17';
 const REVIEWER_DISCLOSURE = 'Рецензент сторінки є одним із лікарів, до яких можна записатися через неї.';
-const REVIEWER_NAME = 'Бондарук Володимир Петрович';
-const REVIEWED_ISO = '';
+
+/** Регалії в середині рядка – з малої літери («…, лікар вищої категорії»). */
+const lcFirst = (s: string) => s.charAt(0).toLowerCase() + s.slice(1);
 
 export const metadata: Metadata = {
   title: { absolute: TITLE },
@@ -204,6 +206,7 @@ const P = 'text-gray-700 leading-relaxed mt-4';
 
 export default async function ProlapsHubPage() {
   const offers = await fetchProlapsOffers();
+  const reviewer = offers.find((o) => o.doctorSlug === REVIEWER_SLUG) ?? null;
 
   const jsonLd: object[] = [
     {
@@ -218,8 +221,8 @@ export default async function ProlapsHubPage() {
         code: { '@type': 'MedicalCode', codingSystem: 'ICD-10', codeValue: 'N81' },
       },
       dateModified: UPDATED_ISO,
-      ...(SHOW_REVIEWER && REVIEWED_ISO
-        ? { lastReviewed: REVIEWED_ISO, reviewedBy: { '@type': 'Physician', name: REVIEWER_NAME } }
+      ...(reviewer
+        ? { lastReviewed: REVIEWED_ISO, reviewedBy: { '@type': 'Physician', name: reviewer.fullName, url: REVIEWER_URL } }
         : {}),
     },
     {
@@ -477,9 +480,12 @@ export default async function ProlapsHubPage() {
               <p className="text-[15px]">
                 <span className="font-semibold text-[#0b1a24]">Автор:</span> Ігор Растрепін, засновник check-up.in.ua
               </p>
-              {SHOW_REVIEWER && (
+              {reviewer && (
                 <>
-                  <p className="text-[15px]">{REVIEWER_LINE}</p>
+                  <p className="text-[15px]">
+                    <span className="font-semibold text-[#0b1a24]">Медичний рецензент:</span> {reviewer.fullName}
+                    {reviewer.level ? `, ${lcFirst(reviewer.level)}` : ''}
+                  </p>
                   <p className="text-sm text-gray-500">{REVIEWER_DISCLOSURE}</p>
                 </>
               )}
