@@ -1,0 +1,214 @@
+'use client';
+
+import { useMemo, useState, type FormEvent } from 'react';
+import { Modal } from '@/components/ui/Modal';
+import OfferDoctorCard from '@/components/hub-diagnosis/OfferDoctorCard';
+import {
+  CITY_LABELS,
+  CITY_ORDER,
+  type HubOffer,
+} from '@/lib/hub/prolaps-content';
+
+// Область пропозицій хабу діагнозу: лікарі за містом, запис із картки.
+// Усі картки є в статичному HTML; фільтри лише ховають зайві. Новий компонент (не спільний):
+// наявні форми репо пишуть у таблицю leads потоку чекапів, а заявки хабу йдуть у потік клінік.
+
+const FOCUS = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#005485]';
+
+function Chip({ active, onClick, children }: { active: boolean; onClick: () => void; children: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`${FOCUS} min-h-[40px] px-4 py-2 rounded-[40px] border-2 text-[14px] transition-colors ${
+        active
+          ? 'border-[#005485] bg-[#e8f4fd] text-[#005485] font-semibold'
+          : 'border-gray-200 bg-white text-gray-700 font-medium hover:border-[#005485]'
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function BookingForm({ offer }: { offer: HubOffer }) {
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('+380');
+  const [consent, setConsent] = useState(false);
+  const [website, setWebsite] = useState(''); // honeypot
+  const [loading, setLoading] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState(false);
+
+  const digits = phone.replace(/\D/g, '');
+  const phoneOk = (digits.length === 12 && digits.startsWith('380')) || (digits.length === 10 && digits.startsWith('0'));
+  const valid = name.trim().length >= 2 && phoneOk && consent;
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    if (!valid || loading) return;
+    setLoading(true);
+    setError(false);
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const res = await fetch('/api/leads/hub', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: name.trim(),
+          phone,
+          consent_given: true,
+          clinic_slug: offer.clinicSlug,
+          preferred_doctor: offer.doctorSlug,
+          utm_source: params.get('utm_source'),
+          utm_medium: params.get('utm_medium'),
+          utm_campaign: params.get('utm_campaign'),
+          utm_content: params.get('utm_content'),
+          utm_term: params.get('utm_term'),
+          referrer: document.referrer || null,
+          website,
+        }),
+      });
+      if (!res.ok) throw new Error(String(res.status));
+      setSent(true);
+    } catch {
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (sent) {
+    return (
+      <div className="text-center py-6" role="status">
+        <p className="text-[17px] font-bold text-[#0b1a24] uppercase tracking-[0.04em]">Заявку надіслано</p>
+        <p className="text-[15px] text-gray-600 leading-relaxed mt-3">
+          Адміністратор клініки зателефонує вам протягом робочого дня та підтвердить час прийому.
+        </p>
+        <p className="text-[14px] text-[#0b1a24] leading-relaxed mt-4 bg-[#fff4e5] border border-[#f5d9a8] rounded-[10px] px-4 py-3 text-left">
+          Якщо не вдається помочитися або на випинанні з&apos;явилася виразка, зверніться до лікаря терміново, не
+          чекаючи дзвінка.
+        </p>
+      </div>
+    );
+  }
+
+  const input =
+    'w-full px-3 py-3.5 border-2 border-gray-200 rounded-[10px] text-[16px] text-[#0b1a24] focus:border-[#005485] focus:outline-none';
+
+  return (
+    <form onSubmit={submit} noValidate>
+      <p className="text-[14px] text-gray-600 leading-relaxed">
+        {offer.fullName} · {offer.clinicLabel}, {offer.cityLabel}
+      </p>
+
+      {/* Honeypot – прихований */}
+      <input
+        type="text"
+        name="website"
+        value={website}
+        onChange={(e) => setWebsite(e.target.value)}
+        className="hidden"
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden="true"
+      />
+
+      <div className="mt-5 space-y-3">
+        <label className="block">
+          <span className="block text-[14px] font-semibold text-[#0b1a24] mb-1.5">Прізвище та ім&apos;я</span>
+          <input type="text" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} required className={input} />
+        </label>
+        <label className="block">
+          <span className="block text-[14px] font-semibold text-[#0b1a24] mb-1.5">Телефон</span>
+          <input
+            type="tel"
+            inputMode="tel"
+            autoComplete="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            required
+            className={input}
+          />
+        </label>
+      </div>
+
+      <label className="flex items-start gap-3 mt-4 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={consent}
+          onChange={(e) => setConsent(e.target.checked)}
+          className="accent-[#005485] w-5 h-5 mt-0.5 shrink-0"
+        />
+        <span className="text-[13px] text-gray-600 leading-relaxed">
+          Я даю згоду на обробку персональних даних відповідно до законодавства України.
+        </span>
+      </label>
+
+      {error && (
+        <p className="mt-4 px-3 py-2 bg-red-50 border border-red-200 rounded-[8px] text-[14px] text-red-700" role="alert">
+          Не вдалося надіслати заявку. Спробуйте ще раз.
+        </p>
+      )}
+
+      <button
+        type="submit"
+        disabled={!valid || loading}
+        className={`${FOCUS} w-full mt-5 py-4 rounded-[10px] text-[16px] font-semibold transition-colors ${
+          valid && !loading ? 'bg-[#d60242] text-white hover:bg-[#b50139] cursor-pointer' : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+        }`}
+      >
+        {loading ? 'Надсилаємо' : 'Записатися'}
+      </button>
+    </form>
+  );
+}
+
+export default function OffersArea({ offers }: { offers: HubOffer[] }) {
+  // Фільтр міст (v3, 6): жодне місто не обране – видно всіх; повторне натискання знімає вибір.
+  const [city, setCity] = useState<string | null>(null);
+  const [booking, setBooking] = useState<HubOffer | null>(null);
+
+  const cityOptions = useMemo(() => CITY_ORDER.filter((c) => offers.some((o) => o.cityKey === c)), [offers]);
+  const visible = (o: HubOffer) => !city || o.cityKey === city;
+
+  return (
+    <div>
+      <div className="mt-8">
+        <p className="text-[13px] font-semibold text-gray-500 mb-2">Місто</p>
+        <div className="flex flex-wrap gap-2">
+          {cityOptions.map((c) => (
+            <Chip key={c} active={city === c} onClick={() => setCity(city === c ? null : c)}>
+              {CITY_LABELS[c]}
+            </Chip>
+          ))}
+        </div>
+      </div>
+
+      <ul className="mt-8 grid gap-5 lg:grid-cols-2 list-none">
+        {offers.map((o) => (
+          <li key={o.id} hidden={!visible(o)}>
+            <OfferDoctorCard
+              fullName={o.fullName}
+              regalia={o.level}
+              expertise={o.expertise}
+              experienceLine={o.experience}
+              clinicName={o.clinicName}
+              location={o.location}
+              photo={o.photo}
+              bookingNote={o.bookingNote}
+              profileLink={o.profileLink}
+              methodLinks={o.methods.map((m) => ({ label: m.linkLabel, href: m.href }))}
+              onBook={() => setBooking(o)}
+            />
+          </li>
+        ))}
+      </ul>
+
+      <Modal open={booking !== null} onClose={() => setBooking(null)} title="Записатися на консультацію">
+        {booking && <BookingForm key={booking.id} offer={booking} />}
+      </Modal>
+    </div>
+  );
+}

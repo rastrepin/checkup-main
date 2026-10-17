@@ -12,6 +12,10 @@ import approved from './approved-routes.json';
 
 export const APPROVED_ROUTES: readonly string[] = approved as string[];
 
+// Погоджені сторінки, яких поки немає в /sitemap-next.xml: сторінка вже на домені,
+// але закрита noindex до перевірки на проді. Знімати запис разом із noindex.
+export const SITEMAP_EXCLUDED_ROUTES: readonly string[] = ['/ukr/prolaps-tazovykh-orhaniv'];
+
 // Службові адреси, які завжди обслуговує Next.js незалежно від переліку.
 export const SYSTEM_ROUTES: readonly string[] = [
   '/robots.txt',

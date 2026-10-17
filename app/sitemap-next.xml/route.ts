@@ -1,14 +1,15 @@
-import { APPROVED_ROUTES, SITE_URL } from '@/lib/seo/approved-routes';
+import { APPROVED_ROUTES, SITEMAP_EXCLUDED_ROUTES, SITE_URL } from '@/lib/seo/approved-routes';
 import { XML_HEADERS, escapeXml } from '@/lib/seo/xml';
 
-// /sitemap-next.xml – лише погоджені сторінки Next.js (approved-routes.json).
+// /sitemap-next.xml – лише погоджені сторінки Next.js (approved-routes.json),
+// крім тимчасово закритих noindex (SITEMAP_EXCLUDED_ROUTES).
 // Порожній перелік – валідний порожній urlset.
 
 export const dynamic = 'force-static';
 
 export function GET() {
   const lastmod = new Date().toISOString();
-  const urls = APPROVED_ROUTES.map(
+  const urls = APPROVED_ROUTES.filter((path) => !SITEMAP_EXCLUDED_ROUTES.includes(path)).map(
     (path) =>
       '  <url>\n' +
       `    <loc>${escapeXml(SITE_URL + path)}</loc>\n` +
