@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import SiteHeader from '@/components/shared/SiteHeader';
+import Header from '@/components/frame/Header'
+import Hero from '@/components/frame/Hero'
+import { ButtonLink } from '@/components/frame/Button';
 import AccordionSection from '@/components/shared/AccordionSection';
 import OffersArea from '@/components/hub-diagnosis/OffersArea';
 import { fetchProlapsOffers } from '@/lib/hub/prolaps-offers';
@@ -246,43 +248,37 @@ export default async function ProlapsHubPage() {
 
   return (
     <>
-      <SiteHeader city={null} />
+      <Header city={null} tone="light" />
       <main className="text-[#0b1a24]">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
         <script dangerouslySetInnerHTML={{ __html: OPEN_SOURCES_SCRIPT }} />
 
         {/* 1. Hero */}
-        <section style={{ backgroundColor: BG_GRAY }}>
-          <div className="max-w-[1200px] mx-auto px-6 lg:px-14 py-14">
-            <div className="max-w-3xl">
-              <nav aria-label="Breadcrumb" className="text-xs text-gray-500 mb-8">
+        <Hero
+          tone="light"
+          breadcrumbs={
+            <nav aria-label="Breadcrumb">
                 <Link href="/" className="hover:underline">
                   check-up.in.ua
                 </Link>
                 <span className="mx-1.5">/</span>
-                <span className="text-gray-700">Опущення матки і піхви</span>
+                <span aria-current="page">Опущення матки і піхви</span>
               </nav>
-              <Eyebrow>ГІНЕКОЛОГІЯ · ТАЗОВЕ ДНО</Eyebrow>
-              <h1
-                className="font-bold leading-tight mb-6"
-                style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: 'clamp(30px, 4.6vw, 52px)' }}
-              >
-                {H1_MAIN} <em className="italic font-semibold text-[#005485]">{H1_EM}</em>
-              </h1>
-              <p className="text-[17px] text-gray-700 leading-relaxed">
+          }
+          eyebrow="ГІНЕКОЛОГІЯ · ТАЗОВЕ ДНО"
+          h1Size="clamp(30px, 4.6vw, 52px)"
+          h1={<>{H1_MAIN} <em className="italic font-semibold text-[var(--hero-decor-light)]">{H1_EM}</em></>}
+          lead={<p>
                 Відчуття кульки чи тиску в піхві може бути ознакою опущення матки або стінок піхви. Лікарі називають
                 цей стан пролапсом тазових органів. Він не загрожує життю і лікується, не завжди операцією. Почніть з
                 огляду в гінеколога. Лікар визначить стадію опущення і разом з вами обере спосіб лікування.
-              </p>
-              <a
-                href={`#${OFFERS_ANCHOR}`}
-                className="inline-flex items-center justify-center min-h-[48px] mt-8 px-7 py-3 rounded-[10px] bg-[#005485] text-white text-[16px] font-semibold hover:bg-[#003a5e] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#005485]"
-              >
-                Обрати лікаря
-              </a>
-            </div>
-          </div>
-        </section>
+              </p>}
+          cta={
+            <ButtonLink href={`#${OFFERS_ANCHOR}`} variant="booking" size="lg">
+              Обрати лікаря
+            </ButtonLink>
+          }
+        />
 
         {/* 2. Чи це опущення */}
         <Section bg={BG_WHITE}>

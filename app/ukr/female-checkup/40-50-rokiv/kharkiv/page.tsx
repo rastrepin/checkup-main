@@ -8,7 +8,9 @@ import AdditionalServices from '@/components/program-page/AdditionalServices';
 import AccordionSection from '@/components/shared/AccordionSection';
 import CrossAgeNav from '@/components/shared/CrossAgeNav';
 import InPageNav, { type InPageNavItem } from '@/components/shared/InPageNav';
-import SiteHeader from '@/components/shared/SiteHeader';
+import Header from '@/components/frame/Header'
+import Hero from '@/components/frame/Hero'
+import { buttonClass } from '@/components/frame/Button';
 import BookingFlow, { BookCta } from '@/components/city/BookingFlow';
 import {
   type AgeAddition,
@@ -345,35 +347,35 @@ export default async function FemaleAge4050KharkivPage() {
 
   return (
     <>
-      <SiteHeader city="kharkiv" section="female" />
+      <Header city="kharkiv" section="female" tone="dark" />
       <main className="text-[#0b1a24]">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
         {/* 1. Hero – без ціни */}
-        <section id="hero" style={{ backgroundColor: '#f4f6f8' }}>
-          <div className="max-w-[1200px] mx-auto px-5 sm:px-6 lg:px-14 pt-4 pb-6 lg:py-14">
-            <div className="max-w-3xl">
-              <nav aria-label="Breadcrumb" className="text-[13px] text-gray-500 mb-3.5">
+        <Hero
+          tone="dark"
+          breadcrumbs={
+            <nav aria-label="Breadcrumb">
                 <Link href="/" className="hover:underline">check-up.in.ua</Link>
                 <span className="mx-1.5">/</span>
                 <Link href="/ukr/kharkiv" className="hover:underline">Харків</Link>
                 <span className="mx-1.5">/</span>
                 <Link href="/ukr/female-checkup/kharkiv" className="hover:underline">Жінкам</Link>
                 <span className="mx-1.5">/</span>
-                <span className="text-gray-700">40–50 років</span>
+                <span aria-current="page">40–50 років</span>
               </nav>
-              <p className="text-xs font-bold uppercase tracking-[0.08em] text-[#005485] mb-2.5">Жіночий чекап · Харків</p>
-              <h1
-                className="font-bold mb-3.5"
-                style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: 'clamp(28px, 5vw, 52px)', lineHeight: 1.15 }}
-              >
-                Чекап для жінок 40–50 років – що перевіряти і де пройти в Харкові
-              </h1>
-              <p className="text-[#4a5a6b] leading-relaxed mb-4">
+          }
+          eyebrow="Жіночий чекап · Харків"
+          h1Size="clamp(30px, 5vw, 56px)"
+          h1={<>Чекап для жінок 40–50 років – що перевіряти і де пройти в Харкові</>}
+          lead={
+            <p>
                 Якщо вам від 40 до 50 років і нічого не турбує, клінічні настанови радять пройти кілька обстежень.
                 Нижче – які саме і де їх пройти в Харкові.
               </p>
-              <div className="bg-white border-[1.5px] border-[#e5e7eb] rounded-[12px] px-4 pt-4 pb-3 mb-4">
+          }
+          summary={
+            <>
                 <p className="font-semibold text-[#0b1a24] mb-2">У 40–50 років жінкам без скарг рекомендують чотири обстеження:</p>
                 <ul className="list-disc pl-5 space-y-1 text-[#374151] leading-snug">
                   {ANSWER_ITEMS.map((a, i) => (
@@ -396,26 +398,29 @@ export default async function FemaleAge4050KharkivPage() {
                   </a>
                   <S n={[4]} />.
                 </p>
-              </div>
-              <a
+              </>
+          }
+          cta={
+            <a
                 href={`#${ID.programs}`}
-                className="flex sm:inline-flex items-center justify-center gap-2 min-h-[52px] px-7 rounded-full bg-[#005485] text-white text-[15px] font-semibold hover:bg-[#003a5e] transition-colors"
+                className={`${buttonClass({ variant: 'hero', size: 'lg' })} w-full sm:w-auto`}
               >
                 Як пройти обстеження в Харкові
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M12 5v14M6 13l6 6 6-6" />
                 </svg>
               </a>
-              <p className="flex items-center gap-2 mt-3 text-[13px] text-[#4a5a6b]">
+          }
+          reassurance={
+            <p className="flex items-center gap-2">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#04b5ba" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="shrink-0">
                   <path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z" />
                   <path d="M9 12l2 2 4-4" />
                 </svg>
                 <span>Інформаційний матеріал: не замінює консультацію лікаря.</span>
               </p>
-            </div>
-          </div>
-        </section>
+          }
+        />
 
         {/* 1a. Внутрішнє меню */}
         <InPageNav items={navItems} />
@@ -475,12 +480,12 @@ export default async function FemaleAge4050KharkivPage() {
                         programSlug={program.slug}
                         sourceCta={`${SOURCE_CTA}_card`}
                         label="Записатися"
-                        className="!rounded-full min-h-[52px] uppercase tracking-[0.1em] font-bold text-[13px]"
+                        className="uppercase tracking-[0.06em] text-[13px]"
                       />
                       {clinic.website && (
                         <a
                           href={clinic.website}
-                          className="inline-flex items-center justify-center min-h-12 rounded-full border-[1.5px] border-[#005485]/30 text-[#005485] font-bold text-[13px] uppercase tracking-[0.1em] hover:bg-[#f0f7fb]"
+                          className={`${buttonClass({ variant: 'secondary', size: 'lg', caps: true })} text-[13px]`}
                         >
                           Детальніше
                         </a>

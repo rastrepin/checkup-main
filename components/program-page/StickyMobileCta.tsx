@@ -60,7 +60,7 @@ export default function StickyMobileCta({ programNameShort, price, programSlug, 
           programSlug={programSlug}
           sourceCta={sourceCta}
           label="Записатися"
-          className="!w-auto shrink-0 !rounded-[14px] px-6 min-h-[52px] uppercase tracking-[0.08em] font-bold"
+          className="!w-auto shrink-0 px-6 uppercase tracking-[0.06em]"
         />
       </div>
     );
