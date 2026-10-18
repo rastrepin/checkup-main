@@ -25,6 +25,10 @@ export const SYSTEM_ROUTES: readonly string[] = [
   '/brand/logo-checkup.svg',
   '/brand/logo-checkup-site-dark.svg',
   '/brand/logo-checkup-site-light.svg',
+  // Fixel Display (@font-face у globals.css): без цих рядків файли віддавала Tilda (404).
+  '/fonts/FixelDisplay-Regular.woff2',
+  '/fonts/FixelDisplay-SemiBold.woff2',
+  '/fonts/FixelDisplay-Bold.woff2',
 ];
 
 export const SITE_URL = 'https://check-up.in.ua';
