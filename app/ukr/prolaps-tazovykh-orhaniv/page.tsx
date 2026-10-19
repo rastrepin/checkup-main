@@ -159,7 +159,7 @@ const FAQ: { q: string; a: Part[] }[] = [
 const faqPlain = (a: Part[]) => a.map((p) => (typeof p === 'string' ? p : `[${p.s}]`)).join('');
 
 function Eyebrow({ children }: { children: string }) {
-  return <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#005485] mb-6">{children}</p>;
+  return <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#005485] mb-[var(--space-eyebrow)]">{children}</p>;
 }
 
 function H2({ children }: { children: React.ReactNode }) {
@@ -187,7 +187,7 @@ function Section({
 }) {
   return (
     <section id={id} className="scroll-mt-6" style={{ backgroundColor: bg, borderTop: BORDER }}>
-      <div className="max-w-[1200px] mx-auto px-6 lg:px-14 py-14">
+      <div className="max-w-[1200px] mx-auto px-[var(--space-gutter)] py-[var(--space-section)]">
         <div className={wide ? '' : 'max-w-3xl'}>{children}</div>
       </div>
     </section>
@@ -471,7 +471,7 @@ export default async function ProlapsHubPage() {
 
         {/* 9. Автор, рецензент, джерела */}
         <section style={{ backgroundColor: BG_GRAY, borderTop: BORDER }}>
-          <div className="max-w-[1200px] mx-auto px-6 lg:px-14 py-12">
+          <div className="max-w-[1200px] mx-auto px-[var(--space-gutter)] py-[var(--space-section)]">
             <div className="max-w-3xl text-[#374151] leading-relaxed space-y-3">
               <p className="text-[15px]">
                 <span className="font-semibold text-[#0b1a24]">Автор:</span> Ігор Растрепін, засновник check-up.in.ua

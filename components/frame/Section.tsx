@@ -28,7 +28,7 @@ export default function Section({
       aria-labelledby={ariaLabelledby}
       className={`border-t border-section-border scroll-mt-16 ${tone === 'muted' ? 'bg-bg-muted' : 'bg-white'} ${className}`}
     >
-      <div className="max-w-[1200px] mx-auto px-6 lg:px-14 py-14">
+      <div className="max-w-[1200px] mx-auto px-[var(--space-gutter)] py-[var(--space-section)]">
         {width === 'read' ? <div className="max-w-[720px]">{children}</div> : children}
       </div>
     </section>

@@ -225,7 +225,7 @@ const BAND_GRAY = 'bg-[#f4f6f8] shadow-[0_0_0_100vmax_#f4f6f8] [clip-path:inset(
 
 function Block({ eyebrow, children, id, gray = false, className = '' }: { eyebrow?: string; children: React.ReactNode; id?: string; gray?: boolean; className?: string }) {
   return (
-    <section id={id} className={`px-5 sm:px-6 lg:px-0 py-10 lg:py-14 border-t border-[#eef0f2] -scroll-mt-6 lg:scroll-mt-16 ${gray ? BAND_GRAY : ''} ${className}`}>
+    <section id={id} className={`px-5 sm:px-6 lg:px-0 py-[var(--space-section)] border-t border-[#eef0f2] -scroll-mt-6 lg:scroll-mt-16 ${gray ? BAND_GRAY : ''} ${className}`}>
       <div className="max-w-3xl">
         {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
         {children}

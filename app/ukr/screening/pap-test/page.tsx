@@ -67,7 +67,7 @@ function S({ n }: { n: number[] }) {
 }
 
 function Eyebrow({ children }: { children: string }) {
-  return <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#005485] mb-6">{children}</p>;
+  return <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#005485] mb-[var(--space-eyebrow)]">{children}</p>;
 }
 
 function H2({ children }: { children: React.ReactNode }) {
@@ -81,7 +81,7 @@ function H2({ children }: { children: React.ReactNode }) {
 function Section({ bg, eyebrow, children }: { bg: string; eyebrow: string; children: React.ReactNode }) {
   return (
     <section style={{ backgroundColor: bg, borderTop: BORDER }}>
-      <div className="max-w-[1200px] mx-auto px-6 lg:px-14 py-14">
+      <div className="max-w-[1200px] mx-auto px-[var(--space-gutter)] py-[var(--space-section)]">
         <div className="max-w-3xl">
           <Eyebrow>{eyebrow}</Eyebrow>
           {children}
@@ -298,7 +298,7 @@ export default function ScreeningPapTestPage() {
 
       {/* author_reviewer */}
       <section style={{ backgroundColor: BG_GRAY, borderTop: BORDER }}>
-        <div className="max-w-[1200px] mx-auto px-6 lg:px-14 py-12">
+        <div className="max-w-[1200px] mx-auto px-[var(--space-gutter)] py-[var(--space-section)]">
           {/* Латка етапу 1, №3: рядки 1–3 – лише коли в спільному REVIEWER заповнений reviewDate; стиль – як на вікових сторінках. */}
           <div className="max-w-3xl text-[#374151] leading-relaxed space-y-3">
             {REVIEWER && (

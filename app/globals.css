@@ -171,12 +171,45 @@
   --hero-decor-light: #005485;
   --hero-line-light: rgba(0, 84, 133, 0.14);
 
+  /* Радіуси і відступи – ті самі токени, що в checkup-platform (ui-kit §2.6–2.7, §5.3) */
+  --radius-sm: 6px; --radius-md: 8px; --radius-lg: 12px; --radius-xl: 18px; --radius-pill: 999px;
+  --space-gutter: 24px; --space-section: 64px; --space-eyebrow: 16px; --space-heading: 24px;
+  --space-block: 32px; --space-stack: 16px; --space-item: 10px; --space-title: 8px;
+  --space-card: 20px; --space-grid: 16px;
+  --space-hero-top: 40px; --space-hero-bottom: 56px; --space-hero-crumbs: 24px;
+  --space-hero-eyebrow: 16px; --space-hero-sub: 12px; --space-hero-lead: 24px; --space-hero-meta: 8px;
+  --space-hero-card: 24px; --space-hero-cta: 32px; --space-hero-caption: 12px;
+
   /* 13. Футер */
   --footer-bg: #05121e;
   --footer-cta-bg: var(--brand-accent);
   --footer-cta-text: var(--brand-accent-text);
   --footer-cta-hover: var(--brand-accent-hover);
 }
+
+@media (min-width: 1024px) {
+  :root {
+    --space-gutter: 56px; --space-section: 96px; --space-eyebrow: 24px; --space-heading: 28px;
+    --space-block: 48px; --space-item: 12px; --space-card: 24px; --space-grid: 24px;
+    --space-hero-top: 72px; --space-hero-bottom: 96px; --space-hero-crumbs: 32px;
+    --space-hero-eyebrow: 20px; --space-hero-sub: 16px; --space-hero-lead: 32px;
+    --space-hero-card: 32px; --space-hero-cta: 40px;
+  }
+}
+
+/* Ритм hero (ui-kit §5.3): відступ перед елементом – за його роллю data-hero. Копія з checkup-platform. */
+.hero-stack { display: flex; flex-direction: column; gap: 0; }
+.hero-stack > * { margin-top: 0; }
+.hero-stack > [data-hero="eyebrow"] { margin-top: var(--space-hero-crumbs); }
+.hero-stack > [data-hero="title"]   { margin-top: var(--space-hero-eyebrow); }
+.hero-stack > [data-hero="sub"]     { margin-top: var(--space-hero-sub); }
+.hero-stack > [data-hero="lead"]    { margin-top: var(--space-hero-lead); }
+.hero-stack > [data-hero="meta"]    { margin-top: var(--space-hero-meta); }
+.hero-stack > [data-hero="card"]    { margin-top: var(--space-hero-card); }
+.hero-stack > [data-hero="cta"]     { margin-top: var(--space-hero-cta); }
+.hero-stack > [data-hero="caption"] { margin-top: var(--space-hero-caption); }
+.hero-stack > :first-child,
+.hero-stack > [data-hero]:first-child { margin-top: 0; }
 
 /* ─── Tailwind v4 @theme ────────────────────────────────────────────────── */
 @theme inline {

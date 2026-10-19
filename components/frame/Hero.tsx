@@ -68,34 +68,38 @@ export default function Hero({
   const t = T[tone];
   return (
     <section id={id} style={t.section} className="relative">
-      <div className="max-w-[1200px] mx-auto px-6 lg:px-14 pt-8 pb-12 lg:pt-14 lg:pb-20">
+      <div className="max-w-[1200px] mx-auto px-[var(--space-gutter)] pt-[var(--space-hero-top)] pb-[var(--space-hero-bottom)]">
         <div className={aside ? 'grid grid-cols-1 gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14 items-start' : ''}>
-          <div className="max-w-3xl flex flex-col">
-            {breadcrumbs && <div className={`text-[13px] mb-6 ${t.crumbs}`}>{breadcrumbs}</div>}
+          <div className="max-w-3xl hero-stack">
+            {breadcrumbs && <div data-hero="crumbs" className={`text-[13px] ${t.crumbs}`}>{breadcrumbs}</div>}
             {eyebrow && (
-              <Eyebrow marker="dash" tone={t.eyebrow} className="mb-5">
-                {eyebrow}
-              </Eyebrow>
+              <div data-hero="eyebrow">
+                <Eyebrow marker="dash" tone={t.eyebrow}>
+                  {eyebrow}
+                </Eyebrow>
+              </div>
             )}
             <h1
+              data-hero="title"
               className={`font-serif font-bold tracking-[-0.02em] ${t.h1}`}
-              style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: h1Size, lineHeight: 1.05 }}
+              style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: h1Size, lineHeight: 1.06 }}
             >
               {h1}
             </h1>
             {h1Italic && (
               <p
-                className={`italic font-medium mt-2 ${t.italic}`}
+                data-hero="sub"
+                className={`italic font-medium ${t.italic}`}
                 style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: 'clamp(22px, 3.4vw, 38px)', lineHeight: 1.1 }}
               >
                 {h1Italic}
               </p>
             )}
-            {lead && <div className={`text-[17px] leading-[1.6] mt-5 ${t.lead}`}>{lead}</div>}
-            {summary && <div className={`rounded-[12px] px-5 pt-4 pb-4 mt-6 leading-snug ${t.card}`}>{summary}</div>}
+            {lead && <div data-hero="lead" className={`text-[17px] leading-[1.6] ${t.lead}`}>{lead}</div>}
+            {summary && <div data-hero="card" className={`rounded-[var(--radius-lg)] p-[var(--space-card)] leading-snug [&_li+li]:mt-1.5 ${t.card}`}>{summary}</div>}
             {children}
-            {cta && <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-3">{cta}</div>}
-            {reassurance && <div className={`mt-3 text-[13px] ${t.reassure}`}>{reassurance}</div>}
+            {cta && <div data-hero="cta" className="flex flex-wrap items-center gap-x-6 gap-y-3">{cta}</div>}
+            {reassurance && <div data-hero="caption" className={`text-[13px] ${t.reassure}`}>{reassurance}</div>}
           </div>
           {aside}
         </div>
