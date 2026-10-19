@@ -211,6 +211,10 @@
 .hero-stack > :first-child,
 .hero-stack > [data-hero]:first-child { margin-top: 0 !important; }
 
+/* Межа між секціями лише всередині однієї смуги: на зміні фону (сіра ↔ біла) лінія зайва. */
+.band-gray + .band-white,
+.band-white + .band-gray { border-top-color: transparent; }
+
 /* ─── Tailwind v4 @theme ────────────────────────────────────────────────── */
 @theme inline {
   --color-background: var(--background);

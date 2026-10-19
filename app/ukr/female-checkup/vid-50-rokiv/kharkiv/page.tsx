@@ -233,12 +233,12 @@ function H2({ children, id, className = '' }: { children: React.ReactNode; id?: 
 // Фони смуг (правка Ігоря 26.09.2026): блоки чергують білий і сірий фон; блок-продовження має фон попереднього.
 // Сіра смуга на desktop тягнеться на всю ширину екрана, під правою колонкою теж (тінь + clip-path, без зміни розмітки);
 // картка програм у правій колонці закріплена (sticky); clip-path робить блоки окремим шаром, тому сайдбар має
-// z-10 і білий фон, щоб лишатися білим поверх сірих смуг.
+// z-10; власного фону не має: над сірою смугою картка лежить на сірому, як і контент ліворуч.
 const BAND_GRAY = 'bg-[#f4f6f8] shadow-[0_0_0_100vmax_#f4f6f8] [clip-path:inset(0_-100vmax)]';
 
 function Block({ eyebrow, children, id, gray = false, className = '' }: { eyebrow?: string; children: React.ReactNode; id?: string; gray?: boolean; className?: string }) {
   return (
-    <section id={id} className={`px-5 sm:px-6 lg:px-0 py-[var(--space-section)] border-t border-[#eef0f2] -scroll-mt-6 lg:scroll-mt-16 ${gray ? BAND_GRAY : ''} ${className}`}>
+    <section id={id} className={`px-5 sm:px-6 lg:px-0 py-[var(--space-section)] border-t border-[#eef0f2] -scroll-mt-6 lg:scroll-mt-16 ${gray ? `${BAND_GRAY} band-gray` : 'band-white'} ${className}`}>
       <div className="max-w-3xl">
         {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
         {children}
