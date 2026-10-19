@@ -412,7 +412,7 @@ export default async function FemaleAgeDo30KharkivPage() {
           <div className="relative lg:contents">
           {/* 1b. Як пройти обстеження в Харкові: mobile – одразу після блоку 2, desktop – права колонка, sticky */}
           <aside id={showComposition ? undefined : ID.programs} className="lg:col-start-2 lg:row-start-1 lg:row-end-3 -scroll-mt-3 lg:scroll-mt-16 bg-[#f4f6f8] lg:bg-transparent" aria-labelledby="prohramy-h2">
-            <div className="px-5 sm:px-6 lg:px-0 pt-7 pb-10 lg:pt-14 lg:sticky lg:top-16 lg:z-10 lg:bg-white">
+            <div className="px-5 sm:px-6 lg:px-0 pt-7 pb-10 lg:pt-14 lg:sticky lg:top-16 lg:z-10">
               <H2 id="prohramy-h2" className="mb-4 lg:!text-[22px]">Як пройти обстеження в Харкові</H2>
               {program && clinic ? (
                 <>
