@@ -200,16 +200,16 @@
 /* Ритм hero (ui-kit §5.3): відступ перед елементом – за його роллю data-hero. Копія з checkup-platform. */
 .hero-stack { display: flex; flex-direction: column; gap: 0; }
 .hero-stack > * { margin-top: 0; }
-.hero-stack > [data-hero="eyebrow"] { margin-top: var(--space-hero-crumbs); }
-.hero-stack > [data-hero="title"]   { margin-top: var(--space-hero-eyebrow); }
-.hero-stack > [data-hero="sub"]     { margin-top: var(--space-hero-sub); }
-.hero-stack > [data-hero="lead"]    { margin-top: var(--space-hero-lead); }
-.hero-stack > [data-hero="meta"]    { margin-top: var(--space-hero-meta); }
-.hero-stack > [data-hero="card"]    { margin-top: var(--space-hero-card); }
-.hero-stack > [data-hero="cta"]     { margin-top: var(--space-hero-cta); }
-.hero-stack > [data-hero="caption"] { margin-top: var(--space-hero-caption); }
+.hero-stack > [data-hero="eyebrow"] { margin-top: var(--space-hero-crumbs) !important; }
+.hero-stack > [data-hero="title"]   { margin-top: var(--space-hero-eyebrow) !important; }
+.hero-stack > [data-hero="sub"]     { margin-top: var(--space-hero-sub) !important; }
+.hero-stack > [data-hero="lead"]    { margin-top: var(--space-hero-lead) !important; }
+.hero-stack > [data-hero="meta"]    { margin-top: var(--space-hero-meta) !important; }
+.hero-stack > [data-hero="card"]    { margin-top: var(--space-hero-card) !important; }
+.hero-stack > [data-hero="cta"]     { margin-top: var(--space-hero-cta) !important; }
+.hero-stack > [data-hero="caption"] { margin-top: var(--space-hero-caption) !important; }
 .hero-stack > :first-child,
-.hero-stack > [data-hero]:first-child { margin-top: 0; }
+.hero-stack > [data-hero]:first-child { margin-top: 0 !important; }
 
 /* ─── Tailwind v4 @theme ────────────────────────────────────────────────── */
 @theme inline {
