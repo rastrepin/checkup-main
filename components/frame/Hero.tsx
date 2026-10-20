@@ -103,7 +103,7 @@ export default function Hero({
                 <>
                   <span className="hero-h1-sep"> – </span>
                   <span
-                    className={`block italic font-medium mt-2 ${t.italic}`}
+                    className={`block italic font-medium mt-3 lg:mt-4 ${t.italic}`}
                     style={{ fontSize: '0.56em', lineHeight: 1.2 }}
                   >
                     {h1Tail}
