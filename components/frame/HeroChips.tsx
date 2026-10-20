@@ -21,12 +21,12 @@ export default function HeroChips({
         <p className="text-[15px] font-semibold text-[var(--hero-muted)]">
           {title}
         </p>
-        <ul className="mt-3 lg:mt-4 flex flex-wrap gap-2.5" role="list">
+        <ul className="mt-3 lg:mt-4 flex flex-wrap gap-2 lg:gap-2.5" role="list">
           {items.map((it) => (
             <li key={it.href}>
               <a
                 href={it.href}
-                className="inline-flex items-center min-h-10 px-3.5 rounded-[var(--radius-pill)] text-[15px] leading-none text-[var(--hero-text)] bg-[var(--hero-card-bg)] border border-[var(--hero-chip-border)] hover:bg-[var(--hero-chip-hover)] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current"
+                className="hero-chip relative inline-flex items-center min-h-8 lg:min-h-10 px-3 lg:px-3.5 rounded-[var(--radius-pill)] text-[14px] lg:text-[15px] leading-none text-[var(--hero-text)] bg-[var(--hero-card-bg)] border border-[var(--hero-chip-border)] hover:bg-[var(--hero-chip-hover)] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current"
               >
                 {it.label}
               </a>

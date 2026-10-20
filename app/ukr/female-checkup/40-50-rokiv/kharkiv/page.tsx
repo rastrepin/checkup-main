@@ -131,7 +131,7 @@ const ID = {
 const ANSWER_ITEMS: { label: string; id: string }[] = [
   { label: 'вимірювання тиску', id: ID.pressure },
   { label: 'аналіз на холестерин', id: ID.cholesterol },
-  { label: 'аналіз на цукор у крові', id: ID.diabetes },
+  { label: 'аналіз на цукор', id: ID.diabetes },
   { label: 'ПАП-тест', id: ID.cervix },
 ];
 

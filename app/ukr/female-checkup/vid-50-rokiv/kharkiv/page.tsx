@@ -134,7 +134,7 @@ const ANSWER_ITEMS: { label: string; id: string }[] = [
   { label: 'ПАП-тест', id: ID.cervix },
   { label: 'вимірювання тиску', id: ID.pressure },
   { label: 'аналіз на холестерин', id: ID.cholesterol },
-  { label: 'аналіз на цукор у крові', id: ID.diabetes },
+  { label: 'аналіз на цукор', id: ID.diabetes },
 ];
 
 /* Доповнення: усі обстеження з переліку, яких немає в програмі (screening-evidence-matrix.md, розділ 3).

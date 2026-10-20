@@ -58,7 +58,7 @@ export default function Hero({
   id?: string;
   breadcrumbs?: ReactNode;
   eyebrow?: ReactNode;
-  /** Рядок над H1 «це місце для вас» (замість eyebrow, ui-kit §5.2). */
+  /** Рядок над H1 «це місце для вас» (замість eyebrow, ui-kit §5.2). Лише з 1024 px: на mobile H1 вже називає вік. */
   kicker?: ReactNode;
   h1: ReactNode;
   /** Хвіст H1 після « – »: той самий тег H1, візуально – другим рядком курсивом. */
@@ -82,7 +82,7 @@ export default function Hero({
           <div className="max-w-3xl hero-stack">
             {breadcrumbs && <div data-hero="crumbs" className={`text-[13px] ${t.crumbs}`}>{breadcrumbs}</div>}
             {kicker && (
-              <p data-hero="eyebrow" className={`text-[15px] font-semibold ${t.italic}`}>
+              <p data-hero="eyebrow" className={`hero-kicker text-[15px] font-semibold ${t.italic}`}>
                 {kicker}
               </p>
             )}

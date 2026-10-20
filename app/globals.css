@@ -180,7 +180,7 @@
   --space-hero-eyebrow: 16px; --space-hero-sub: 12px; --space-hero-lead: 24px; --space-hero-meta: 8px;
   --space-hero-card: 24px; --space-hero-cta: 32px; --space-hero-caption: 12px;
   /* Групи hero без кнопки (вікові сторінки): заголовок → група обстежень → «що далі» + застереження. */
-  --space-hero-group: 40px; --space-hero-next: 32px; --space-hero-note: 12px;
+  --space-hero-group: 48px; --space-hero-next: 40px; --space-hero-note: 12px;
 
   /* 13. Футер */
   --footer-bg: #05121e;
@@ -196,7 +196,7 @@
     --space-hero-top: 72px; --space-hero-bottom: 96px; --space-hero-crumbs: 32px;
     --space-hero-eyebrow: 20px; --space-hero-sub: 16px; --space-hero-lead: 32px;
     --space-hero-card: 32px; --space-hero-cta: 40px;
-    --space-hero-group: 56px; --space-hero-next: 40px; --space-hero-note: 16px;
+    --space-hero-group: 64px; --space-hero-next: 48px; --space-hero-note: 16px;
   }
 }
 
@@ -214,6 +214,13 @@
 .hero-stack > [data-hero="group"]   { margin-top: var(--space-hero-group) !important; }
 .hero-stack > [data-hero="next"]    { margin-top: var(--space-hero-next) !important; }
 .hero-stack > [data-hero="next"] + [data-hero="caption"] { margin-top: var(--space-hero-note) !important; }
+/* Рядок над H1 – лише з 1024 px; на mobile H1 стоїть за крихтами на їхньому відступі. */
+@media (max-width: 1023px) {
+  .hero-stack > .hero-kicker { display: none; }
+  .hero-stack > .hero-kicker + [data-hero="title"] { margin-top: var(--space-hero-crumbs) !important; }
+}
+/* Кнопки обстежень у hero: на mobile 32 px заввишки, зона натиску – 44 px. */
+.hero-chip::after { content: ""; position: absolute; inset: -6px 0; }
 .hero-stack > :first-child,
 .hero-stack > [data-hero]:first-child { margin-top: 0 !important; }
 
