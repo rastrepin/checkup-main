@@ -375,6 +375,16 @@ export default async function FemaleAgeVid50KharkivPage() {
 
         {/* 1a. Внутрішнє меню */}
         <InPageNav items={navItems} />
+        {program && clinic && (
+          <ProgramBridge
+            className="lg:hidden"
+            label="Програма клініки в Харкові"
+            title={`${program.name_ua} · ${clinic.name}`}
+            teaser={composition ? [composition.consultationsSummary && `Консультації: ${composition.consultationsSummary}.`, composition.instrumentalSummary].filter(Boolean).join(' ') : undefined}
+            href={`#${ID.programs}`}
+            cta="Переглянути програму ↓"
+          />
+        )}
 
         {/* ЗОНА РЕКОМЕНДАЦІЙ (макет зон 20.10): рекомендації для всіх, історія. Права колонка порожня. */}
         <div className="max-w-[1200px] mx-auto lg:px-14 lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-x-12">
@@ -385,6 +395,16 @@ export default async function FemaleAgeVid50KharkivPage() {
               <h3 id={ID.breast} className={H3}>Молочні залози</h3>
               <ClampMobile>
               <p className={P}>У 50–69 років мамографію роблять кожні 2 роки всім жінкам, навіть якщо факторів ризику немає<S n={[1]} />. Що робити після 69, описано на сторінці «<Link href="/ukr/screening/mamografiia" className={LINK}>Мамографія: що показує і коли потрібна</Link>».</p>
+              {program && clinic && (
+                <ProgramBridge
+                  className="hidden lg:block mt-8 mb-2"
+                  label="Програма клініки в Харкові"
+                  title={`${program.name_ua} · ${clinic.name}`}
+                  teaser={composition ? [composition.consultationsSummary && `Консультації: ${composition.consultationsSummary}.`, composition.instrumentalSummary].filter(Boolean).join(' ') : undefined}
+                  href={`#${ID.programs}`}
+                  cta="Переглянути програму ↓"
+                />
+              )}
               <p className={P}>Якщо з&apos;явилося ущільнення в грудях чи під пахвою, зміни шкіри, втягнення соска або виділення із соска, до лікаря звертаються одразу, не чекаючи планової мамографії<S n={[1]} />.</p>
               </ClampMobile>
               <h3 id={ID.colon} className={H3}>Колоректальний рак</h3>
@@ -415,15 +435,6 @@ export default async function FemaleAgeVid50KharkivPage() {
               <p className={P}>Особливо важливо не пропускати аналіз, якщо є надлишкова вага (індекс маси тіла 25 і більше), діабет 2 типу був у батьків, братів чи сестер, під час вагітності був гестаційний діабет або є синдром полікістозних яєчників<S n={[5]} />.</p>
               </ClampMobile>
             </Block>
-            {program && clinic && (
-              <ProgramBridge
-                label="Програма клініки в Харкові"
-                title={`${program.name_ua} · ${clinic.name}`}
-                teaser={composition ? [composition.consultationsSummary && `Консультації: ${composition.consultationsSummary}.`, composition.instrumentalSummary].filter(Boolean).join(' ') : undefined}
-                href={`#${ID.programs}`}
-                cta="Переглянути програму ↓"
-              />
-            )}
             {/* 2b. Що залежить від вашої історії */}
             <Block eyebrow="Ваша історія" id={ID.history}>
               <H2>Що залежить від вашої історії</H2>

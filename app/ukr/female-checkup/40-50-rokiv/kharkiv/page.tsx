@@ -393,6 +393,16 @@ export default async function FemaleAge4050KharkivPage() {
 
         {/* 1a. Внутрішнє меню */}
         <InPageNav items={navItems} />
+        {program && clinic && (
+          <ProgramBridge
+            className="lg:hidden"
+            label="Програма клініки в Харкові"
+            title={`${program.name_ua} · ${clinic.name}`}
+            teaser={composition ? [composition.consultationsSummary && `Консультації: ${composition.consultationsSummary}.`, composition.instrumentalSummary].filter(Boolean).join(' ') : undefined}
+            href={`#${ID.programs}`}
+            cta="Переглянути програму ↓"
+          />
+        )}
 
         {/* ЗОНА РЕКОМЕНДАЦІЙ (макет зон 20.10): рекомендації для всіх, історія. Права колонка порожня. */}
         <div className="max-w-[1200px] mx-auto lg:px-14 lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-x-12">
@@ -403,6 +413,16 @@ export default async function FemaleAge4050KharkivPage() {
               <h3 id={ID.pressure} className={H3}>Артеріальний тиск</h3>
               <ClampMobile>
               <p className={P}>Від 40 років тиск вимірюють щороку<S n={[1]} />. Для цього достатньо вимірювання на прийомі, окремий аналіз не потрібен.</p>
+              {program && clinic && (
+                <ProgramBridge
+                  className="hidden lg:block mt-8 mb-2"
+                  label="Програма клініки в Харкові"
+                  title={`${program.name_ua} · ${clinic.name}`}
+                  teaser={composition ? [composition.consultationsSummary && `Консультації: ${composition.consultationsSummary}.`, composition.instrumentalSummary].filter(Boolean).join(' ') : undefined}
+                  href={`#${ID.programs}`}
+                  cta="Переглянути програму ↓"
+                />
+              )}
               </ClampMobile>
               <h3 id={ID.cholesterol} className={H3}>Холестерин</h3>
               <ClampMobile>
@@ -427,15 +447,6 @@ export default async function FemaleAge4050KharkivPage() {
               <p className={P}>Планову перевірку на колоректальний рак для всіх починають з 50 років: аналіз калу на приховану кров або фекальний імунохімічний тест (ФІТ) раз на 2 роки<S n={[4]} />. У 40–49 років лікар щороку розпитує про фактори ризику, а аналіз призначає, якщо вони є або з&apos;явилися симптоми<S n={[4]} />.</p>
               </ClampMobile>
             </Block>
-            {program && clinic && (
-              <ProgramBridge
-                label="Програма клініки в Харкові"
-                title={`${program.name_ua} · ${clinic.name}`}
-                teaser={composition ? [composition.consultationsSummary && `Консультації: ${composition.consultationsSummary}.`, composition.instrumentalSummary].filter(Boolean).join(' ') : undefined}
-                href={`#${ID.programs}`}
-                cta="Переглянути програму ↓"
-              />
-            )}
             {/* 2b. Що залежить від вашої історії – у порядку переліку */}
             <Block eyebrow="Ваша історія" id={ID.history}>
               <H2>Що залежить від вашої історії</H2>

@@ -8,15 +8,17 @@ export default function ProgramBridge({
   teaser,
   href,
   cta,
+  className = '',
 }: {
   label: string;
   title: string;
   teaser?: string;
   href: string;
   cta: string;
+  className?: string;
 }) {
   return (
-    <section aria-label={label} className="zone-program-mark relative bg-[var(--zone-program-bg)]">
+    <section aria-label={label} className={`zone-program-mark relative bg-[var(--zone-program-bg)] ${className}`}>
       <div className="px-5 sm:px-6 lg:px-0 py-6 lg:py-7 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 lg:gap-10">
         <div className="min-w-0">
           <p className="text-[12px] font-bold uppercase tracking-[0.12em] text-link">{label}</p>
