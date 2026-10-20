@@ -216,8 +216,8 @@
 
 /* Зона програми: фон на всю ширину. */
 :root { --zone-program-bg: #f4f6f8; --hero-chip-border: rgba(255,255,255,0.18); --hero-chip-hover: rgba(255,255,255,0.14); }
-.zone-program-mark { box-shadow: 0 0 0 100vmax var(--zone-program-bg); clip-path: inset(0 -100vmax); }
-.zone-program-mark::before { content: ""; position: absolute; top: 0; left: 50%; width: 100vw; transform: translateX(-50%); height: 3px; background: var(--brand-primary); }
+/* Смуга зони на всю ширину вікна з будь-якої колонки: border-image з виносом не створює горизонтальної прокрутки. */
+.zone-program-mark { border-image: linear-gradient(var(--brand-primary) 0 3px, var(--zone-program-bg) 3px) fill 0 // 0 100vmax; }
 
 /* Розкриття тексту на mobile: перший абзац – 2 рядки, решта – після кліку. */
 @media (max-width: 1023px) {
