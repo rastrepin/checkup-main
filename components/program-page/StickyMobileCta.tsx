@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { BookCta } from '@/components/city/BookingFlow';
+import { buttonClass } from '@/components/frame/Button';
 
 // Блок 1c обох MD (5a-female-40-50/vid-50-kharkiv.md): постійний CTA на мобільному,
 // зʼявляється після прокрутки повз Hero. components-map-FIXED.md §16 не містить
@@ -21,19 +22,29 @@ export interface StickyMobileCtaProps {
   revealAfterId?: string;
   /** 'v2': ціна Source Serif 4 navy, кнопка navy з radius 14 px. За замовчуванням – як раніше. */
   look?: 'default' | 'v2';
+  /** Макет зон 20.10: id заголовка зони програми. До неї панель веде в зону програми («Переглянути»),
+   *  від неї – «Записатися». Без пропу – як раніше. */
+  zoneId?: string;
+  /** Напис кнопки до зони програми. */
+  browseLabel?: string;
 }
 
 function fmt(n: number) {
   return n.toLocaleString('uk-UA');
 }
 
-export default function StickyMobileCta({ programNameShort, price, programSlug, sourceCta, revealAfterId, look = 'default' }: StickyMobileCtaProps) {
+export default function StickyMobileCta({ programNameShort, price, programSlug, sourceCta, revealAfterId, look = 'default', zoneId, browseLabel = 'Переглянути' }: StickyMobileCtaProps) {
   const [visible, setVisible] = useState(false);
+  const [inZone, setInZone] = useState(!zoneId);
 
   useEffect(() => {
     const onScroll = () => {
       const el = revealAfterId ? document.getElementById(revealAfterId) : null;
       setVisible(el ? el.getBoundingClientRect().bottom < 0 : window.scrollY > 400);
+      if (zoneId) {
+        const z = document.getElementById(zoneId);
+        setInZone(z ? z.getBoundingClientRect().top < window.innerHeight * 0.5 : true);
+      }
     };
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
@@ -56,12 +67,18 @@ export default function StickyMobileCta({ programNameShort, price, programSlug, 
             </p>
           )}
         </div>
-        <BookCta
-          programSlug={programSlug}
-          sourceCta={sourceCta}
-          label="Записатися"
-          className="!w-auto shrink-0 px-6 uppercase tracking-[0.06em]"
-        />
+        {inZone ? (
+          <BookCta
+            programSlug={programSlug}
+            sourceCta={sourceCta}
+            label="Записатися"
+            className="!w-auto shrink-0 px-6 uppercase tracking-[0.06em]"
+          />
+        ) : (
+          <a href={`#${zoneId}`} className={`${buttonClass({ variant: 'secondary', size: 'lg' })} shrink-0 px-6`}>
+            {browseLabel}
+          </a>
+        )}
       </div>
     );
   }

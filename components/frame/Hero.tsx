@@ -41,11 +41,14 @@ export default function Hero({
   id = 'hero',
   breadcrumbs,
   eyebrow,
+  kicker,
   h1,
+  h1Tail,
   h1Italic,
   h1Size = 'clamp(32px, 5vw, 64px)',
   lead,
   summary,
+  content,
   cta,
   reassurance,
   aside,
@@ -55,11 +58,17 @@ export default function Hero({
   id?: string;
   breadcrumbs?: ReactNode;
   eyebrow?: ReactNode;
+  /** Рядок над H1 «це місце для вас» (замість eyebrow, ui-kit §5.2). */
+  kicker?: ReactNode;
   h1: ReactNode;
+  /** Хвіст H1 після « – »: той самий тег H1, візуально – другим рядком курсивом. */
+  h1Tail?: ReactNode;
   h1Italic?: ReactNode;
   h1Size?: string;
   lead?: ReactNode;
   summary?: ReactNode;
+  /** Вміст без обгортки-картки (напр. HeroChips), на місці підсумку. */
+  content?: ReactNode;
   cta?: ReactNode;
   reassurance?: ReactNode;
   aside?: ReactNode;
@@ -72,7 +81,12 @@ export default function Hero({
         <div className={aside ? 'grid grid-cols-1 gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14 items-start' : ''}>
           <div className="max-w-3xl hero-stack">
             {breadcrumbs && <div data-hero="crumbs" className={`text-[13px] ${t.crumbs}`}>{breadcrumbs}</div>}
-            {eyebrow && (
+            {kicker && (
+              <p data-hero="eyebrow" className={`text-[15px] font-semibold ${t.italic}`}>
+                {kicker}
+              </p>
+            )}
+            {!kicker && eyebrow && (
               <div data-hero="eyebrow">
                 <Eyebrow marker="dash" tone={t.eyebrow}>
                   {eyebrow}
@@ -85,6 +99,17 @@ export default function Hero({
               style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: h1Size, lineHeight: 1.06 }}
             >
               {h1}
+              {h1Tail && (
+                <>
+                  <span className="hero-h1-sep"> – </span>
+                  <span
+                    className={`block italic font-medium mt-2 ${t.italic}`}
+                    style={{ fontSize: '0.56em', lineHeight: 1.2 }}
+                  >
+                    {h1Tail}
+                  </span>
+                </>
+              )}
             </h1>
             {h1Italic && (
               <p
@@ -97,6 +122,7 @@ export default function Hero({
             )}
             {lead && <div data-hero="lead" className={`text-[17px] leading-[1.6] ${t.lead}`}>{lead}</div>}
             {summary && <div data-hero="card" className={`rounded-[var(--radius-lg)] p-[var(--space-card)] leading-snug [&_li+li]:mt-1.5 ${t.card}`}>{summary}</div>}
+            {content}
             {children}
             {cta && <div data-hero="cta" className="flex flex-wrap items-center gap-x-6 gap-y-3">{cta}</div>}
             {reassurance && <div data-hero="caption" className={`text-[13px] ${t.reassure}`}>{reassurance}</div>}

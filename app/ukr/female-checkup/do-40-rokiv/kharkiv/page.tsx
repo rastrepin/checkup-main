@@ -10,6 +10,10 @@ import CrossAgeNav from '@/components/shared/CrossAgeNav';
 import InPageNav, { type InPageNavItem } from '@/components/shared/InPageNav';
 import Header from '@/components/frame/Header'
 import Hero from '@/components/frame/Hero'
+import HeroChips from '@/components/frame/HeroChips'
+import ProgramBridge from '@/components/frame/ProgramBridge'
+import ZoneHeader from '@/components/frame/ZoneHeader'
+import ClampMobile from '@/components/frame/ClampMobile'
 import { buttonClass } from '@/components/frame/Button';
 import BookingFlow, { BookCta } from '@/components/city/BookingFlow';
 import {
@@ -338,52 +342,16 @@ export default async function FemaleAge3040KharkivPage() {
                 <span aria-current="page">30–40 років</span>
               </nav>
           }
-          eyebrow="Жіночий чекап · Харків"
+          kicker="Вам 30–40 і нічого не турбує – ця сторінка для вас"
           h1Size="clamp(30px, 5vw, 56px)"
-          h1={<>Чекап для жінок 30–40 років – що перевіряти і де пройти в Харкові</>}
-          lead={
-            <p>
-                Якщо вам від 30 до 40 років і нічого не турбує, клінічні настанови радять пройти кілька обстежень.
-                Нижче – які саме і де їх пройти в Харкові.
-              </p>
-          }
-          summary={
-            <>
-                <p className="font-semibold text-[#0b1a24] mb-2">У 30–40 років жінкам без скарг рекомендують три обстеження:</p>
-                <ul className="list-disc pl-5 space-y-1 text-[#374151] leading-snug">
-                  {ANSWER_ITEMS.map((a, i) => (
-                    <li key={a.id}>
-                      <a href={`#${a.id}`} className={LINK}>
-                        {a.label}
-                      </a>
-                      {i < ANSWER_ITEMS.length - 1 ? ';' : '.'}
-                    </li>
-                  ))}
-                </ul>
-                <p className="text-[15px] text-[#374151] mt-2">
-                  З 35 років до них додається{' '}
-                  <a href={`#${ID.diabetes}`} className={LINK}>
-                    аналіз на цукор у крові
-                  </a>
-                  <S n={[6]} />. Якщо рак молочної залози був у матері, сестри або доньки,{' '}
-                  <a href={`#${ID.breast}`} className={LINK}>
-                    мамографію
-                  </a>{' '}
-                  починають раніше, ніж зазвичай
-                  <S n={[3]} />.
-                </p>
-              </>
-          }
-          cta={
-            <a
-                href={`#${ID.programs}`}
-                className={`${buttonClass({ variant: 'hero', size: 'lg' })} w-full sm:w-auto`}
-              >
-                Як пройти обстеження в Харкові
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M12 5v14M6 13l6 6 6-6" />
-                </svg>
-              </a>
+          h1="Чекап для жінок 30–40 років"
+          h1Tail="що перевіряти і де пройти в Харкові"
+          content={
+            <HeroChips
+              title="Рекомендують кожній:"
+              items={ANSWER_ITEMS.map((a) => ({ label: a.label, href: `#${a.id}` }))}
+              more={{ label: 'Коли проходити розширене обстеження ↓', href: `#${ID.history}` }}
+            />
           }
           reassurance={
             <p className="flex items-center gap-2">
@@ -391,7 +359,7 @@ export default async function FemaleAge3040KharkivPage() {
                   <path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z" />
                   <path d="M9 12l2 2 4-4" />
                 </svg>
-                <span>Інформаційний матеріал: не замінює консультацію лікаря.</span>
+                <span>Інформаційний матеріал. Свій план обстеження обговоріть з лікарем.</span>
               </p>
           }
         />
@@ -399,35 +367,71 @@ export default async function FemaleAge3040KharkivPage() {
         {/* 1a. Внутрішнє меню */}
         <InPageNav items={navItems} />
 
-        <div className="relative max-w-[1200px] mx-auto lg:px-14 lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-x-12">
-          <div className="lg:col-start-1 lg:row-start-1 min-w-0">
+        {/* ЗОНА РЕКОМЕНДАЦІЙ (макет зон 20.10): рекомендації для всіх, історія. Права колонка порожня. */}
+        <div className="max-w-[1200px] mx-auto lg:px-14 lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-x-12">
+          <div className="min-w-0">
             {/* 2. Які обстеження рекомендують жінкам у 30–40 років – не залежить від партнера */}
             <Block eyebrow="За клінічними настановами" id={ID.list}>
               <H2>Які обстеження рекомендують жінкам у 30–40 років</H2>
               <p className={P}>Єдиного українського протоколу профілактичного обстеження для цього віку немає. Диспансеризацію скасовано 2018 року<S n={[1]} />. Тому перелік нижче складений за українськими порядками скринінгу окремих хвороб і за міжнародними рекомендаціями.</p>
               <h3 id={ID.cervix} className={H3}>Рак шийки матки</h3>
+              <ClampMobile>
               <p className={P}>Мазок на клітини шийки матки (ПАП-тест) роблять раз на 3 роки<S n={[2]} />. З 35 років можна обрати інший спосіб: тест на вірус папіломи людини (ВПЛ) раз на 5–10 років. Спосіб та інтервал ви обираєте разом із гінекологом<S n={[2]} />. Державний порядок скринінгу передбачає мінімум: тест раз на 10 років з 30–35 до 55 років<S n={[5]} />. Детальніше на сторінці «<Link href="/ukr/screening/pap-test" className={LINK}>ПАП-тест: що показує і коли потрібен</Link>».</p>
+              </ClampMobile>
               <h3 id={ID.pressure} className={H3}>Артеріальний тиск</h3>
+              <ClampMobile>
               <p className={P}>До 40 років тиск вимірюють раз на 3–5 років, а за наявності факторів ризику – щороку<S n={[3]} />. Для цього достатньо вимірювання на прийомі, окремий аналіз не потрібен.</p>
+              </ClampMobile>
               <h3 id={ID.cholesterol} className={H3}>Холестерин</h3>
+              <ClampMobile>
               <p className={P}>Ліпідограма, тобто аналіз крові на холестерин і його фракції, показує, чи не підвищений ризик для серця і судин. Якщо ви її ще не здавали, аналіз варто зробити зараз. Якщо попередній результат був у нормі, його повторюють раз на 4–6 років<S n={[3]} />. Якщо результат відхиляється від норми, разом із лікарем ви визначаєте, коли повторити аналіз і що робити далі, з огляду на ваш загальний ризик.</p>
+              </ClampMobile>
               <h3 id={ID.diabetes} className={H3}>Цукровий діабет 2 типу</h3>
+              <ClampMobile>
               <p className={P}>З 35 років рівень цукру в крові рекомендують перевіряти всім, навіть за нормальної ваги: якщо результат у нормі, аналіз повторюють щонайменше раз на 3 роки<S n={[6]} />. Перевіряють аналізом крові на глюкозу натще або на глікований гемоглобін (HbA1c, середній рівень цукру за останні 2–3 місяці)<S n={[4]} />. Аналіз показує діабет 2 типу і переддіабет: стан, коли рівень цукру вже вищий за норму, але ще не досягає рівня діабету.</p>
               <p className={P}>Особливо важливо не пропускати аналіз, якщо є надлишкова вага (індекс маси тіла 25 і більше), діабет 2 типу був у батьків, братів чи сестер, під час вагітності був гестаційний діабет або є синдром полікістозних яєчників<S n={[4]} />.</p>
+              </ClampMobile>
               <h3 id={ID.breast} className={H3}>Молочні залози</h3>
+              <ClampMobile>
               <p className={P}>Якщо вам менше 40 і немає скарг чи раку молочної залози в родині, мамографія найімовірніше не потрібна<S n={[3]} />. Вона стає потрібною раніше, якщо рак був у матері, сестри або доньки: про це в розділі «<a href={`#${ID.history}`} className={LINK}>Що залежить від вашої історії</a>». Детальніше на сторінці «<Link href="/ukr/screening/mamografiia" className={LINK}>Мамографія: що показує і коли потрібна</Link>».</p>
               <p className={P}>Якщо з&apos;явилося ущільнення в грудях чи під пахвою, зміни шкіри, втягнення соска або виділення із соска, до лікаря звертаються одразу, не чекаючи планової мамографії<S n={[5]} />.</p>
+              </ClampMobile>
+            </Block>
+            {program && clinic && (
+              <ProgramBridge
+                label="Програма клініки в Харкові"
+                title={`${program.name_ua} · ${clinic.name}`}
+                teaser={composition ? [composition.consultationsSummary && `Консультації: ${composition.consultationsSummary}.`, composition.instrumentalSummary].filter(Boolean).join(' ') : undefined}
+                href={`#${ID.programs}`}
+                cta="Переглянути програму ↓"
+              />
+            )}
+            {/* 2b. Що залежить від вашої історії – у порядку переліку */}
+            <Block eyebrow="Ваша історія" id={ID.history}>
+              <H2>Що залежить від вашої історії</H2>
+              <p className={P}>Перелік вище розрахований на жінку без скарг і без особливої історії. Він змінюється, якщо:</p>
+              <h3 className={H3}>ВІЛ або інший стан, що пригнічує імунітет</h3>
+              <p className={P}>Графік скринінгу інший: ПАП-тест або тест на ВПЛ роблять кожні 5 років<S n={[5]} />, і з віком скринінг не припиняють<S n={[2]} />.</p>
+              <h3 className={H3}>Фактори серцево-судинного ризику</h3>
+              <p className={P}>Тиск вимірюють щороку, а не раз на 3–5 років<S n={[3]} />. Які фактори ризику є саме у вас, оцінює лікар.</p>
+              <h3 className={H3}>Рак молочної залози в матері, сестри або доньки</h3>
+              <p className={P}>Мамографію починають за 5–10 років до віку, у якому діагноз поставили родичці<S n={[3]} />. З якого віку починати вам, обговоріть з лікарем.</p>
             </Block>
           </div>
+        </div>
 
-          {/* Латка етапу 1, п. 2.6: на mobile картка 1b стоїть одразу після блоку 2. Обгортка на mobile – найближчий
-              позиціонований предок якоря «Програми» (він веде на картку 1b); з 1024 px вона display: contents,
-              і картка 1b – права колонка на обидва рядки сітки, sticky, як і раніше. */}
-          <div className="relative lg:contents">
-          {/* 1b. Як пройти обстеження в Харкові: mobile – одразу після блоку 2, desktop – права колонка, sticky */}
-          <aside id={showComposition ? undefined : ID.programs} className="lg:col-start-2 lg:row-start-1 lg:row-end-3 -scroll-mt-3 lg:scroll-mt-16 bg-[#f4f6f8] lg:bg-transparent" aria-labelledby="prohramy-h2">
-            <div className="px-5 sm:px-6 lg:px-0 pt-7 pb-10 lg:pt-14 lg:sticky lg:top-16 lg:z-10">
-              <H2 id="prohramy-h2" className="mb-4 lg:!text-[22px]">Як пройти обстеження в Харкові</H2>
+        {/* ЗОНА ПРОГРАМИ: заголовок зони, склад, доповнення, візити, контакти; сайдбар лише тут. */}
+        {program && clinic && (
+          <ZoneHeader
+            id={ID.programs}
+            eyebrow="Програма клініки"
+            title="Як пройти обстеження в Харкові"
+            sub="Склад програми, її лікарі й ціна. Поруч – що з рекомендованого кожній у програму не входить."
+          />
+        )}
+        <div className="relative max-w-[1200px] mx-auto lg:px-14 lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-x-12">
+          <aside aria-label="Програма клініки" className="lg:col-start-2 lg:row-start-1 -scroll-mt-3 lg:scroll-mt-16 bg-[#f4f6f8] lg:bg-transparent">
+            <div className="px-5 sm:px-6 lg:px-0 pt-7 pb-10 lg:pt-[var(--space-section)] lg:sticky lg:top-16 lg:z-10">
               {program && clinic ? (
                 <>
                   <div className="border-[1.5px] border-[#e5e7eb] rounded-[12px] px-4 pt-[18px] pb-4 bg-white">
@@ -476,27 +480,13 @@ export default async function FemaleAge3040KharkivPage() {
               )}
             </div>
           </aside>
-
-          <div className="lg:col-start-1 lg:row-start-2 min-w-0">
-            {/* 2b. Що залежить від вашої історії – у порядку переліку */}
-            <Block eyebrow="Ваша історія" id={ID.history}>
-              <H2>Що залежить від вашої історії</H2>
-              <p className={P}>Перелік вище розрахований на жінку без скарг і без особливої історії. Він змінюється, якщо:</p>
-              <h3 className={H3}>ВІЛ або інший стан, що пригнічує імунітет</h3>
-              <p className={P}>Графік скринінгу інший: ПАП-тест або тест на ВПЛ роблять кожні 5 років<S n={[5]} />, і з віком скринінг не припиняють<S n={[2]} />.</p>
-              <h3 className={H3}>Фактори серцево-судинного ризику</h3>
-              <p className={P}>Тиск вимірюють щороку, а не раз на 3–5 років<S n={[3]} />. Які фактори ризику є саме у вас, оцінює лікар.</p>
-              <h3 className={H3}>Рак молочної залози в матері, сестри або доньки</h3>
-              <p className={P}>Мамографію починають за 5–10 років до віку, у якому діагноз поставили родичці<S n={[3]} />. З якого віку починати вам, обговоріть з лікарем.</p>
-            </Block>
-
+          <div className="lg:col-start-1 lg:row-start-1 min-w-0">
             {/* 4. Що входить у програму */}
             {program && clinic && composition && (
               <Block eyebrow="Програма клініки" id={ID.composition} gray className="lg:relative">
                 {/* Якір «Програми» (меню 1a і кнопка Hero), правка Ігоря 26.09.2026: на mobile найближчий позиціонований
                     предок – обгортка картки 1b і решти колонки, тому якір стоїть на початку картки програм 1b; на desktop блок 4 relative,
                     і якір веде на «Що входить у програму» (картка 1b там закріплена праворуч і видна весь час). */}
-                <span id={ID.programs} aria-hidden="true" className="absolute top-0 left-0 w-px h-px -scroll-mt-3 lg:scroll-mt-16" />
                 <H2>Що входить у програму</H2>
                 <p className="font-semibold text-[#0b1a24] mt-2">
                   {program.name_ua} · {clinic.name}
@@ -615,7 +605,7 @@ export default async function FemaleAge3040KharkivPage() {
 
             {/* 7. Як це проходить */}
             {showVisits && composition && (
-              <Block eyebrow="Візити" id={ID.visits}>
+              <Block eyebrow="Візити" id={ID.visits} gray>
                 <H2>Як це проходить</H2>
                 <p className={P}>Програма проходить за {visitsText(visitCount)}.</p>
                 <div className="mt-4 flex flex-col gap-4">
@@ -700,7 +690,11 @@ export default async function FemaleAge3040KharkivPage() {
                 )}
               </Block>
             )}
+          </div>
+        </div>
 
+        <div className="max-w-[1200px] mx-auto lg:px-14 lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-x-12">
+          <div className="min-w-0">
             {/* 8. FAQ – нативний <details>, відповіді в DOM */}
             <Block eyebrow="Питання" id={ID.faq}>
               <H2>Часті запитання</H2>
@@ -714,8 +708,6 @@ export default async function FemaleAge3040KharkivPage() {
                 ))}
               </div>
             </Block>
-
-          </div>
           </div>
         </div>
 
@@ -794,6 +786,7 @@ export default async function FemaleAge3040KharkivPage() {
             programSlug={program.slug}
             sourceCta={`${SOURCE_CTA}_sticky`}
             revealAfterId="hero"
+            zoneId={ID.programs}
             look="v2"
           />
         </>

@@ -211,6 +211,20 @@
 .hero-stack > :first-child,
 .hero-stack > [data-hero]:first-child { margin-top: 0 !important; }
 
+/* Hero: хвіст H1 – другим рядком; тире лишається в тексті H1, візуально приховане. */
+.hero-h1-sep { font-size: 0; }
+
+/* Зона програми: фон на всю ширину. */
+:root { --zone-program-bg: #f4f6f8; --hero-chip-border: rgba(255,255,255,0.18); --hero-chip-hover: rgba(255,255,255,0.14); }
+.zone-program-mark { box-shadow: 0 0 0 100vmax var(--zone-program-bg); clip-path: inset(0 -100vmax); }
+.zone-program-mark::before { content: ""; position: absolute; top: 0; left: 50%; width: 100vw; transform: translateX(-50%); height: 3px; background: var(--brand-primary); }
+
+/* Розкриття тексту на mobile: перший абзац – 2 рядки, решта – після кліку. */
+@media (max-width: 1023px) {
+  .clamp-mobile:not([data-open]) > p:first-child { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .clamp-mobile:not([data-open]) > p:not(:first-child) { display: none; }
+}
+
 /* Межа між секціями лише всередині однієї смуги: на зміні фону (сіра ↔ біла) лінія зайва. */
 .band-gray + .band-white,
 .band-white + .band-gray { border-top-color: transparent; }
