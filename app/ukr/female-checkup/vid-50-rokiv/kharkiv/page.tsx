@@ -5,7 +5,6 @@ import { fetchClinicOffers, type ClinicOffer, type OfferBranch } from '@/lib/pro
 import { priceDateNotice } from '@/lib/programs/type5a';
 import StickyMobileCta from '@/components/program-page/StickyMobileCta';
 import AdditionalServices from '@/components/program-page/AdditionalServices';
-import AccordionSection from '@/components/shared/AccordionSection';
 import CrossAgeNav from '@/components/shared/CrossAgeNav';
 import InPageNav, { type InPageNavItem } from '@/components/shared/InPageNav';
 import Header from '@/components/frame/Header'
@@ -14,6 +13,10 @@ import HeroChips from '@/components/frame/HeroChips'
 import ProgramBridge from '@/components/frame/ProgramBridge'
 import ZoneHeader from '@/components/frame/ZoneHeader'
 import ClampMobile from '@/components/frame/ClampMobile'
+import Accordion from '@/components/frame/Accordion'
+import AccordionMobile from '@/components/frame/AccordionMobile'
+import ProgramLocation from '@/components/frame/ProgramLocation'
+import ProgramCard, { countText } from '@/components/frame/ProgramCard'
 import { buttonClass } from '@/components/frame/Button';
 import BookingFlow, { BookCta } from '@/components/city/BookingFlow';
 import {
@@ -287,7 +290,6 @@ export default async function FemaleAgeVid50KharkivPage() {
   const navItems: InPageNavItem[] = [
     { id: ID.list, label: 'Що перевірити' },
     { id: ID.programs, label: 'Програми' },
-    ...(showVisits ? [{ id: ID.visits, label: 'Як це проходить' }] : []),
     { id: ID.faq, label: 'Питання' },
   ];
 
@@ -439,34 +441,41 @@ export default async function FemaleAgeVid50KharkivPage() {
             <Block eyebrow="Ваша історія" id={ID.history}>
               <H2>Що залежить від вашої історії</H2>
               <p className={P}>Перелік вище розрахований на жінку без скарг і без особливої історії. Він змінюється, якщо:</p>
-              <h3 className={H3}>Підтверджена мутація BRCA1 або BRCA2</h3>
-              <p className={P}>Якщо у вас підтверджено мутацію в генах BRCA1 або BRCA2 (спадкова зміна, що підвищує ризик раку молочної залози), основним стандартом обстеження в Україні є щорічна МРТ молочних залоз із контрастною речовиною разом із мамографією<S n={[6]} />. Індивідуальну програму спостереження і профілактики ви узгоджуєте з онкологом-мамологом і лікарем-генетиком.</p>
-              <h3 className={H3}>Фактори ризику колоректального раку</h3>
-              <p className={P}>Якщо є фактори ризику колоректального раку, аналіз калу на приховану кров або ФІТ роблять щороку<S n={[1]} />. До факторів ризику належать<S n={[1]} />:</p>
-              <ul className={`mt-3 list-disc pl-5 space-y-1 ${TEXT}`}>
-                <li>колоректальний рак або поліпи кишечника в близьких родичів;</li>
-                <li>поліпи кишечника, знайдені у вас раніше;</li>
-                <li>запальні захворювання кишечника: хвороба Крона або виразковий коліт;</li>
-                <li>спадкові синдроми, зокрема сімейний аденоматозний поліпоз.</li>
-              </ul>
-              <p className={P}>Чи є у вас інші фактори ризику, ви оцінюєте разом із лікарем.</p>
-              <h3 className={H3}>Невідомі результати попередніх ПАП-тестів</h3>
-              <p className={P}>Якщо вам більше 65 і ви не знаєте результатів попередніх мазків, скринінг продовжують, доки не буде двох негативних тестів на ВПЛ або трьох нормальних мазків за останні 10 років<S n={[3]} />.</p>
-              <h3 className={H3}>ВІЛ або інший стан, що пригнічує імунітет</h3>
-              <p className={P}>Графік скринінгу інший: ПАП-тест або тест на ВПЛ роблять кожні 5 років<S n={[1]} />, і з віком скринінг не припиняють<S n={[3]} />.</p>
-              <h3 className={H3}>Менопауза і фактори ризику перелому</h3>
-              <p className={P}>Якщо менопауза вже настала, денситометрію рекомендують і до 65 років за таких факторів ризику перелому<S n={[2]} />:</p>
-              <ul className={`mt-3 list-disc pl-5 space-y-1 ${TEXT}`}>
-                <li>низька маса тіла;</li>
-                <li>перелом стегна в батька чи матері;</li>
-                <li>куріння;</li>
-                <li>надмірне вживання алкоголю.</li>
-              </ul>
+              <AccordionMobile title={<>Підтверджена мутація BRCA1 або BRCA2</>}>
+                <p className={P}>Якщо у вас підтверджено мутацію в генах BRCA1 або BRCA2 (спадкова зміна, що підвищує ризик раку молочної залози), основним стандартом обстеження в Україні є щорічна МРТ молочних залоз із контрастною речовиною разом із мамографією<S n={[6]} />. Індивідуальну програму спостереження і профілактики ви узгоджуєте з онкологом-мамологом і лікарем-генетиком.</p>
+              </AccordionMobile>
+              <AccordionMobile title={<>Фактори ризику колоректального раку</>}>
+                <p className={P}>Якщо є фактори ризику колоректального раку, аналіз калу на приховану кров або ФІТ роблять щороку<S n={[1]} />. До факторів ризику належать<S n={[1]} />:</p>
+                <ul className={`mt-3 list-disc pl-5 space-y-1 ${TEXT}`}>
+                  <li>колоректальний рак або поліпи кишечника в близьких родичів;</li>
+                  <li>поліпи кишечника, знайдені у вас раніше;</li>
+                  <li>запальні захворювання кишечника: хвороба Крона або виразковий коліт;</li>
+                  <li>спадкові синдроми, зокрема сімейний аденоматозний поліпоз.</li>
+                </ul>
+                <p className={P}>Чи є у вас інші фактори ризику, ви оцінюєте разом із лікарем.</p>
+              </AccordionMobile>
+              <AccordionMobile title={<>Невідомі результати попередніх ПАП-тестів</>}>
+                <p className={P}>Якщо вам більше 65 і ви не знаєте результатів попередніх мазків, скринінг продовжують, доки не буде двох негативних тестів на ВПЛ або трьох нормальних мазків за останні 10 років<S n={[3]} />.</p>
+              </AccordionMobile>
+              <AccordionMobile title={<>ВІЛ або інший стан, що пригнічує імунітет</>}>
+                <p className={P}>Графік скринінгу інший: ПАП-тест або тест на ВПЛ роблять кожні 5 років<S n={[1]} />, і з віком скринінг не припиняють<S n={[3]} />.</p>
+              </AccordionMobile>
+              <AccordionMobile title={<>Менопауза і фактори ризику перелому</>}>
+                <p className={P}>Якщо менопауза вже настала, денситометрію рекомендують і до 65 років за таких факторів ризику перелому<S n={[2]} />:</p>
+                <ul className={`mt-3 list-disc pl-5 space-y-1 ${TEXT}`}>
+                  <li>низька маса тіла;</li>
+                  <li>перелом стегна в батька чи матері;</li>
+                  <li>куріння;</li>
+                  <li>надмірне вживання алкоголю.</li>
+                </ul>
+              </AccordionMobile>
             </Block>
           </div>
         </div>
 
-        {/* ЗОНА ПРОГРАМИ: заголовок зони, склад, доповнення, візити, контакти; сайдбар лише тут. */}
+        {/* ЗОНА ПРОГРАМИ (макет v2, 21.10; рішення Ігоря 1А 2А): локація – один раз на клініку, над її програмами;
+            програма – картка: перший шар для рішення, решта – акордеон; ціна і запис – у картці. Сайдбара немає.
+            Кілька програм – кілька ProgramCard одна під одною (зараз у даних одна програма клініки на сторінку). */}
         {program && clinic && (
           <ZoneHeader
             id={ID.programs}
@@ -475,112 +484,67 @@ export default async function FemaleAgeVid50KharkivPage() {
             sub="Склад програми, її лікарі й ціна. Поруч – що з рекомендованого кожній у програму не входить."
           />
         )}
-        <div className="relative max-w-[1200px] mx-auto lg:px-14 lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-x-12">
-          <aside aria-label="Програма клініки" className="lg:col-start-2 lg:row-start-1 -scroll-mt-3 lg:scroll-mt-16 bg-[#f4f6f8] lg:bg-transparent">
-            <div className="px-5 sm:px-6 lg:px-0 pt-7 pb-10 lg:pt-[var(--space-section)] lg:sticky lg:top-16 lg:z-10">
-              {program && clinic ? (
-                <>
-                  <div className="border-[1.5px] border-[#e5e7eb] rounded-[12px] px-4 pt-[18px] pb-4 bg-white">
-                    <p className="text-[13px] text-gray-500 mb-1">{clinic.name}</p>
-                    <p className="text-xl font-bold text-[#0b1a24] leading-snug mb-1.5">{program.name_ua}</p>
-                    <p className="text-sm text-[#4a5a6b] mb-3.5">
-                      {[ageShort, visitCount > 0 ? visitsText(visitCount) : null].filter(Boolean).map((t) => (
-                        <span key={t as string}>{t} · </span>
-                      ))}
-                      <a href={`#${ID.composition}`} className="underline hover:no-underline text-[#005485]">
-                        склад програми
-                      </a>
-                    </p>
-                    <p className="text-[28px] font-bold text-[#005485] leading-tight" style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}>
-                      {fmt(program.price_discount)} грн
-                    </p>
-                    {program.price_date && (
-                      <p className="text-[13px] text-gray-500 mt-0.5">Ціна клініки станом на {fmtDate(program.price_date)}</p>
+        <div className="bg-[var(--zone-program-bg)]">
+          <div className="max-w-[1200px] mx-auto px-5 sm:px-6 lg:px-14 pt-8 lg:pt-12 pb-[var(--space-section)] flex flex-col gap-4 lg:gap-5">
+            {clinic && (
+              <ProgramLocation
+                kicker="Контакти"
+                name={clinic.name}
+                city="в Харкові"
+                moreLabel="Адреси і графік"
+                branches={branches.map((b) => ({ id: b.id, name: b.name_ua, address: b.address_ua, metro: b.metro_ua, schedule: scheduleText(b), phone: b.tracking_phone }))}
+                footer={
+                  <>
+                    {clinic.phone && (
+                      <span>
+                        Телефон:{' '}
+                        <a href={`tel:${clinic.phone.replace(/\s/g, '')}`} className="text-link hover:underline">
+                          {clinic.phone}
+                        </a>
+                      </span>
                     )}
-                    {notice && <p className="text-[13px] text-gray-500 mt-1">{notice}</p>}
-                    <div className="mt-4 flex flex-col gap-2.5">
-                      <BookCta
-                        programSlug={program.slug}
-                        sourceCta={`${SOURCE_CTA}_card`}
-                        label="Записатися"
-                        className="uppercase tracking-[0.06em] text-[13px]"
-                      />
+                    {clinic.website && (
+                      <a href={clinic.website} className="font-semibold text-link hover:underline">
+                        Сторінка клініки на check-up.in.ua →
+                      </a>
+                    )}
+                  </>
+                }
+              />
+            )}
+            {program && clinic && composition ? (
+              <ProgramCard
+                id={ID.composition}
+                title={program.name_ua}
+                meta={[
+                  ...([ageShort, visitCount > 0 ? visitsText(visitCount) : null].filter(Boolean) as string[]),
+                  ...(composition.counts.consultations > 0 ? [countText(composition.counts.consultations, ['консультація', 'консультації', 'консультацій'])] : []),
+                  ...(composition.counts.diagnostics > 0 ? [countText(composition.counts.diagnostics, ['обстеження', 'обстеження', 'обстежень'])] : []),
+                  ...(composition.counts.analyses > 0 ? [countText(composition.counts.analyses, ['аналіз', 'аналізи', 'аналізів'])] : []),
+                ]}
+                buyId="program-buy"
+                buy={
+                  <>
+                    <div>
+                      <p className="text-[30px] font-bold text-[var(--brand-primary)] leading-tight" style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}>
+                        {fmt(program.price_discount)} грн
+                      </p>
+                      {program.price_date && <p className="text-[13px] text-text-secondary mt-1">Ціна клініки станом на {fmtDate(program.price_date)}</p>}
+                      {notice && <p className="text-[13px] text-text-secondary mt-1">{notice}</p>}
+                    </div>
+                    <div className="flex flex-col gap-2.5">
+                      <BookCta programSlug={program.slug} sourceCta={`${SOURCE_CTA}_card`} label="Записатися" className="uppercase tracking-[0.06em] text-[13px]" />
                       {clinic.website && (
-                        <a
-                          href={clinic.website}
-                          className={`${buttonClass({ variant: 'secondary', size: 'lg', caps: true })} text-[13px]`}
-                        >
+                        <a href={clinic.website} className={`${buttonClass({ variant: 'secondary', size: 'lg', caps: true })} text-[13px]`}>
                           Детальніше
                         </a>
                       )}
                     </div>
-                  </div>
-                  {clinic.website && (
-                    <a href={clinic.website} className="block mt-4 text-[15px] font-semibold text-[#005485] hover:underline">
-                      Усі програми {clinic.name} →
-                    </a>
-                  )}
-                </>
-              ) : (
-                <p className={TEXT}>Дані про програму клініки зараз недоступні. Перелік обстежень із цієї сторінки можна пройти в будь-якій клініці.</p>
-              )}
-            </div>
-          </aside>
-          <div className="lg:col-start-1 lg:row-start-1 min-w-0">
-            {/* 4. Що входить у програму */}
-            {program && clinic && composition && (
-              <Block eyebrow="Програма клініки" id={ID.composition} gray className="lg:relative">
-                {/* Якір «Програми» (меню 1a і кнопка Hero), правка Ігоря 26.09.2026: на mobile найближчий позиціонований
-                    предок – обгортка картки 1b і решти колонки, тому якір стоїть на початку картки програм 1b; на desktop блок 4 relative,
-                    і якір веде на «Що входить у програму» (картка 1b там закріплена праворуч і видна весь час). */}
-                <H2>Що входить у програму</H2>
-                <p className="font-semibold text-[#0b1a24] mt-2">
-                  {program.name_ua} · {clinic.name}
-                </p>
-                {(inProgram.length > 0 || missingText) && (
-                  <div className="mt-5 bg-white rounded-[12px] p-4 flex flex-col gap-3">
-                    {inProgram.length > 0 && (
-                      <div className="flex gap-2.5 items-start">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#04b5ba" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="shrink-0 mt-0.5">
-                          <path d="M5 12l5 5 9-10" />
-                        </svg>
-                        <p className={TEXT}>
-                          <span className="font-semibold text-[#0b1a24]">З переліку в програмі є:</span> {inProgram.join(', ')}.
-                        </p>
-                      </div>
-                    )}
-                    {missingText && (
-                      <div className="flex gap-2.5 items-start">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#005485" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true" className="shrink-0 mt-0.5">
-                          <path d="M12 5v14M5 12h14" />
-                        </svg>
-                        <p className={TEXT}>{missingText}</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {composition.consultationsSummary && (
-                  <>
-                    <GroupLabel className="mt-6 mb-1">Консультації</GroupLabel>
-                    <p className={TEXT}>{composition.consultationsSummary.charAt(0).toUpperCase() + composition.consultationsSummary.slice(1)}.</p>
                   </>
-                )}
-                {composition.instrumentalSummary && (
+                }
+                sections={
                   <>
-                    <GroupLabel className="mt-4 mb-1">Обстеження</GroupLabel>
-                    <p className={TEXT}>{composition.instrumentalSummary}</p>
-                  </>
-                )}
-                {composition.labSummary && (
-                  <>
-                    <GroupLabel className="mt-4 mb-1">Аналізи</GroupLabel>
-                    <p className={TEXT}>{composition.labSummary}</p>
-                  </>
-                )}
-
-                <div className="mt-6 border-y border-[#e5e7eb] py-2">
-                  <AccordionSection summary="Повний склад програми">
+                    <Accordion as="h4" summary="Повний склад програми">
                     <div className={`space-y-4 text-[15px] ${TEXT} pb-2`}>
                       {composition.consultationsSummary && (
                         <div>
@@ -612,15 +576,9 @@ export default async function FemaleAgeVid50KharkivPage() {
                         </div>
                       )}
                     </div>
-                  </AccordionSection>
-                </div>
-              </Block>
-            )}
-
-            {/* 5. Чого немає в програмі – без цін і без кнопки: доповнення додаються на етапі форми запису */}
-            {showAdditions && program && (
-              <Block eyebrow="Доповнення" id={ID.additions} gray>
-                <H2>Чого немає в програмі</H2>
+                    </Accordion>
+                    {showAdditions && program && (
+                      <Accordion as="h4" id={ID.additions} summary="Чого немає в програмі">
                 <p className={P}>{additionsIntro(program.name_ua)}</p>
                 <div className="mt-5">
                   <AdditionalServices
@@ -636,21 +594,10 @@ export default async function FemaleAgeVid50KharkivPage() {
                   />
                 </div>
                 {additionsUnavailable.length > 0 && <p className={P}>{additionsUnavailableReason(additionsUnavailable.length, false)} {additionsAskDoctor(additionsUnavailable.length)}</p>}
-              </Block>
-            )}
-
-            {/* 6. Дисклеймер і будь-яка клініка – продовження блоків 4 і 5, та сама сіра смуга */}
-            <div className={`px-5 sm:px-6 lg:px-0 pb-10 ${BAND_GRAY}`}>
-              <div className="max-w-3xl bg-[#e8f9fa] rounded-[12px] p-4" role="note">
-                <p className="text-[#0b1a24] leading-relaxed">{DOCTOR_DECIDES_TEXT}</p>
-                <p className="text-[15px] text-[#374151] leading-relaxed mt-2">{ANY_CLINIC_TEXT}</p>
-              </div>
-            </div>
-
-            {/* 7. Як це проходить */}
-            {showVisits && composition && (
-              <Block eyebrow="Візити" id={ID.visits} gray>
-                <H2>Як це проходить</H2>
+                      </Accordion>
+                    )}
+                    {showVisits && composition && (
+                      <Accordion as="h4" id={ID.visits} summary="Як це проходить">
                 <p className={P}>Програма проходить за {visitsText(visitCount)}.</p>
                 <div className="mt-4 flex flex-col gap-4">
                   <div className="flex gap-3">
@@ -670,10 +617,14 @@ export default async function FemaleAgeVid50KharkivPage() {
                     </div>
                   )}
                 </div>
-                {preparation.length > 0 && (
-                  <>
-                    <h3 className={H3}>Підготовка</h3>
-                    <ul className={`mt-3 list-disc pl-5 space-y-1 ${TEXT}`}>
+                <p className={P}>
+                  Якщо ви приїжджаєте з іншого міста або з-за кордону, скажіть про це під час запису і вкажіть бажану дату.
+                </p>
+                      </Accordion>
+                    )}
+                    {preparation.length > 0 && (
+                      <Accordion as="h4" summary="Підготовка">
+                    <ul className={`list-disc pl-5 space-y-1 ${TEXT}`}>
                       {preparation.map((n, i) => (
                         <li key={n}>
                           {n}
@@ -681,59 +632,63 @@ export default async function FemaleAgeVid50KharkivPage() {
                         </li>
                       ))}
                     </ul>
+                      </Accordion>
+                    )}
+                  </>
+                }
+              >
+                <div className="mt-5">
+                {(inProgram.length > 0 || missingText) && (
+                  <div className="bg-[var(--zone-program-bg)] rounded-[var(--radius-lg)] p-4 flex flex-col gap-3">
+                    {inProgram.length > 0 && (
+                      <div className="flex gap-2.5 items-start">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#04b5ba" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="shrink-0 mt-0.5">
+                          <path d="M5 12l5 5 9-10" />
+                        </svg>
+                        <p className={TEXT}>
+                          <span className="font-semibold text-[#0b1a24]">З переліку в програмі є:</span> {inProgram.join(', ')}.
+                        </p>
+                      </div>
+                    )}
+                    {missingText && (
+                      <div className="flex gap-2.5 items-start">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#005485" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true" className="shrink-0 mt-0.5">
+                          <path d="M12 5v14M5 12h14" />
+                        </svg>
+                        <p className={TEXT}>{missingText}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                </div>
+                {composition.consultationsSummary && (
+                  <>
+                    <GroupLabel className="mt-5 mb-1">Консультації</GroupLabel>
+                    <p className={TEXT}>{composition.consultationsSummary.charAt(0).toUpperCase() + composition.consultationsSummary.slice(1)}.</p>
                   </>
                 )}
-                <p className={P}>
-                  Якщо ви приїжджаєте з іншого міста або з-за кордону, скажіть про це під час запису і вкажіть бажану дату.
-                </p>
-              </Block>
-            )}
+                {composition.instrumentalSummary && (
+                  <>
+                    <GroupLabel className="mt-4 mb-1">Обстеження</GroupLabel>
+                    <p className={TEXT}>{composition.instrumentalSummary}</p>
+                  </>
+                )}
+                {composition.labSummary && (
+                  <>
+                    <GroupLabel className="mt-4 mb-1">Аналізи</GroupLabel>
+                    <p className={TEXT}>{composition.labSummary}</p>
+                  </>
+                )}
 
-            {/* 7a. Контакти клініки */}
-            {clinic && (
-              <Block eyebrow="Контакти" id={ID.contacts} gray>
-                <H2>Контакти клініки</H2>
-                {branches.length > 0 && (
-                  <ul className="mt-4 space-y-3">
-                    {branches.map((b) => {
-                      const sch = scheduleText(b);
-                      return (
-                        <li key={b.id} className="border-[1.5px] border-[#e5e7eb] rounded-[12px] px-4 py-3.5 bg-white">
-                          <p className="font-bold text-[#0b1a24]">{b.name_ua}</p>
-                          <p className={`${TEXT} mt-1`}>
-                            {b.address_ua}
-                            {b.metro_ua ? `, ${b.metro_ua}` : ''}
-                          </p>
-                          {sch && <p className="text-sm text-gray-500 mt-1">{sch}</p>}
-                          {b.tracking_phone && (
-                            <p className="text-[15px] mt-1">
-                              <a href={`tel:${b.tracking_phone.replace(/\s/g, '')}`} className="text-[#005485] hover:underline">
-                                {b.tracking_phone}
-                              </a>
-                            </p>
-                          )}
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
-                {clinic.phone && (
-                  <p className={P}>
-                    Телефон:{' '}
-                    <a href={`tel:${clinic.phone.replace(/\s/g, '')}`} className="text-[#005485] hover:underline">
-                      {clinic.phone}
-                    </a>
-                  </p>
-                )}
-                {clinic.website && (
-                  <p className="mt-4 text-[15px]">
-                    <a href={clinic.website} className="font-semibold text-[#005485] hover:underline">
-                      Сторінка клініки на check-up.in.ua →
-                    </a>
-                  </p>
-                )}
-              </Block>
+              </ProgramCard>
+            ) : (
+              <p className={TEXT}>Дані про програму клініки зараз недоступні. Перелік обстежень із цієї сторінки можна пройти в будь-якій клініці.</p>
             )}
+            <div className="max-w-3xl mt-4 bg-[var(--teal-soft)] rounded-[var(--radius-lg)] p-4" role="note">
+              <p className="text-ink leading-relaxed">{DOCTOR_DECIDES_TEXT}</p>
+              <p className="text-[15px] text-text-secondary leading-relaxed mt-2">{ANY_CLINIC_TEXT}</p>
+            </div>
           </div>
         </div>
 
@@ -742,13 +697,11 @@ export default async function FemaleAgeVid50KharkivPage() {
             {/* 8. FAQ – нативний <details>, відповіді в DOM */}
             <Block eyebrow="Питання" id={ID.faq}>
               <H2>Часті запитання</H2>
-              <div className="mt-6 space-y-3">
+              <div className="mt-6 [&>.acc:last-child]:border-b [&>.acc:last-child]:border-section-border">
                 {FAQ.map((f) => (
-                  <div key={f.q} className="border border-[#e8edf3] rounded-[10px] px-5 py-3">
-                    <AccordionSection summary={f.q}>
-                      <p className={`text-[15px] ${TEXT}`}>{f.a}</p>
-                    </AccordionSection>
-                  </div>
+                  <Accordion key={f.q} as="h3" summary={f.q}>
+                    <p className="text-[15px]">{f.a}</p>
+                  </Accordion>
                 ))}
               </div>
             </Block>
@@ -831,6 +784,7 @@ export default async function FemaleAgeVid50KharkivPage() {
             sourceCta={`${SOURCE_CTA}_sticky`}
             revealAfterId="hero"
             zoneId={ID.programs}
+            hideWhenVisibleId="program-buy"
             look="v2"
           />
         </>

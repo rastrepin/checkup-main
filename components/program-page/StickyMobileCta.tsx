@@ -27,20 +27,26 @@ export interface StickyMobileCtaProps {
   zoneId?: string;
   /** Напис кнопки до зони програми. */
   browseLabel?: string;
+  /** Макет зони програми v2 (21.10): id блоку ціни в картці програми. Поки він на екрані, панель схована –
+   *  дві кнопки «Записатися» одночасно не видно. */
+  hideWhenVisibleId?: string;
 }
 
 function fmt(n: number) {
   return n.toLocaleString('uk-UA');
 }
 
-export default function StickyMobileCta({ programNameShort, price, programSlug, sourceCta, revealAfterId, look = 'default', zoneId, browseLabel = 'Переглянути' }: StickyMobileCtaProps) {
+export default function StickyMobileCta({ programNameShort, price, programSlug, sourceCta, revealAfterId, look = 'default', zoneId, browseLabel = 'Переглянути', hideWhenVisibleId }: StickyMobileCtaProps) {
   const [visible, setVisible] = useState(false);
   const [inZone, setInZone] = useState(!zoneId);
 
   useEffect(() => {
     const onScroll = () => {
       const el = revealAfterId ? document.getElementById(revealAfterId) : null;
-      setVisible(el ? el.getBoundingClientRect().bottom < 0 : window.scrollY > 400);
+      const buy = hideWhenVisibleId ? document.getElementById(hideWhenVisibleId) : null;
+      const r = buy?.getBoundingClientRect();
+      const buyOnScreen = r ? r.top < window.innerHeight && r.bottom > 0 : false;
+      setVisible((el ? el.getBoundingClientRect().bottom < 0 : window.scrollY > 400) && !buyOnScreen);
       if (zoneId) {
         const z = document.getElementById(zoneId);
         setInZone(z ? z.getBoundingClientRect().top < window.innerHeight * 0.5 : true);

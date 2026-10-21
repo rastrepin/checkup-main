@@ -235,7 +235,22 @@
 /* Розкриття тексту на mobile: перший абзац – 2 рядки, решта – після кліку. */
 @media (max-width: 1023px) {
   .clamp-mobile:not([data-open]) > p:first-child { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  .clamp-mobile:not([data-open]) > p:not(:first-child) { display: none; }
+  .clamp-mobile:not([data-open]) > p:not(:first-child) { max-height: 0; overflow: hidden; margin: 0; }
+}
+
+/* Підрозділ-акордеон лише на mobile (AccordionMobile, ui-kit §6.10). Згорнутий вміст – max-height: 0, не display: none
+   (SEO-STANDARD §6: вміст лишається в DOM і в розмітці). З 1024 px – звичайний H3 з текстом. */
+@media (max-width: 1023px) {
+  .acc-m { border-top: 1px solid var(--section-border); }
+  .acc-m:last-child { border-bottom: 1px solid var(--section-border); }
+  .acc-m:first-of-type { margin-top: 24px; }
+  .acc-m-body { overflow: hidden; }
+  .acc-m:not([data-open]) > .acc-m-body { max-height: 0; }
+  .acc-m[data-open] > .acc-m-body { padding-bottom: 20px; }
+  .acc-m-body > :first-child { margin-top: 0 !important; }
+}
+@media (min-width: 1024px) {
+  .acc-m-h { font-size: 18px; margin-top: 32px; }
 }
 
 /* Межа між секціями лише всередині однієї смуги: на зміні фону (сіра ↔ біла) лінія зайва. */
