@@ -517,7 +517,7 @@ export default async function FemaleAgeVid50KharkivPage() {
                 id={ID.composition}
                 title={program.name_ua}
                 meta={[
-                  ...([ageShort, visitCount > 0 ? visitsText(visitCount) : null].filter(Boolean) as string[]),
+                  ...(visitCount > 0 ? [visitsText(visitCount).charAt(0).toUpperCase() + visitsText(visitCount).slice(1)] : []),
                   ...(composition.counts.consultations > 0 ? [countText(composition.counts.consultations, ['консультація', 'консультації', 'консультацій'])] : []),
                   ...(composition.counts.diagnostics > 0 ? [countText(composition.counts.diagnostics, ['обстеження', 'обстеження', 'обстежень'])] : []),
                   ...(composition.counts.analyses > 0 ? [countText(composition.counts.analyses, ['аналіз', 'аналізи', 'аналізів'])] : []),
@@ -637,6 +637,7 @@ export default async function FemaleAgeVid50KharkivPage() {
                   </>
                 }
               >
+                {ageShort && <p className="mt-1 text-[15px] text-text-secondary">{ageShort}</p>}
                 <div className="mt-5">
                 {(inProgram.length > 0 || missingText) && (
                   <div className="bg-[var(--zone-program-bg)] rounded-[var(--radius-lg)] p-4 flex flex-col gap-3">
