@@ -5,7 +5,8 @@
 //   profileLink – посилання на профіль лікаря; methodLinks – сторінки операцій лікаря чи клініки.
 // Кнопка без імені лікаря; дію задає батьківський компонент (форма запису).
 // v2 (рішення Ігоря 21.10, 4Б 5А): кнопка запису – crimson (ui-kit §8, роль 3–4); ім'я лікаря – посилання на профіль;
-// сторінки операцій – один рядок «Операції:» замість окремого посилання на кожну. components-map §30.6.
+// сторінки операцій – один рядок «Операції:» з короткими назвами методів (повна назва сторінки – у title).
+// Фото обов'язкове: картку без фото сторінка не отримує (lib/hub/prolaps-offers.ts). components-map §30.6.
 
 import { buttonClass } from '@/components/frame/Button';
 
@@ -13,6 +14,8 @@ const FOCUS = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visi
 
 export interface OfferLink {
   label: string;
+  /** Повна назва сторінки (підказка при наведенні); у рядку «Операції:» – коротка назва методу. */
+  title?: string;
   href: string;
 }
 
@@ -84,7 +87,7 @@ export default function OfferDoctorCard({
           <span className="font-semibold text-ink">Операції:</span>{' '}
           {methodLinks.map((l, i) => (
             <span key={l.href}>
-              <a href={l.href} className={`${FOCUS} text-link underline decoration-1 underline-offset-[3px] hover:decoration-2`}>
+              <a href={l.href} title={l.title} className={`${FOCUS} text-link underline decoration-1 underline-offset-[3px] hover:decoration-2`}>
                 {l.label}
               </a>
               {i < methodLinks.length - 1 && <span aria-hidden="true"> · </span>}

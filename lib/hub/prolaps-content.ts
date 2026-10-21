@@ -90,7 +90,8 @@ export const CITY_LABELS: Record<string, string> = {
  * experience – лише там, де реєстр порожній (рішення 11А: рік диплома; у реєстр не пишемо).
  * clinicName, location – замість назви клініки і «місто, адреса» з реєстру (доктор-бренд: у реєстрі клініка – сайт лікаря,
  *   а приймає він у закладі). Вигляд картки однаковий для всіх: назва закладу окремим рядком, під нею «місто, адреса».
- * photo, profileLink – лише для доктор-бренду (рішення 14А): фото doctors.photo_url, профіль – clinics.website.
+ * photo – застаріле поле: фото є в кожній картці (doctors.photo_url), картка без фото не публікується (Ігор 21.10).
+ * profileLink – лише для доктор-бренду (рішення 14А): профіль – clinics.website.
  */
 export interface DoctorCardContent {
   expertise?: string;

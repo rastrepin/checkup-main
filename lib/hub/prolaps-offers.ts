@@ -149,8 +149,9 @@ export async function fetchProlapsOffers(): Promise<HubOffer[]> {
             clinicLabel: label,
             clinicName: content.clinicName ?? label,
             location: content.location ?? (street ? `${cityLabel}, ${street}` : cityLabel),
+            // Фото – у кожній картці; без фото картка не публікується (Ігор 21.10, ui-kit §6.9, components-map §30.6).
             photo:
-              content.photo && d.photo_url
+              d.photo_url
                 ? { src: d.photo_url.startsWith('http') ? d.photo_url : `${site}${d.photo_url}`, alt: name }
                 : null,
             profileLink: content.profileLink ? { label: name, href: `${site}/` } : null,
@@ -171,7 +172,11 @@ export async function fetchProlapsOffers(): Promise<HubOffer[]> {
       const i = CITY_ORDER.indexOf(k);
       return i === -1 ? CITY_ORDER.length : i;
     };
-    return [...offers.values()].sort(
+    const withPhoto = [...offers.values()].filter((o) => {
+      if (!o.photo) console.warn(`[hub-prolaps] картка ${o.doctorSlug} без фото (doctors.photo_url) – не публікується`);
+      return Boolean(o.photo);
+    });
+    return withPhoto.sort(
       (a, b) => cityRank(a.cityKey) - cityRank(b.cityKey) || a.doctorSlug.localeCompare(b.doctorSlug),
     );
   } catch {
