@@ -393,11 +393,10 @@ export default async function FemaleAge4050KharkivPage() {
           }
         />
 
-        {/* 1a. Внутрішнє меню */}
+        {/* 1a. Внутрішнє меню. Смуга програми – одразу після меню, між розділами, на mobile і desktop (Ігор 21.10). */}
         <InPageNav items={navItems} />
         {program && clinic && (
           <ProgramBridge
-            className="lg:hidden"
             label="Програма клініки в Харкові"
             title={`${program.name_ua} · ${clinic.name}`}
             teaser={composition ? [composition.consultationsSummary && `Консультації: ${composition.consultationsSummary}.`, composition.instrumentalSummary].filter(Boolean).join(' ') : undefined}
@@ -415,16 +414,6 @@ export default async function FemaleAge4050KharkivPage() {
               <h3 id={ID.pressure} className={H3}>Артеріальний тиск</h3>
               <ClampMobile>
               <p className={P}>Від 40 років тиск вимірюють щороку<S n={[1]} />. Для цього достатньо вимірювання на прийомі, окремий аналіз не потрібен.</p>
-              {program && clinic && (
-                <ProgramBridge
-                  className="hidden lg:block mt-8 mb-2"
-                  label="Програма клініки в Харкові"
-                  title={`${program.name_ua} · ${clinic.name}`}
-                  teaser={composition ? [composition.consultationsSummary && `Консультації: ${composition.consultationsSummary}.`, composition.instrumentalSummary].filter(Boolean).join(' ') : undefined}
-                  href={`#${ID.programs}`}
-                  cta="Переглянути програму ↓"
-                />
-              )}
               </ClampMobile>
               <h3 id={ID.cholesterol} className={H3}>Холестерин</h3>
               <ClampMobile>

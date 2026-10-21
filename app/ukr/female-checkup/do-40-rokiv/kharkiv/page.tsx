@@ -366,11 +366,10 @@ export default async function FemaleAge3040KharkivPage() {
           }
         />
 
-        {/* 1a. Внутрішнє меню */}
+        {/* 1a. Внутрішнє меню. Смуга програми – одразу після меню, між розділами, на mobile і desktop (Ігор 21.10). */}
         <InPageNav items={navItems} />
         {program && clinic && (
           <ProgramBridge
-            className="lg:hidden"
             label="Програма клініки в Харкові"
             title={`${program.name_ua} · ${clinic.name}`}
             teaser={composition ? [composition.consultationsSummary && `Консультації: ${composition.consultationsSummary}.`, composition.instrumentalSummary].filter(Boolean).join(' ') : undefined}
@@ -386,16 +385,6 @@ export default async function FemaleAge3040KharkivPage() {
             <Block eyebrow="За клінічними настановами" id={ID.list}>
               <H2>Які обстеження рекомендують жінкам у 30–40 років</H2>
               <p className={P}>Єдиного українського протоколу профілактичного обстеження для цього віку немає. Диспансеризацію скасовано 2018 року<S n={[1]} />. Тому перелік нижче складений за українськими порядками скринінгу окремих хвороб і за міжнародними рекомендаціями.</p>
-              {program && clinic && (
-                <ProgramBridge
-                  className="hidden lg:block mt-8 mb-2"
-                  label="Програма клініки в Харкові"
-                  title={`${program.name_ua} · ${clinic.name}`}
-                  teaser={composition ? [composition.consultationsSummary && `Консультації: ${composition.consultationsSummary}.`, composition.instrumentalSummary].filter(Boolean).join(' ') : undefined}
-                  href={`#${ID.programs}`}
-                  cta="Переглянути програму ↓"
-                />
-              )}
               <h3 id={ID.cervix} className={H3}>Рак шийки матки</h3>
               <ClampMobile>
               <p className={P}>Мазок на клітини шийки матки (ПАП-тест) роблять раз на 3 роки<S n={[2]} />. З 35 років можна обрати інший спосіб: тест на вірус папіломи людини (ВПЛ) раз на 5–10 років. Спосіб та інтервал ви обираєте разом із гінекологом<S n={[2]} />. Державний порядок скринінгу передбачає мінімум: тест раз на 10 років з 30–35 до 55 років<S n={[5]} />. Детальніше на сторінці «<Link href="/ukr/screening/pap-test" className={LINK}>ПАП-тест: що показує і коли потрібен</Link>».</p>
