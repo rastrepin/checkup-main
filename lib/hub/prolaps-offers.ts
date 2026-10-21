@@ -147,7 +147,7 @@ export async function fetchProlapsOffers(): Promise<HubOffer[]> {
             experience: experienceLine(d),
             clinicSlug: clinic.slug,
             clinicLabel: label,
-            clinicName: content.location ? null : label,
+            clinicName: content.clinicName ?? label,
             location: content.location ?? (street ? `${cityLabel}, ${street}` : cityLabel),
             photo:
               content.photo && d.photo_url

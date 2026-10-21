@@ -88,12 +88,14 @@ export const CITY_LABELS: Record<string, string> = {
 /**
  * Рядки картки, яких немає в реєстрі (content v3.1, 6.1–6.2).
  * experience – лише там, де реєстр порожній (рішення 11А: рік диплома; у реєстр не пишемо).
- * location – замість «місто, адреса» з реєстру; тоді назва клініки окремим рядком не виводиться.
+ * clinicName, location – замість назви клініки і «місто, адреса» з реєстру (доктор-бренд: у реєстрі клініка – сайт лікаря,
+ *   а приймає він у закладі). Вигляд картки однаковий для всіх: назва закладу окремим рядком, під нею «місто, адреса».
  * photo, profileLink – лише для доктор-бренду (рішення 14А): фото doctors.photo_url, профіль – clinics.website.
  */
 export interface DoctorCardContent {
   expertise?: string;
   experience?: string;
+  clinicName?: string;
   location?: string;
   photo?: boolean;
   profileLink?: boolean;
@@ -102,7 +104,8 @@ export interface DoctorCardContent {
 export const DOCTOR_CONTENT: Record<string, DoctorCardContent> = {
   'bondaruk-volodymyr': {
     experience: 'У професії з 2001 року',
-    location: 'Київ, КМЦРПМ, проспект Володимира Івасюка, 16',
+    clinicName: 'КМЦРПМ',
+    location: 'Київ, проспект Володимира Івасюка, 16',
     photo: true,
     profileLink: true,
   },
