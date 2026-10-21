@@ -8,9 +8,10 @@
 // сторінки операцій – один рядок «Операції:» з короткими назвами методів (повна назва сторінки – у title).
 // Фото обов'язкове: картку без фото сторінка не отримує (lib/hub/prolaps-offers.ts). components-map §30.6.
 
-import { buttonClass } from '@/components/frame/Button';
+import { buttonClass } from "@/components/frame/Button";
 
-const FOCUS = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#005485]';
+const FOCUS =
+  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#005485]";
 
 export interface OfferLink {
   label: string;
@@ -34,7 +35,6 @@ export interface OfferDoctorCardProps {
   onBook: () => void;
 }
 
-
 export default function OfferDoctorCard({
   fullName,
   regalia,
@@ -46,70 +46,101 @@ export default function OfferDoctorCard({
   bookingNote,
   profileLink,
   methodLinks,
-  ctaLabel = 'Записатися на консультацію',
+  ctaLabel = "Записатися на консультацію",
   onBook,
 }: OfferDoctorCardProps) {
   return (
-    <div className="bg-white border-[1.5px] border-[var(--border)] rounded-[var(--radius-lg)] p-[var(--space-card)] flex flex-col h-full">
-      <div className="flex gap-4 items-start">
-        {photo && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={photo.src}
-            alt={photo.alt}
-            width={88}
-            height={110}
-            loading="lazy"
-            className="w-[88px] h-[110px] rounded-[10px] object-cover object-top bg-[#f4f6f8] shrink-0"
-          />
-        )}
+    <div className="bg-white border-[1.5px] border-[var(--border)] rounded-[var(--radius-lg)] overflow-hidden flex flex-col h-full">
+      {photo && (
+        // Кадр 3:2 на всю ширину картки, mobile і desktop (Ігор 21.10, 1А 2А). Файл уже за стандартом кадру.
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={photo.src}
+          alt={photo.alt}
+          width={900}
+          height={600}
+          loading="lazy"
+          className="block w-full aspect-[3/2] object-cover bg-[var(--brand-primary-soft)]"
+        />
+      )}
+      <div className="p-[var(--space-card)] flex flex-col flex-1">
         <div className="min-w-0">
           <h3 className="text-[20px] font-bold text-ink leading-snug">
             {profileLink ? (
-              <a href={profileLink.href} className={`${FOCUS} hover:underline decoration-1 underline-offset-[3px]`}>
+              <a
+                href={profileLink.href}
+                className={`${FOCUS} hover:underline decoration-1 underline-offset-[3px]`}
+              >
                 {fullName}
               </a>
             ) : (
               fullName
             )}
           </h3>
-          {regalia && <p className="text-[15px] text-gray-700 mt-2">{regalia}</p>}
-          {expertise && <p className="text-[15px] text-gray-700 mt-1">{expertise}</p>}
-          {experienceLine && <p className="text-[15px] text-gray-700 mt-1">{experienceLine}</p>}
+          {regalia && (
+            <p className="text-[15px] text-text-secondary mt-2">{regalia}</p>
+          )}
+          {expertise && (
+            <p className="text-[15px] text-text-secondary mt-1">{expertise}</p>
+          )}
+          {experienceLine && (
+            <p className="text-[15px] text-text-secondary mt-1">
+              {experienceLine}
+            </p>
+          )}
           {profileLink && (
-            <a href={profileLink.href} className={`${FOCUS} inline-block mt-2 text-[14px] font-semibold text-link underline decoration-1 underline-offset-[3px] hover:decoration-2`}>
+            <a
+              href={profileLink.href}
+              className={`${FOCUS} inline-block mt-2 text-[14px] font-semibold text-link underline decoration-1 underline-offset-[3px] hover:decoration-2`}
+            >
               Профіль лікаря →
             </a>
           )}
         </div>
-      </div>
 
-      {clinicName && <p className="text-[15px] text-[#0b1a24] font-semibold mt-4">{clinicName}</p>}
-      <p className={`text-[14px] text-gray-600 ${clinicName ? 'mt-1' : 'mt-4'}`}>{location}</p>
-
-      {methodLinks.length > 0 && (
-        <p className="mt-4 text-[14px] leading-relaxed text-text-secondary">
-          <span className="font-semibold text-ink">Операції:</span>{' '}
-          {methodLinks.map((l, i) => (
-            <span key={l.href}>
-              <a href={l.href} title={l.title} className={`${FOCUS} text-link underline decoration-1 underline-offset-[3px] hover:decoration-2`}>
-                {l.label}
-              </a>
-              {i < methodLinks.length - 1 && <span aria-hidden="true"> · </span>}
-            </span>
-          ))}
-        </p>
-      )}
-
-      <p className="text-[13px] text-gray-500 leading-relaxed mt-4">{bookingNote}</p>
-      <div className="mt-auto pt-5">
-        <button
-          type="button"
-          onClick={onBook}
-          className={`${buttonClass({ variant: 'booking', size: 'lg' })} w-full sm:w-auto`}
+        {clinicName && (
+          <p className="text-[15px] text-[#0b1a24] font-semibold mt-4">
+            {clinicName}
+          </p>
+        )}
+        <p
+          className={`text-[14px] text-gray-600 ${clinicName ? "mt-1" : "mt-4"}`}
         >
-          {ctaLabel}
-        </button>
+          {location}
+        </p>
+
+        {methodLinks.length > 0 && (
+          <p className="mt-4 text-[14px] leading-relaxed text-text-secondary">
+            <span className="font-semibold text-ink">Операції:</span>{" "}
+            {methodLinks.map((l, i) => (
+              <span key={l.href}>
+                <a
+                  href={l.href}
+                  title={l.title}
+                  className={`${FOCUS} text-link underline decoration-1 underline-offset-[3px] hover:decoration-2`}
+                >
+                  {l.label}
+                </a>
+                {i < methodLinks.length - 1 && (
+                  <span aria-hidden="true"> · </span>
+                )}
+              </span>
+            ))}
+          </p>
+        )}
+
+        <p className="text-[13px] text-gray-500 leading-relaxed mt-4">
+          {bookingNote}
+        </p>
+        <div className="mt-auto pt-5">
+          <button
+            type="button"
+            onClick={onBook}
+            className={`${buttonClass({ variant: "booking", size: "lg" })} w-full sm:w-auto`}
+          >
+            {ctaLabel}
+          </button>
+        </div>
       </div>
     </div>
   );

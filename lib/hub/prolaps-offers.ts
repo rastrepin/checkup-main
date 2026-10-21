@@ -24,6 +24,7 @@ interface DoctorRow {
   slug: string;
   full_name: string;
   photo_url: string | null;
+  photo_card_url: string | null;
   regalia_line: string | null;
   experience_verb: string | null;
   experience_since: number | null;
@@ -92,7 +93,7 @@ export async function fetchProlapsOffers(): Promise<HubOffer[]> {
         .eq('is_active', true),
       sb
         .from('doctors')
-        .select('slug, full_name, photo_url, regalia_line, experience_verb, experience_since, clinic_id')
+        .select('slug, full_name, photo_url, photo_card_url, regalia_line, experience_verb, experience_since, clinic_id')
         .in('clinic_id', clinicIds)
         .eq('is_active', true),
     ]);
@@ -149,10 +150,11 @@ export async function fetchProlapsOffers(): Promise<HubOffer[]> {
             clinicLabel: label,
             clinicName: content.clinicName ?? label,
             location: content.location ?? (street ? `${cityLabel}, ${street}` : cityLabel),
-            // Фото – у кожній картці; без фото картка не публікується (Ігор 21.10, ui-kit §6.9, components-map §30.6).
+            // Фото – кадр картки doctors.photo_card_url (3:2, голова з шиєю, ui-kit §6.11); файл на check-up.in.ua,
+            // тому відносний шлях лишається як є. Без кадру картка не публікується (Ігор 21.10, components-map §30.6).
             photo:
-              d.photo_url
-                ? { src: d.photo_url.startsWith('http') ? d.photo_url : `${site}${d.photo_url}`, alt: name }
+              d.photo_card_url
+                ? { src: d.photo_card_url, alt: name }
                 : null,
             // Профіль лікаря – у кожній картці (Ігор 21.10): доктор-бренд – головна сайту лікаря,
             // лікар клініки – сторінка лікаря на піддомені клініки ({site}/{місто}/doctors/{slug}).
@@ -175,7 +177,7 @@ export async function fetchProlapsOffers(): Promise<HubOffer[]> {
       return i === -1 ? CITY_ORDER.length : i;
     };
     const withPhoto = [...offers.values()].filter((o) => {
-      if (!o.photo) console.warn(`[hub-prolaps] картка ${o.doctorSlug} без фото (doctors.photo_url) – не публікується`);
+      if (!o.photo) console.warn(`[hub-prolaps] картка ${o.doctorSlug} без кадру фото (doctors.photo_card_url) – не публікується`);
       return Boolean(o.photo);
     });
     return withPhoto.sort(
