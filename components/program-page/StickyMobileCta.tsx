@@ -11,12 +11,12 @@ import { buttonClass } from '@/components/frame/Button';
 
 export interface StickyMobileCtaProps {
   /** Скорочена назва програми, напр. "Check-Up жіночий після 40" */
-  programNameShort: string;
+  programNameShort?: string;
   /** Необов'язкова (SPRINT-KHARKIV-v0): без price рядок ціни не рендериться.
    *  Якщо price передано – поведінка як раніше. */
   price?: number;
-  programSlug: string;
-  sourceCta: string;
+  programSlug?: string;
+  sourceCta?: string;
   /** Задача v2 (24.09.2026): id елемента (Hero), після прокрутки якого кнопка з'являється.
    *  Без нього – як раніше, після 400 px прокрутки. */
   revealAfterId?: string;
@@ -30,13 +30,16 @@ export interface StickyMobileCtaProps {
   /** Макет зони програми v2 (21.10): id блоку ціни в картці програми. Поки він на екрані, панель схована –
    *  дві кнопки «Записатися» одночасно не видно. */
   hideWhenVisibleId?: string;
+  /** Хаб діагнозу (рішення Ігоря 21.10, 3А): лише кнопка-перехід у зону лікарів (`zoneId`) на всю ширину,
+   *  без назви і ціни; у зоні панель схована (у картках лікарів – свої кнопки запису). Кнопка – structural (не запис). */
+  browseOnly?: boolean;
 }
 
 function fmt(n: number) {
   return n.toLocaleString('uk-UA');
 }
 
-export default function StickyMobileCta({ programNameShort, price, programSlug, sourceCta, revealAfterId, look = 'default', zoneId, browseLabel = 'Переглянути', hideWhenVisibleId }: StickyMobileCtaProps) {
+export default function StickyMobileCta({ programNameShort, price, programSlug, sourceCta, revealAfterId, look = 'default', zoneId, browseLabel = 'Переглянути', hideWhenVisibleId, browseOnly = false }: StickyMobileCtaProps) {
   const [visible, setVisible] = useState(false);
   const [inZone, setInZone] = useState(!zoneId);
 
@@ -59,6 +62,20 @@ export default function StickyMobileCta({ programNameShort, price, programSlug, 
 
   if (!visible) return null;
 
+  if (browseOnly) {
+    if (inZone || !zoneId) return null;
+    return (
+      <div
+        className="fixed bottom-0 left-0 right-0 z-[150] md:hidden bg-white border-t border-gray-200 px-5 pt-3 pb-[calc(12px+env(safe-area-inset-bottom,0px))]"
+        style={{ boxShadow: '0 -8px 24px rgba(0,0,0,0.04)' }}
+      >
+        <a href={`#${zoneId}`} className={buttonClass({ variant: 'structural', size: 'lg', fullWidth: true })}>
+          {browseLabel}
+        </a>
+      </div>
+    );
+  }
+
   if (look === 'v2') {
     return (
       <div
@@ -75,8 +92,8 @@ export default function StickyMobileCta({ programNameShort, price, programSlug, 
         </div>
         {inZone ? (
           <BookCta
-            programSlug={programSlug}
-            sourceCta={sourceCta}
+            programSlug={programSlug ?? ''}
+            sourceCta={sourceCta ?? ''}
             label="Записатися"
             className="!w-auto shrink-0 px-6 uppercase tracking-[0.06em]"
           />
@@ -101,8 +118,8 @@ export default function StickyMobileCta({ programNameShort, price, programSlug, 
         )}
       </div>
       <BookCta
-        programSlug={programSlug}
-        sourceCta={sourceCta}
+        programSlug={programSlug ?? ''}
+        sourceCta={sourceCta ?? ''}
         label="Записатися"
         variant="crimson"
         className="!w-auto shrink-0 px-5"

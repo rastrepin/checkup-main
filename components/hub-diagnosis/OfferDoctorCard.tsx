@@ -4,6 +4,10 @@
 //   photo – лише коли передане (доктор-бренд); clinicName – назва клініки окремим рядком;
 //   profileLink – посилання на профіль лікаря; methodLinks – сторінки операцій лікаря чи клініки.
 // Кнопка без імені лікаря; дію задає батьківський компонент (форма запису).
+// v2 (рішення Ігоря 21.10, 4Б 5А): кнопка запису – crimson (ui-kit §8, роль 3–4); ім'я лікаря – посилання на профіль;
+// сторінки операцій – один рядок «Операції:» замість окремого посилання на кожну. components-map §30.6.
+
+import { buttonClass } from '@/components/frame/Button';
 
 const FOCUS = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#005485]';
 
@@ -27,13 +31,6 @@ export interface OfferDoctorCardProps {
   onBook: () => void;
 }
 
-function LinkLine({ link }: { link: OfferLink }) {
-  return (
-    <a href={link.href} className={`${FOCUS} text-[14px] text-[#005485] underline hover:no-underline`}>
-      Детальніше на сторінці «{link.label}»
-    </a>
-  );
-}
 
 export default function OfferDoctorCard({
   fullName,
@@ -50,7 +47,7 @@ export default function OfferDoctorCard({
   onBook,
 }: OfferDoctorCardProps) {
   return (
-    <div className="bg-white border border-[#e8edf3] rounded-[14px] p-6 flex flex-col h-full">
+    <div className="bg-white border-[1.5px] border-[var(--border)] rounded-[var(--radius-lg)] p-[var(--space-card)] flex flex-col h-full">
       <div className="flex gap-4 items-start">
         {photo && (
           // eslint-disable-next-line @next/next/no-img-element
@@ -64,7 +61,15 @@ export default function OfferDoctorCard({
           />
         )}
         <div className="min-w-0">
-          <h3 className="text-[20px] font-bold text-[#0b1a24] leading-snug">{fullName}</h3>
+          <h3 className="text-[20px] font-bold text-ink leading-snug">
+            {profileLink ? (
+              <a href={profileLink.href} className={`${FOCUS} hover:underline decoration-1 underline-offset-[3px]`}>
+                {fullName}
+              </a>
+            ) : (
+              fullName
+            )}
+          </h3>
           {regalia && <p className="text-[15px] text-gray-700 mt-2">{regalia}</p>}
           {expertise && <p className="text-[15px] text-gray-700 mt-1">{expertise}</p>}
           {experienceLine && <p className="text-[15px] text-gray-700 mt-1">{experienceLine}</p>}
@@ -74,19 +79,18 @@ export default function OfferDoctorCard({
       {clinicName && <p className="text-[15px] text-[#0b1a24] font-semibold mt-4">{clinicName}</p>}
       <p className={`text-[14px] text-gray-600 ${clinicName ? 'mt-1' : 'mt-4'}`}>{location}</p>
 
-      {(profileLink || methodLinks.length > 0) && (
-        <ul className="mt-4 space-y-2 list-none">
-          {profileLink && (
-            <li>
-              <LinkLine link={profileLink} />
-            </li>
-          )}
-          {methodLinks.map((l) => (
-            <li key={l.href}>
-              <LinkLine link={l} />
-            </li>
+      {methodLinks.length > 0 && (
+        <p className="mt-4 text-[14px] leading-relaxed text-text-secondary">
+          <span className="font-semibold text-ink">Операції:</span>{' '}
+          {methodLinks.map((l, i) => (
+            <span key={l.href}>
+              <a href={l.href} className={`${FOCUS} text-link underline decoration-1 underline-offset-[3px] hover:decoration-2`}>
+                {l.label}
+              </a>
+              {i < methodLinks.length - 1 && <span aria-hidden="true"> · </span>}
+            </span>
           ))}
-        </ul>
+        </p>
       )}
 
       <p className="text-[13px] text-gray-500 leading-relaxed mt-4">{bookingNote}</p>
@@ -94,7 +98,7 @@ export default function OfferDoctorCard({
         <button
           type="button"
           onClick={onBook}
-          className={`${FOCUS} w-full sm:w-auto min-h-[48px] px-6 py-3 rounded-[10px] bg-[#005485] text-white text-[16px] font-semibold hover:bg-[#003a5e] transition-colors`}
+          className={`${buttonClass({ variant: 'booking', size: 'lg' })} w-full sm:w-auto`}
         >
           {ctaLabel}
         </button>
