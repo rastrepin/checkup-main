@@ -154,7 +154,9 @@ export async function fetchProlapsOffers(): Promise<HubOffer[]> {
               d.photo_url
                 ? { src: d.photo_url.startsWith('http') ? d.photo_url : `${site}${d.photo_url}`, alt: name }
                 : null,
-            profileLink: content.profileLink ? { label: name, href: `${site}/` } : null,
+            // Профіль лікаря – у кожній картці (Ігор 21.10): доктор-бренд – головна сайту лікаря,
+            // лікар клініки – сторінка лікаря на піддомені клініки ({site}/{місто}/doctors/{slug}).
+            profileLink: { label: name, href: content.profileLink ? `${site}/` : `${site}/${cityKey}/doctors/${d.slug}` },
             cityKey,
             cityLabel,
             bookingNote: BOOKING_NOTES[clinic.slug] ?? BOOKING_NOTE_DEFAULT,

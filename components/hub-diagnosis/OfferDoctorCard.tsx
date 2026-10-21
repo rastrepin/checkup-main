@@ -4,7 +4,7 @@
 //   photo – лише коли передане (доктор-бренд); clinicName – назва клініки окремим рядком;
 //   profileLink – посилання на профіль лікаря; methodLinks – сторінки операцій лікаря чи клініки.
 // Кнопка без імені лікаря; дію задає батьківський компонент (форма запису).
-// v2 (рішення Ігоря 21.10, 4Б 5А): кнопка запису – crimson (ui-kit §8, роль 3–4); ім'я лікаря – посилання на профіль;
+// v2 (рішення Ігоря 21.10, 4Б 5А): кнопка запису – crimson (ui-kit §8, роль 3–4); профіль лікаря – ім'я і посилання «Профіль лікаря →»;
 // сторінки операцій – один рядок «Операції:» з короткими назвами методів (повна назва сторінки – у title).
 // Фото обов'язкове: картку без фото сторінка не отримує (lib/hub/prolaps-offers.ts). components-map §30.6.
 
@@ -76,6 +76,11 @@ export default function OfferDoctorCard({
           {regalia && <p className="text-[15px] text-gray-700 mt-2">{regalia}</p>}
           {expertise && <p className="text-[15px] text-gray-700 mt-1">{expertise}</p>}
           {experienceLine && <p className="text-[15px] text-gray-700 mt-1">{experienceLine}</p>}
+          {profileLink && (
+            <a href={profileLink.href} className={`${FOCUS} inline-block mt-2 text-[14px] font-semibold text-link underline decoration-1 underline-offset-[3px] hover:decoration-2`}>
+              Профіль лікаря →
+            </a>
+          )}
         </div>
       </div>
 
