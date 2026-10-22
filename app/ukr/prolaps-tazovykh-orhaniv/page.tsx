@@ -1,7 +1,13 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import SiteHeader from '@/components/shared/SiteHeader';
-import AccordionSection from '@/components/shared/AccordionSection';
+import Header from '@/components/frame/Header'
+import Hero from '@/components/frame/Hero'
+import { ButtonLink } from '@/components/frame/Button';
+import Accordion from '@/components/frame/Accordion';
+import ZoneHeader from '@/components/frame/ZoneHeader';
+import { Lead, Note, CheckList, StageScale, InfoCard } from '@/components/frame/TextBlocks';
+import InPageNav from '@/components/shared/InPageNav';
+import StickyMobileCta from '@/components/program-page/StickyMobileCta';
 import OffersArea from '@/components/hub-diagnosis/OffersArea';
 import { fetchProlapsOffers } from '@/lib/hub/prolaps-offers';
 import { GEO_BLOCKS, HUB_URL, OFFERS_ANCHOR } from '@/lib/hub/prolaps-content';
@@ -156,20 +162,18 @@ const FAQ: { q: string; a: Part[] }[] = [
 
 const faqPlain = (a: Part[]) => a.map((p) => (typeof p === 'string' ? p : `[${p.s}]`)).join('');
 
-function Eyebrow({ children }: { children: string }) {
-  return <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#005485] mb-6">{children}</p>;
-}
-
+// Ієрархія тексту хабу (ui-kit §6.12, рішення Ігоря 21.10): мало стилів, другорядне – тихіше.
+//   H2, H3 – заголовки сторінки; Lead, Note, CheckList, StageScale, InfoCard – каркас (components/frame/TextBlocks).
 function H2({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="font-bold text-[#0b1a24]" style={{ fontSize: 'clamp(22px, 3vw, 30px)', lineHeight: 1.25 }}>
+    <h2 className="font-bold text-ink [text-wrap:balance]" style={{ fontSize: 'clamp(24px, 3vw, 32px)', lineHeight: 1.2 }}>
       {children}
     </h2>
   );
 }
 
 function H3({ children }: { children: React.ReactNode }) {
-  return <h3 className="text-[19px] font-bold text-[#0b1a24] leading-snug mt-10">{children}</h3>;
+  return <h3 className="text-[19px] font-bold text-ink leading-snug mt-[var(--space-block)]">{children}</h3>;
 }
 
 function Section({
@@ -184,8 +188,8 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section id={id} className="scroll-mt-6" style={{ backgroundColor: bg, borderTop: BORDER }}>
-      <div className="max-w-[1200px] mx-auto px-6 lg:px-14 py-14">
+    <section id={id} className="scroll-mt-16" style={{ backgroundColor: bg, borderTop: BORDER }}>
+      <div className="max-w-[1200px] mx-auto px-[var(--space-gutter)] py-[var(--space-section)]">
         <div className={wide ? '' : 'max-w-3xl'}>{children}</div>
       </div>
     </section>
@@ -194,7 +198,7 @@ function Section({
 
 function Ul({ items }: { items: React.ReactNode[] }) {
   return (
-    <ul className="mt-4 space-y-2 list-disc pl-6 text-gray-700 leading-relaxed marker:text-[#005485]">
+    <ul className="mt-4 space-y-2 list-disc pl-6 text-text-secondary leading-relaxed marker:text-link">
       {items.map((it, i) => (
         <li key={i}>{it}</li>
       ))}
@@ -202,7 +206,16 @@ function Ul({ items }: { items: React.ReactNode[] }) {
   );
 }
 
-const P = 'text-gray-700 leading-relaxed mt-4';
+const P = 'text-text-secondary leading-relaxed mt-4';
+const P0 = 'text-text-secondary leading-relaxed';
+
+const ID = { symptoms: 'symptomy', treatment: 'likuvannia', faq: 'pytannia' };
+const NAV = [
+  { id: ID.symptoms, label: 'Симптоми' },
+  { id: ID.treatment, label: 'Лікування' },
+  { id: OFFERS_ANCHOR, label: 'Лікарі' },
+  { id: ID.faq, label: 'Питання' },
+];
 
 export default async function ProlapsHubPage() {
   const offers = await fetchProlapsOffers();
@@ -246,52 +259,52 @@ export default async function ProlapsHubPage() {
 
   return (
     <>
-      <SiteHeader city={null} />
+      <Header city={null} tone="light" />
       <main className="text-[#0b1a24]">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
         <script dangerouslySetInnerHTML={{ __html: OPEN_SOURCES_SCRIPT }} />
 
         {/* 1. Hero */}
-        <section style={{ backgroundColor: BG_GRAY }}>
-          <div className="max-w-[1200px] mx-auto px-6 lg:px-14 py-14">
-            <div className="max-w-3xl">
-              <nav aria-label="Breadcrumb" className="text-xs text-gray-500 mb-8">
+        <Hero
+          tone="light"
+          breadcrumbs={
+            <nav aria-label="Breadcrumb">
                 <Link href="/" className="hover:underline">
                   check-up.in.ua
                 </Link>
                 <span className="mx-1.5">/</span>
-                <span className="text-gray-700">Опущення матки і піхви</span>
+                <span aria-current="page">Опущення матки і піхви</span>
               </nav>
-              <Eyebrow>ГІНЕКОЛОГІЯ · ТАЗОВЕ ДНО</Eyebrow>
-              <h1
-                className="font-bold leading-tight mb-6"
-                style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: 'clamp(30px, 4.6vw, 52px)' }}
-              >
-                {H1_MAIN} <em className="italic font-semibold text-[#005485]">{H1_EM}</em>
-              </h1>
-              <p className="text-[17px] text-gray-700 leading-relaxed">
+          }
+          eyebrow="ГІНЕКОЛОГІЯ · ТАЗОВЕ ДНО"
+          h1Size="clamp(30px, 4.6vw, 52px)"
+          h1={<>{H1_MAIN} <em className="italic font-semibold text-[var(--hero-decor-light)]">{H1_EM}</em></>}
+          lead={<p>
                 Відчуття кульки чи тиску в піхві може бути ознакою опущення матки або стінок піхви. Лікарі називають
                 цей стан пролапсом тазових органів. Він не загрожує життю і лікується, не завжди операцією. Почніть з
                 огляду в гінеколога. Лікар визначить стадію опущення і разом з вами обере спосіб лікування.
-              </p>
-              <a
-                href={`#${OFFERS_ANCHOR}`}
-                className="inline-flex items-center justify-center min-h-[48px] mt-8 px-7 py-3 rounded-[10px] bg-[#005485] text-white text-[16px] font-semibold hover:bg-[#003a5e] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#005485]"
-              >
-                Обрати лікаря
-              </a>
-            </div>
-          </div>
-        </section>
+              </p>}
+          cta={
+            <ButtonLink href={`#${OFFERS_ANCHOR}`} variant="structural" size="lg">
+              Обрати лікаря
+            </ButtonLink>
+          }
+        />
+
+        {/* 1a. Меню розділів (рішення Ігоря 21.10, 2А) */}
+        <InPageNav items={NAV} />
+
+        {/* ЗОНА ІНФОРМАЦІЇ (рішення Ігоря 21.10, 1А): симптоми, огляд, лікування, операції. Без лікарів і цін.
+            Ієрархія тексту (ui-kit §6.12): головне – Lead, решта – P; другорядне – Note; групи – Card. */}
 
         {/* 2. Чи це опущення */}
-        <Section bg={BG_WHITE}>
+        <Section bg={BG_WHITE} id={ID.symptoms}>
           <H2>Симптоми опущення матки і піхви</H2>
-          <p className={P}>
+          <Lead>
             На ранній стадії опущення може зовсім не турбувати. Коли органи опускаються нижче, з&apos;являються такі
             ознаки:
-          </p>
-          <Ul
+          </Lead>
+          <CheckList
             items={[
               'відчуття кульки, тиску чи важкості в піхві;',
               'випинання біля входу в піхву, яке видно або можна намацати;',
@@ -301,18 +314,25 @@ export default async function ProlapsHubPage() {
               'дискомфорт під час статевого життя.',
             ]}
           />
-          <p className={P}>Увечері ці відчуття зазвичай сильніші, ніж зранку.</p>
-          <p className={P}>
-            Опущення трапляється приблизно в третини жінок <S n={1} />. Соромитися цих відчуттів не потрібно. Скажіть
-            про них гінекологу прямо.
-          </p>
           <p className={P}>
             Запишіться на огляд, якщо помітили хоча б одну з цих ознак. Чекати, поки стане гірше, не потрібно. Стадію
             опущення визначає лише огляд. Схожі відчуття бувають і при інших станах, тому висновок робить лікар.
           </p>
-          <div className="mt-10 bg-[#fff4e5] border border-[#f5d9a8] rounded-[10px] px-5 py-5">
-            <h3 className="text-[19px] font-bold text-[#0b1a24] leading-snug">Коли звернутися терміново</h3>
-            <p className="text-gray-700 leading-relaxed mt-3">
+          <Note>Увечері ці відчуття зазвичай сильніші, ніж зранку.</Note>
+          <Note>
+            Опущення трапляється приблизно в третини жінок <S n={1} />. Соромитися цих відчуттів не потрібно. Скажіть
+            про них гінекологу прямо.
+          </Note>
+          {/* «Коли звернутися терміново» – CalloutBlock urgent (ui-kit §6.8) */}
+          <div className="mt-[var(--space-block)] bg-[var(--danger-bg)] border-[1.5px] border-[var(--danger)] rounded-[var(--radius-lg)] p-[var(--space-card)]">
+            <h3 className="flex items-center gap-2.5 text-[18px] font-bold text-[var(--danger-text)] leading-snug">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="shrink-0 text-[var(--danger)]">
+                <path d="M12 3l9.5 17h-19z" />
+                <path d="M12 10v4.5M12 17.5h.01" />
+              </svg>
+              Коли звернутися терміново
+            </h3>
+            <p className="text-text-secondary leading-relaxed mt-3">
               Зверніться до лікаря терміново, не чекаючи планового запису, якщо:
             </p>
             <Ul items={['не вдається помочитися;', "на випинанні з'явилася виразка (ранка)."]} />
@@ -322,10 +342,10 @@ export default async function ProlapsHubPage() {
         {/* 3. Що буде на огляді */}
         <Section bg={BG_GRAY}>
           <H2>Огляд і діагностика</H2>
-          <p className={P}>
+          <Lead>
             Лікар розпитає, що саме вас турбує і як це заважає в звичному житті. Також запитає про пологи, перенесені
             операції та хронічні хвороби. Відчуття зручно записати заздалегідь: які вони і коли сильніші.
-          </p>
+          </Lead>
           <p className={P}>
             Огляд проводять на гінекологічному кріслі. Лікар попросить покашляти або напружитися. Так видно,
             наскільки опускаються органи. Іноді оглядають і стоячи. Також лікар перевіряє, як працюють м&apos;язи
@@ -336,13 +356,13 @@ export default async function ProlapsHubPage() {
             Стадію визначають за тим, наскільки низько опустилася матка чи стінка піхви. Орієнтиром є вхід у піхву{' '}
             <S n={2} />.
           </p>
-          <Ul
+          <StageScale
             items={[
-              '0: опущення немає;',
-              'I: опущення є, але до входу в піхву лишається більше ніж 1 см;',
-              'II: органи опустилися до входу в піхву, в межах 1 см вище чи нижче;',
-              'III: органи виходять за вхід у піхву більше ніж на 1 см, але не повністю;',
-              'IV: матка або піхва повністю виходять назовні.',
+              ['0', 'опущення немає;'],
+              ['I', 'опущення є, але до входу в піхву лишається більше ніж 1 см;'],
+              ['II', 'органи опустилися до входу в піхву, в межах 1 см вище чи нижче;'],
+              ['III', 'органи виходять за вхід у піхву більше ніж на 1 см, але не повністю;'],
+              ['IV', 'матка або піхва повністю виходять назовні.'],
             ]}
           />
           <p className={P}>Стадія не визначає лікування сама по собі. Так само важить, наскільки опущення заважає вам.</p>
@@ -359,123 +379,139 @@ export default async function ProlapsHubPage() {
         </Section>
 
         {/* 4. Без операції чи операція */}
-        <Section bg={BG_WHITE}>
-          <H2>Методи лікування</H2>
-          <p className={P}>
-            Якщо опущення не турбує, лікувати його не обов&apos;язково. Досить спостерігатися в гінеколога <S n={3} />. Якщо з&apos;являться нові відчуття
-            або наявні посиляться, скажіть про це гінекологу. Тоді ви разом обговорите лікування.
-          </p>
-          <H3>Консервативне лікування</H3>
-          <p className={P}>Якщо симптоми є, лікування зазвичай починають без операції. Таке лікування називають консервативним. Лікар
-            може запропонувати:</p>
-          <Ul
-            items={[
-              <>
-                вправи для м&apos;язів тазового дна щонайменше 16 тижнів, краще під наглядом фахівця <S n={3} />;
-              </>,
-              'песарій, тобто спеціальний виріб, найчастіше у формі кільця, який вводять у піхву, щоб підтримувати органи;',
-              'зміну звичок, наприклад схуднути за надмірної ваги, менше піднімати важке, лікувати закрепи.',
-            ]}
-          />
-          <p className={P}>Вправи радять насамперед при I–II стадії.</p>
-          <H3>Коли потрібна операція</H3>
-          <p className={P}>
-            Операцію обговорюють, якщо опущення заважає жити і <S n={3} />:
-          </p>
-          <Ul
-            items={[
-              'вправи не допомогли;',
-              'песарій не допоміг або створює суттєві незручності;',
-              'ви не хочете лікуватися без операції.',
-            ]}
-          />
-          <p className={P}>Яку операцію запропонують, залежить від того, що саме опустилося і що важливо для вас.</p>
+        <Section bg={BG_WHITE} wide id={ID.treatment}>
+          <div className="max-w-3xl">
+            <H2>Методи лікування</H2>
+            <Lead>
+              Якщо опущення не турбує, лікувати його не обов&apos;язково. Досить спостерігатися в гінеколога <S n={3} />. Якщо з&apos;являться нові відчуття
+              або наявні посиляться, скажіть про це гінекологу. Тоді ви разом обговорите лікування.
+            </Lead>
+          </div>
+          <div className="mt-[var(--space-block)] grid gap-[var(--space-grid)] lg:grid-cols-2">
+            <InfoCard title="Консервативне лікування">
+              <p className={P0}>Якщо симптоми є, лікування зазвичай починають без операції. Таке лікування називають консервативним. Лікар
+                може запропонувати:</p>
+              <Ul
+                items={[
+                  <>
+                    вправи для м&apos;язів тазового дна щонайменше 16 тижнів, краще під наглядом фахівця <S n={3} />;
+                  </>,
+                  'песарій, тобто спеціальний виріб, найчастіше у формі кільця, який вводять у піхву, щоб підтримувати органи;',
+                  'зміну звичок, наприклад схуднути за надмірної ваги, менше піднімати важке, лікувати закрепи.',
+                ]}
+              />
+              <Note>Вправи радять насамперед при I–II стадії.</Note>
+            </InfoCard>
+            <InfoCard title="Коли потрібна операція">
+              <p className={P0}>
+                Операцію обговорюють, якщо опущення заважає жити і <S n={3} />:
+              </p>
+              <Ul
+                items={[
+                  'вправи не допомогли;',
+                  'песарій не допоміг або створює суттєві незручності;',
+                  'ви не хочете лікуватися без операції.',
+                ]}
+              />
+              <Note>Яку операцію запропонують, залежить від того, що саме опустилося і що важливо для вас.</Note>
+            </InfoCard>
+          </div>
         </Section>
 
         {/* 5. Яка операція підходить */}
-        <Section bg={BG_GRAY}>
-          <H2>Операції при опущенні матки і піхви</H2>
-          <p className={P}>
-            Спосіб операції лікар обирає разом з вами. Лікар зважає на таке <S n={3} />:
-          </p>
-          <Ul
-            items={[
-              'що саме опустилося (матка, передня чи задня стінка піхви, верхня частина піхви після видалення матки);',
-              'чи хочете ви зберегти матку і чи плануєте вагітність;',
-              'чи важливе для вас статеве життя;',
-              'вік, загальний стан і супутні хвороби.',
-            ]}
-          />
-          <H3>Лапароскопічне лікування опущення матки і піхви</H3>
-          <p className={P}>
-            Розглядають, якщо опустилася матка або верхня частина піхви. Через невеликі проколи на животі органи
-            підтягують і закріплюють сітчастим імплантатом.
-          </p>
-          <H3>Кольпорафія, пластика стінок піхви</H3>
-          <p className={P}>
-            Розглядають, якщо разом зі стінкою піхви опустився сечовий міхур або пряма кишка. Стінку відновлюють через
-            піхву, сітку не використовують.
-          </p>
-          <H3>Вагінальна фіксація матки і купола піхви</H3>
-          <p className={P}>
-            Ще один варіант при опущенні матки чи верхньої частини піхви. Органи закріплюють до зв&apos;язок таза через
-            піхву, без проколів на животі.
-          </p>
-          <H3>Опущення і нетримання сечі</H3>
-          <p className={P}>
-            Підтікання сечі під час кашлю чи навантаження буває в третини–половини жінок з опущенням <S n={4} />. Тоді
-            разом з операцією або окремо можуть розглянути слінгову операцію. Під час неї сечівник підтримують тонкою
-            стрічкою. Слінгова операція лікує нетримання сечі, опущення вона не усуває.
-          </p>
-          <p className={P}>Яку саме операцію провести, вирішують на консультації в оперуючого гінеколога.</p>
+        <Section bg={BG_GRAY} wide>
+          <div className="max-w-3xl">
+            <H2>Операції при опущенні матки і піхви</H2>
+            <Lead>
+              Спосіб операції лікар обирає разом з вами. Лікар зважає на таке <S n={3} />:
+            </Lead>
+            <Ul
+              items={[
+                'що саме опустилося (матка, передня чи задня стінка піхви, верхня частина піхви після видалення матки);',
+                'чи хочете ви зберегти матку і чи плануєте вагітність;',
+                'чи важливе для вас статеве життя;',
+                'вік, загальний стан і супутні хвороби.',
+              ]}
+            />
+          </div>
+          <div className="mt-[var(--space-block)] grid gap-[var(--space-grid)] lg:grid-cols-2">
+            <InfoCard title="Лапароскопічне лікування опущення матки і піхви">
+              <p className={P0}>
+                Розглядають, якщо опустилася матка або верхня частина піхви. Через невеликі проколи на животі органи
+                підтягують і закріплюють сітчастим імплантатом.
+              </p>
+            </InfoCard>
+            <InfoCard title="Кольпорафія, пластика стінок піхви">
+              <p className={P0}>
+                Розглядають, якщо разом зі стінкою піхви опустився сечовий міхур або пряма кишка. Стінку відновлюють через
+                піхву, сітку не використовують.
+              </p>
+            </InfoCard>
+            <InfoCard title="Вагінальна фіксація матки і купола піхви">
+              <p className={P0}>
+                Ще один варіант при опущенні матки чи верхньої частини піхви. Органи закріплюють до зв&apos;язок таза через
+                піхву, без проколів на животі.
+              </p>
+            </InfoCard>
+            <InfoCard title="Опущення і нетримання сечі">
+              <p className={P0}>
+                Підтікання сечі під час кашлю чи навантаження буває в третини–половини жінок з опущенням <S n={4} />. Тоді
+                разом з операцією або окремо можуть розглянути слінгову операцію. Під час неї сечівник підтримують тонкою
+                стрічкою. Слінгова операція лікує нетримання сечі, опущення вона не усуває.
+              </p>
+            </InfoCard>
+          </div>
+          <p className={`${P} max-w-3xl`}>Яку саме операцію провести, вирішують на консультації в оперуючого гінеколога.</p>
         </Section>
 
+        {/* ЗОНА ЛІКАРІВ (рішення Ігоря 21.10, 1А): межа і фон – як у зони програми (ui-kit §6.11). */}
         {/* 6. Обрати лікаря і місто + GEO-блоки */}
-        <Section bg={BG_WHITE} wide id={OFFERS_ANCHOR}>
-          <H2>Де лікують опущення матки і піхви</H2>
-          <p className={`${P} max-w-3xl`}>
-            Лікарі та клініки, які лікують опущення матки і піхви. Оберіть своє місто і запишіться на консультацію.
-          </p>
-          <OffersArea offers={offers} />
+        <ZoneHeader
+          id={OFFERS_ANCHOR}
+          eyebrow="Лікарі"
+          title="Де лікують опущення матки і піхви"
+          sub="Лікарі та клініки, які лікують опущення матки і піхви. Оберіть своє місто і запишіться на консультацію."
+        />
+        <div className="bg-[var(--zone-program-bg)]">
+          <div className="flow-root max-w-[1200px] mx-auto px-[var(--space-gutter)] pb-[var(--space-section)]">
+            <OffersArea offers={offers} />
 
-          <div className="max-w-3xl mt-12 space-y-8">
-            {GEO_BLOCKS.map((g) => (
-              <div key={g.city}>
-                <h3 className="text-[19px] font-bold text-[#0b1a24] leading-snug">{g.title}</h3>
-                <p className={P}>{g.text}</p>
-              </div>
+            {/* 7. Що далі – продовження зони лікарів */}
+            <div className="max-w-3xl mt-[var(--space-block)] bg-[var(--teal-soft)] rounded-[var(--radius-lg)] p-[var(--space-card)]" role="note">
+              <h2 className="text-[18px] font-bold text-ink leading-snug">Що далі</h2>
+              <p className="text-text-secondary leading-relaxed mt-2">
+                Підготовку до операції, строки відновлення і вартість лікар пояснить на консультації. Детальніше про кожну
+                операцію написано на сторінках операцій у картках лікарів.
+              </p>
+            </div>
+
+            {/* GEO-блоки – другорядний текст зони (статичний HTML, SEO-STANDARD §6) */}
+            <div className="max-w-3xl mt-[var(--space-block)] pt-[var(--space-block)] border-t border-section-border space-y-6">
+              {GEO_BLOCKS.map((g) => (
+                <div key={g.city}>
+                  <h3 className="text-[16px] font-bold text-ink leading-snug">{g.title}</h3>
+                  <p className="text-[15px] text-text-secondary leading-relaxed mt-2">{g.text}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* 8. Часті питання: акордеон (ui-kit §6.10), текст відповідей у серверному HTML */}
+        <Section bg={BG_WHITE} id={ID.faq}>
+          <H2>Часті запитання</H2>
+          <div className="mt-[var(--space-block)] [&>.acc:last-child]:border-b [&>.acc:last-child]:border-section-border">
+            {FAQ.map((f) => (
+              <Accordion key={f.q} as="h3" summary={f.q}>
+                <p className="text-[15px]">{f.a.map((p, i) => (typeof p === 'string' ? p : <S key={i} n={p.s} />))}</p>
+              </Accordion>
             ))}
           </div>
         </Section>
 
-        {/* 7. Що далі */}
-        <Section bg={BG_GRAY}>
-          <H2>Що далі</H2>
-          <p className={P}>
-            Підготовку до операції, строки відновлення і вартість лікар пояснить на консультації. Детальніше про кожну
-            операцію написано на сторінках операцій у картках лікарів.
-          </p>
-        </Section>
-
-        {/* 8. Часті питання: згорнуто, текст відповідей у серверному HTML */}
-        <Section bg={BG_WHITE}>
-          <H2>Часті запитання</H2>
-          <ul className="mt-6 space-y-3 list-none">
-            {FAQ.map((f) => (
-              <li key={f.q} className="border border-[#e8edf3] rounded-[10px] px-5 py-3">
-                <AccordionSection summary={f.q}>
-                  <p className="text-[15px] text-gray-700 leading-relaxed pb-2">
-                    {f.a.map((p, i) => (typeof p === 'string' ? p : <S key={i} n={p.s} />))}
-                  </p>
-                </AccordionSection>
-              </li>
-            ))}
-          </ul>
-        </Section>
-
         {/* 9. Автор, рецензент, джерела */}
         <section style={{ backgroundColor: BG_GRAY, borderTop: BORDER }}>
-          <div className="max-w-[1200px] mx-auto px-6 lg:px-14 py-12">
+          <div className="max-w-[1200px] mx-auto px-[var(--space-gutter)] py-[var(--space-section)]">
             <div className="max-w-3xl text-[#374151] leading-relaxed space-y-3">
               <p className="text-[15px]">
                 <span className="font-semibold text-[#0b1a24]">Автор:</span> Ігор Растрепін, засновник check-up.in.ua
@@ -506,7 +542,7 @@ export default async function ProlapsHubPage() {
                 огляду.
               </p>
 
-              <AccordionSection summary="Джерела" className="pt-3">
+              <Accordion summary="Джерела" size="sm" className="mt-3">
                 <div className="text-sm text-gray-600 leading-relaxed space-y-3">
                   <p>
                     <a href={SOURCE_LEAD.url} target="_blank" rel="noopener" className="text-[#005485] underline hover:no-underline">
@@ -534,11 +570,13 @@ export default async function ProlapsHubPage() {
                     ))}
                   </ul>
                 </div>
-              </AccordionSection>
+              </Accordion>
             </div>
           </div>
         </section>
       </main>
+      {/* Закріплена панель mobile (рішення Ігоря 21.10, 3А): до зони лікарів – «Обрати лікаря», у зоні схована. */}
+      <StickyMobileCta browseOnly revealAfterId="hero" zoneId={OFFERS_ANCHOR} browseLabel="Обрати лікаря" />
     </>
   );
 }

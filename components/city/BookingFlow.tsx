@@ -1,5 +1,7 @@
 'use client';
 
+import { buttonClass } from '@/components/frame/Button';
+
 import { useEffect, useState } from 'react';
 import type { CheckupProgram } from '@/lib/types';
 
@@ -74,15 +76,13 @@ export function BookCta({
    *  прокидається в open-booking-flow. Рішення Cowork 29.08.2026 п.2. */
   selectedAdditionalServices?: string[];
 }) {
-  // 'crimson' — accent-exclusivity (brand-tokens-v3 / checkup-design §Кольори):
-  // crimson лише на CTA сайдбара і StickyMobileCta на сторінках Типу 5a
-  // (завдання Cowork 29.08.2026, "UX-переробка"), ніде більше на сторінці.
+  // ui-kit v1.1 §8: crimson (--brand-accent) – УСІ кнопки запису основного домену.
+  // 'primary' і 'crimson' – одна роль (booking); 'crimson' лишається як аліас на один реліз.
+  // 'hero' – кнопка темного hero: біла (роль 12). Радіус lg 12px (ui-kit §2.7).
   const base =
     variant === 'hero'
-      ? 'inline-flex items-center justify-center min-h-12 px-7 rounded-[10px] bg-navy text-white font-semibold text-base hover:bg-navy-dark transition-colors'
-      : variant === 'crimson'
-      ? 'w-full inline-flex items-center justify-center min-h-12 px-5 rounded-[10px] bg-crimson text-white font-semibold text-sm hover:bg-crimson-hover transition-colors'
-      : 'w-full inline-flex items-center justify-center min-h-12 px-5 rounded-[10px] bg-navy text-white font-semibold text-sm hover:bg-navy-dark transition-colors';
+      ? `${buttonClass({ variant: 'hero', size: 'lg' })}`
+      : `${buttonClass({ variant: 'booking', size: 'lg', fullWidth: true })}`;
   return (
     <button
       type="button"

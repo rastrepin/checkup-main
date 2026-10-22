@@ -126,7 +126,136 @@
   --border-warm: #e8e4dc;
   --text-primary: #0b1a24;
   --text-secondary: #4a5a6b;
+
+  /* ─── Рольовий контракт (docs/ux/ui-kit.md v1.1 §3–4, checkup-platform) ───
+     Компоненти каркаса (components/frame/) читають лише ролі. Значення –
+     тема основного домену. Нових hex у .tsx не додавати. */
+  --ink: #0b1a24;
+  --border: #e5e7eb;
+  --section-border: #e8edf3;
+  --bg-muted: #f8fafc;
+  --danger: #dc2626;
+  --danger-bg: #fef2f2;
+  --danger-text: #991b1b;
+  --warn: #d97706;
+  --warn-bg: #fffbeb;
+
+  --brand-primary: #005485;        /* 1. структура, не кнопка запису */
+  --brand-primary-hover: #003a5e;
+  --brand-primary-soft: #e8f4fd;
+  --brand-primary-text: #ffffff;   /* 2. 8.06 */
+  --brand-accent: #d60242;         /* 3. лише кнопки запису (crimson) */
+  --brand-accent-hover: #b50139;
+  --brand-accent-text: #ffffff;    /* 4. 5.32 / 6.93 */
+  --brand-secondary: #04D3D9;      /* 5. декор */
+  --link: #005485;                 /* 7. 8.06 на білому, 7.70 на #f8fafc */
+
+  /* 8–12. Темний hero (головна, чекапи) */
+  --header-bg: linear-gradient(180deg, #0B3E5E 0%, #082F48 100%);
+  --hero-bg: linear-gradient(180deg, #082F48 0%, #041826 100%);
+  --hero-text: #ffffff;
+  --hero-muted: rgba(255, 255, 255, 0.72);
+  --hero-decor: #86BFC7;
+  --hero-cta-bg: #ffffff;
+  --hero-cta-bg-hover: #EAF1F5;
+  --hero-cta-text: #082F48;
+  --hero-line: rgba(255, 255, 255, 0.12);
+  --hero-card-bg: rgba(255, 255, 255, 0.06);
+  --hero-card-border: rgba(255, 255, 255, 0.12);
+
+  /* Світлий (warm) hero (хірургія, вагітність, статті, FAQ) */
+  --header-bg-light: linear-gradient(180deg, #F3EDE2 0%, #F7F2EA 100%);
+  --hero-bg-light: linear-gradient(180deg, #F7F2EA 0%, #FCFAF6 100%);
+  --hero-text-light: #0b1a24;
+  --hero-muted-light: #4a5a6b;
+  --hero-decor-light: #005485;
+  --hero-line-light: rgba(0, 84, 133, 0.14);
+
+  /* Радіуси і відступи – ті самі токени, що в checkup-platform (ui-kit §2.6–2.7, §5.3) */
+  --radius-sm: 6px; --radius-md: 8px; --radius-lg: 12px; --radius-xl: 18px; --radius-pill: 999px;
+  --space-gutter: 24px; --space-section: 64px; --space-eyebrow: 16px; --space-heading: 24px;
+  --space-block: 32px; --space-stack: 16px; --space-item: 10px; --space-title: 8px;
+  --space-card: 20px; --space-grid: 16px;
+  --space-hero-top: 40px; --space-hero-bottom: 56px; --space-hero-crumbs: 24px;
+  --space-hero-eyebrow: 16px; --space-hero-sub: 12px; --space-hero-lead: 24px; --space-hero-meta: 8px;
+  --space-hero-card: 24px; --space-hero-cta: 32px; --space-hero-caption: 12px;
+  /* Групи hero без кнопки (вікові сторінки): заголовок → група обстежень → «що далі» + застереження. */
+  --space-hero-group: 48px; --space-hero-next: 40px; --space-hero-note: 12px;
+
+  /* 13. Футер */
+  --footer-bg: #05121e;
+  --footer-cta-bg: var(--brand-accent);
+  --footer-cta-text: var(--brand-accent-text);
+  --footer-cta-hover: var(--brand-accent-hover);
 }
+
+@media (min-width: 1024px) {
+  :root {
+    --space-gutter: 56px; --space-section: 96px; --space-eyebrow: 24px; --space-heading: 28px;
+    --space-block: 48px; --space-item: 12px; --space-card: 24px; --space-grid: 24px;
+    --space-hero-top: 72px; --space-hero-bottom: 96px; --space-hero-crumbs: 32px;
+    --space-hero-eyebrow: 20px; --space-hero-sub: 16px; --space-hero-lead: 32px;
+    --space-hero-card: 32px; --space-hero-cta: 40px;
+    --space-hero-group: 64px; --space-hero-next: 48px; --space-hero-note: 16px;
+  }
+}
+
+/* Ритм hero (ui-kit §5.3): відступ перед елементом – за його роллю data-hero. Копія з checkup-platform. */
+.hero-stack { display: flex; flex-direction: column; gap: 0; }
+.hero-stack > * { margin-top: 0; }
+.hero-stack > [data-hero="eyebrow"] { margin-top: var(--space-hero-crumbs) !important; }
+.hero-stack > [data-hero="title"]   { margin-top: var(--space-hero-eyebrow) !important; }
+.hero-stack > [data-hero="sub"]     { margin-top: var(--space-hero-sub) !important; }
+.hero-stack > [data-hero="lead"]    { margin-top: var(--space-hero-lead) !important; }
+.hero-stack > [data-hero="meta"]    { margin-top: var(--space-hero-meta) !important; }
+.hero-stack > [data-hero="card"]    { margin-top: var(--space-hero-card) !important; }
+.hero-stack > [data-hero="cta"]     { margin-top: var(--space-hero-cta) !important; }
+.hero-stack > [data-hero="caption"] { margin-top: var(--space-hero-caption) !important; }
+.hero-stack > [data-hero="group"]   { margin-top: var(--space-hero-group) !important; }
+.hero-stack > [data-hero="next"]    { margin-top: var(--space-hero-next) !important; }
+.hero-stack > [data-hero="next"] + [data-hero="caption"] { margin-top: var(--space-hero-note) !important; }
+/* Рядок над H1 – лише з 1024 px; на mobile H1 стоїть за крихтами на їхньому відступі. */
+@media (max-width: 1023px) {
+  .hero-stack > .hero-kicker { display: none; }
+  .hero-stack > .hero-kicker + [data-hero="title"] { margin-top: var(--space-hero-crumbs) !important; }
+}
+/* Кнопки обстежень у hero: на mobile 32 px заввишки, зона натиску – 44 px. */
+.hero-chip::after { content: ""; position: absolute; inset: -6px 0; }
+.hero-stack > :first-child,
+.hero-stack > [data-hero]:first-child { margin-top: 0 !important; }
+
+/* Hero: хвіст H1 – другим рядком; тире лишається в тексті H1, візуально приховане. */
+.hero-h1-sep { font-size: 0; }
+
+/* Зона програми: фон на всю ширину. */
+:root { --zone-program-bg: #f4f6f8; --hero-chip-border: rgba(255,255,255,0.18); --hero-chip-hover: rgba(255,255,255,0.14); }
+/* Смуга зони на всю ширину вікна з будь-якої колонки: border-image з виносом не створює горизонтальної прокрутки. */
+.zone-program-mark { border-image: linear-gradient(var(--brand-primary) 0 3px, var(--zone-program-bg) 3px) fill 0 // 0 100vmax; }
+
+/* Розкриття тексту на mobile: перший абзац – 2 рядки, решта – після кліку. */
+@media (max-width: 1023px) {
+  .clamp-mobile:not([data-open]) > p:first-child { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .clamp-mobile:not([data-open]) > p:not(:first-child) { max-height: 0; overflow: hidden; margin: 0; }
+}
+
+/* Підрозділ-акордеон лише на mobile (AccordionMobile, ui-kit §6.10). Згорнутий вміст – max-height: 0, не display: none
+   (SEO-STANDARD §6: вміст лишається в DOM і в розмітці). З 1024 px – звичайний H3 з текстом. */
+@media (max-width: 1023px) {
+  .acc-m { border-top: 1px solid var(--section-border); }
+  .acc-m:last-child { border-bottom: 1px solid var(--section-border); }
+  .acc-m:first-of-type { margin-top: 24px; }
+  .acc-m-body { overflow: hidden; }
+  .acc-m:not([data-open]) > .acc-m-body { max-height: 0; }
+  .acc-m[data-open] > .acc-m-body { padding-bottom: 20px; }
+  .acc-m-body > :first-child { margin-top: 0 !important; }
+}
+@media (min-width: 1024px) {
+  .acc-m-h { font-size: 18px; margin-top: 32px; }
+}
+
+/* Межа між секціями лише всередині однієї смуги: на зміні фону (сіра ↔ біла) лінія зайва. */
+.band-gray + .band-white,
+.band-white + .band-gray { border-top-color: transparent; }
 
 /* ─── Tailwind v4 @theme ────────────────────────────────────────────────── */
 @theme inline {
@@ -143,6 +272,22 @@
   --color-border-warm: var(--border-warm);
   --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);
+  --color-ink: var(--ink);
+  --color-brand-primary: var(--brand-primary);
+  --color-brand-primary-hover: var(--brand-primary-hover);
+  --color-brand-primary-soft: var(--brand-primary-soft);
+  --color-brand-primary-text: var(--brand-primary-text);
+  --color-brand-accent: var(--brand-accent);
+  --color-brand-accent-hover: var(--brand-accent-hover);
+  --color-brand-accent-text: var(--brand-accent-text);
+  --color-brand-secondary: var(--brand-secondary);
+  --color-link: var(--link);
+  --color-section-border: var(--section-border);
+  --color-bg-muted: var(--bg-muted);
+  --color-danger: var(--danger);
+  --color-danger-bg: var(--danger-bg);
+  --color-danger-text: var(--danger-text);
+  --color-footer-bg: var(--footer-bg);
 
   --font-sans: var(--font-fixel-text, system-ui, sans-serif);
   --font-display: 'Fixel Display', system-ui, sans-serif;

@@ -24,6 +24,7 @@ interface DoctorRow {
   slug: string;
   full_name: string;
   photo_url: string | null;
+  photo_card_url: string | null;
   regalia_line: string | null;
   experience_verb: string | null;
   experience_since: number | null;
@@ -92,7 +93,7 @@ export async function fetchProlapsOffers(): Promise<HubOffer[]> {
         .eq('is_active', true),
       sb
         .from('doctors')
-        .select('slug, full_name, photo_url, regalia_line, experience_verb, experience_since, clinic_id')
+        .select('slug, full_name, photo_url, photo_card_url, regalia_line, experience_verb, experience_since, clinic_id')
         .in('clinic_id', clinicIds)
         .eq('is_active', true),
     ]);
@@ -147,13 +148,17 @@ export async function fetchProlapsOffers(): Promise<HubOffer[]> {
             experience: experienceLine(d),
             clinicSlug: clinic.slug,
             clinicLabel: label,
-            clinicName: content.location ? null : label,
+            clinicName: content.clinicName ?? label,
             location: content.location ?? (street ? `${cityLabel}, ${street}` : cityLabel),
+            // Фото – кадр картки doctors.photo_card_url (3:2, голова з шиєю, ui-kit §6.11); файл на check-up.in.ua,
+            // тому відносний шлях лишається як є. Без кадру картка не публікується (Ігор 21.10, components-map §30.6).
             photo:
-              content.photo && d.photo_url
-                ? { src: d.photo_url.startsWith('http') ? d.photo_url : `${site}${d.photo_url}`, alt: name }
+              d.photo_card_url
+                ? { src: d.photo_card_url, alt: name }
                 : null,
-            profileLink: content.profileLink ? { label: name, href: `${site}/` } : null,
+            // Профіль лікаря – у кожній картці (Ігор 21.10): доктор-бренд – головна сайту лікаря,
+            // лікар клініки – сторінка лікаря на піддомені клініки ({site}/{місто}/doctors/{slug}).
+            profileLink: { label: name, href: content.profileLink ? `${site}/` : `${site}/${cityKey}/doctors/${d.slug}` },
             cityKey,
             cityLabel,
             bookingNote: BOOKING_NOTES[clinic.slug] ?? BOOKING_NOTE_DEFAULT,
@@ -171,7 +176,11 @@ export async function fetchProlapsOffers(): Promise<HubOffer[]> {
       const i = CITY_ORDER.indexOf(k);
       return i === -1 ? CITY_ORDER.length : i;
     };
-    return [...offers.values()].sort(
+    const withPhoto = [...offers.values()].filter((o) => {
+      if (!o.photo) console.warn(`[hub-prolaps] картка ${o.doctorSlug} без кадру фото (doctors.photo_card_url) – не публікується`);
+      return Boolean(o.photo);
+    });
+    return withPhoto.sort(
       (a, b) => cityRank(a.cityKey) - cityRank(b.cityKey) || a.doctorSlug.localeCompare(b.doctorSlug),
     );
   } catch {

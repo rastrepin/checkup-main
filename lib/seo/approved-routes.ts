@@ -23,6 +23,12 @@ export const SYSTEM_ROUTES: readonly string[] = [
   '/sitemap-next.xml',
   '/sitemap-tilda.xml',
   '/brand/logo-checkup.svg',
+  '/brand/logo-checkup-site-dark.svg',
+  '/brand/logo-checkup-site-light.svg',
+  // Fixel Display (@font-face у globals.css): без цих рядків файли віддавала Tilda (404).
+  '/fonts/FixelDisplay-Regular.woff2',
+  '/fonts/FixelDisplay-SemiBold.woff2',
+  '/fonts/FixelDisplay-Bold.woff2',
 ];
 
 export const SITE_URL = 'https://check-up.in.ua';
@@ -39,6 +45,9 @@ export function isApprovedRoute(pathname: string): boolean {
   return approvedSet.has(normalizePath(pathname));
 }
 
+/** Префікси службових файлів Next.js: кадри фото лікарів для карток (scripts/doctor-card-photo.py, ui-kit §6.11). */
+export const SYSTEM_PREFIXES: readonly string[] = ['/assets/doctors/cards/'];
+
 export function isSystemRoute(pathname: string): boolean {
-  return systemSet.has(normalizePath(pathname));
+  return systemSet.has(normalizePath(pathname)) || SYSTEM_PREFIXES.some((p) => pathname.startsWith(p));
 }
