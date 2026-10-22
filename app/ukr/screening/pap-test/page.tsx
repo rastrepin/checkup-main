@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import SiteHeader from '@/components/shared/SiteHeader';
+import Header from '@/components/frame/Header';
+import Hero from '@/components/frame/Hero';
 import {
   REVIEWER as SHARED_REVIEWER,
   REVIEWER_PARTNER_NOTE,
@@ -66,7 +67,7 @@ function S({ n }: { n: number[] }) {
 }
 
 function Eyebrow({ children }: { children: string }) {
-  return <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#005485] mb-6">{children}</p>;
+  return <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#005485] mb-[var(--space-eyebrow)]">{children}</p>;
 }
 
 function H2({ children }: { children: React.ReactNode }) {
@@ -80,7 +81,7 @@ function H2({ children }: { children: React.ReactNode }) {
 function Section({ bg, eyebrow, children }: { bg: string; eyebrow: string; children: React.ReactNode }) {
   return (
     <section style={{ backgroundColor: bg, borderTop: BORDER }}>
-      <div className="max-w-[1200px] mx-auto px-6 lg:px-14 py-14">
+      <div className="max-w-[1200px] mx-auto px-[var(--space-gutter)] py-[var(--space-section)]">
         <div className="max-w-3xl">
           <Eyebrow>{eyebrow}</Eyebrow>
           {children}
@@ -117,33 +118,29 @@ export default function ScreeningPapTestPage() {
 
   return (
     <>
-    <SiteHeader city={null} />
+    <Header city={null} tone="light" />
     <main className="text-[#0b1a24]">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
       {/* Hero + disclaimer_short */}
-      <section style={{ backgroundColor: BG_GRAY }}>
-        <div className="max-w-[1200px] mx-auto px-6 lg:px-14 py-14">
-          <div className="max-w-3xl">
-            <nav aria-label="Breadcrumb" className="text-xs text-gray-500 mb-8">
+      <Hero
+        tone="light"
+        breadcrumbs={
+          <nav aria-label="Breadcrumb">
               <Link href="/" className="hover:underline">check-up.in.ua</Link>
               <span className="mx-1.5">/</span>
-              <span className="text-gray-700">ПАП-тест</span>
+              <span aria-current="page">ПАП-тест</span>
             </nav>
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#005485] mb-6">Довідник обстежень</p>
-            <h1
-              className="font-bold leading-tight mb-6"
-              style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: 'clamp(32px, 5.5vw, 64px)' }}
-            >
-              ПАП-тест: що показує і коли потрібен
-            </h1>
-            <p className="text-sm text-gray-600 bg-white border border-[#e8edf3] rounded-[10px] px-5 py-4">
+        }
+        eyebrow="Довідник обстежень"
+        h1={<>ПАП-тест: що показує і коли потрібен</>}
+        summary={
+          <p className="text-[15px] text-text-secondary">
               Це довідка, не консультація. Чи потрібне вам обстеження, вирішуйте разом із лікарем, який вас
               спостерігає.
             </p>
-          </div>
-        </div>
-      </section>
+        }
+      />
 
       {/* what_shows */}
       <Section bg={BG_WHITE} eyebrow="Суть обстеження">
@@ -301,7 +298,7 @@ export default function ScreeningPapTestPage() {
 
       {/* author_reviewer */}
       <section style={{ backgroundColor: BG_GRAY, borderTop: BORDER }}>
-        <div className="max-w-[1200px] mx-auto px-6 lg:px-14 py-12">
+        <div className="max-w-[1200px] mx-auto px-[var(--space-gutter)] py-[var(--space-section)]">
           {/* Латка етапу 1, №3: рядки 1–3 – лише коли в спільному REVIEWER заповнений reviewDate; стиль – як на вікових сторінках. */}
           <div className="max-w-3xl text-[#374151] leading-relaxed space-y-3">
             {REVIEWER && (

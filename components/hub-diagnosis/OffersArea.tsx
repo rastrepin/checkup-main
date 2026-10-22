@@ -199,7 +199,7 @@ export default function OffersArea({ offers }: { offers: HubOffer[] }) {
               photo={o.photo}
               bookingNote={o.bookingNote}
               profileLink={o.profileLink}
-              methodLinks={o.methods.map((m) => ({ label: m.linkLabel, href: m.href }))}
+              methodLinks={o.methods.map((m) => ({ label: m.short, title: m.linkLabel, href: m.href }))}
               onBook={() => setBooking(o)}
             />
           </li>
