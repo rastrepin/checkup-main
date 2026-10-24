@@ -28,7 +28,7 @@ const UPDATED_ISO = '2026-10-17';
 const PUBLISHED_LABEL = '17.10.2026';
 const UPDATED_LABEL = '17.10.2026';
 
-const TITLE = 'Опущення матки (пролапс): симптоми, лікування і лікарі | check-up.in.ua';
+const TITLE = 'Опущення матки (пролапс): симптоми і лікування';
 const H1_MAIN = 'Опущення матки і піхви';
 const H1_EM = '(пролапс тазових органів)';
 const H1 = `${H1_MAIN} ${H1_EM}`;
@@ -221,26 +221,60 @@ export default async function ProlapsHubPage() {
   const offers = await fetchProlapsOffers();
   const reviewer = offers.find((o) => o.doctorSlug === REVIEWER_SLUG) ?? null;
 
+  // Schema: один граф з @id – сторінка, FAQ і хлібні крихти пов'язані між собою.
+  const PAGE_ID = `${HUB_URL}#webpage`;
+  const BREADCRUMB_ID = `${HUB_URL}#breadcrumb`;
+  const FAQ_ID = `${HUB_URL}#faq`;
+  // Методи – назви з видимого тексту розділу «Операції при опущенні матки і піхви».
+  const TREATMENTS = [
+    'Лапароскопічне лікування опущення матки і піхви',
+    'Кольпорафія, пластика стінок піхви',
+    'Вагінальна фіксація матки і купола піхви',
+    'Слінгова операція',
+  ];
+
   const jsonLd: object[] = [
     {
       '@context': 'https://schema.org',
       '@type': 'MedicalWebPage',
+      '@id': PAGE_ID,
       name: H1,
       url: HUB_URL,
+      author: { '@type': 'Person', name: 'Ігор Растрепін', jobTitle: 'засновник check-up.in.ua' },
+      publisher: {
+        '@type': 'Organization',
+        '@id': 'https://check-up.in.ua/#organization',
+        name: 'check-up.in.ua',
+        url: 'https://check-up.in.ua',
+      },
+      breadcrumb: { '@id': BREADCRUMB_ID },
       mainEntity: {
         '@type': 'MedicalCondition',
         name: 'Пролапс тазових органів',
         alternateName: ['Опущення матки', 'Опущення піхви', 'Генітальний пролапс'],
         code: { '@type': 'MedicalCode', codingSystem: 'ICD-10', codeValue: 'N81' },
+        relevantSpecialty: 'https://schema.org/Gynecologic',
+        possibleTreatment: TREATMENTS.map((name) => ({ '@type': 'MedicalProcedure', name })),
       },
+      datePublished: '2026-10-17',
       dateModified: UPDATED_ISO,
       ...(reviewer
-        ? { lastReviewed: REVIEWED_ISO, reviewedBy: { '@type': 'Physician', name: reviewer.fullName, url: REVIEWER_URL } }
+        ? {
+            lastReviewed: REVIEWED_ISO,
+            reviewedBy: {
+              '@type': 'Physician',
+              name: reviewer.fullName,
+              url: REVIEWER_URL,
+              medicalSpecialty: 'https://schema.org/Gynecologic',
+            },
+          }
         : {}),
     },
     {
       '@context': 'https://schema.org',
       '@type': 'FAQPage',
+      '@id': FAQ_ID,
+      isPartOf: { '@id': PAGE_ID },
       mainEntity: FAQ.map((f) => ({
         '@type': 'Question',
         name: f.q,
@@ -250,6 +284,7 @@ export default async function ProlapsHubPage() {
     {
       '@context': 'https://schema.org',
       '@type': 'BreadcrumbList',
+      '@id': BREADCRUMB_ID,
       itemListElement: [
         { '@type': 'ListItem', position: 1, name: 'check-up.in.ua', item: 'https://check-up.in.ua' },
         { '@type': 'ListItem', position: 2, name: 'Опущення матки і піхви', item: HUB_URL },
