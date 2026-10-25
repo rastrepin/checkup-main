@@ -46,7 +46,7 @@ export const OFFER_SOURCES: OfferSource[] = [
   {
     method: 'laparoscopic',
     clinicSlug: 'onclinic-mykolaiv',
-    serviceSlug: 'kolporafia',
+    serviceSlug: 'laparoskopichne-likuvannia-prolapsu',
     linkLabel: 'Хірургічне лікування опущення матки',
   },
   {
