@@ -56,33 +56,74 @@ for (const [key, words] of Object.entries(COLUMNS)) {
   }
 }
 
-const cleanName = (s) =>
-  s.replace(/["«»“”„]/g, '')
-    .replace(/\b(ТОВАРИСТВО З ОБМЕЖЕНОЮ ВІДПОВІДАЛЬНІСТЮ|ТОВ|КНП|КП|ПП|ФОП|ПРАТ|АТ)\b/giu, '')
-    .replace(/\s{2,}/g, ' ')
-    .trim();
+// Організаційна форма з реєстру → коротка: «ТОВАРИСТВО З ОБМЕЖЕНОЮ ВІДПОВІДАЛЬНІСТЮ "МЕДІКАЛ АДВАНСТ"» → ТОВ «Медікал Адванст».
+// \b у JS не працює з кирилицею, тому межі слова – через пробіли й лапки.
+const FORMS = [
+  ['ТОВАРИСТВО З ОБМЕЖЕНОЮ ВІДПОВІДАЛЬНІСТЮ', 'ТОВ'],
+  ['КОМУНАЛЬНЕ НЕКОМЕРЦІЙНЕ ПІДПРИЄМСТВО', 'КНП'],
+  ['ДЕРЖАВНЕ НЕКОМЕРЦІЙНЕ ПІДПРИЄМСТВО', 'ДНП'],
+  ['КОМУНАЛЬНЕ ПІДПРИЄМСТВО', 'КП'],
+  ['ПРИВАТНЕ ПІДПРИЄМСТВО', 'ПП'],
+  ['ПРИВАТНЕ АКЦІОНЕРНЕ ТОВАРИСТВО', 'ПрАТ'],
+  ['АКЦІОНЕРНЕ ТОВАРИСТВО', 'АТ'],
+  ['ДЕРЖАВНА УСТАНОВА', 'ДУ'],
+];
+const SMALL = new Set(['та', 'і', 'й', 'імені', 'з', 'в', 'у', 'на', 'при']);
+const titleCase = (s) =>
+  s === s.toUpperCase()
+    ? s
+        .toLowerCase()
+        .replace(/(^|[\s(«".-])(\p{L}[\p{L}'’]*)/gu, (m, a, w, off) => (off > 0 && SMALL.has(w) ? m : a + w[0].toUpperCase() + w.slice(1)))
+    : s;
+const splitName = (raw) => {
+  let rest = raw.trim();
+  let form = '';
+  for (const [full, short] of FORMS) {
+    if (rest.toUpperCase().startsWith(full)) {
+      form = short;
+      rest = rest.slice(full.length);
+      break;
+    }
+  }
+  const inner = titleCase(rest.replace(/["«»“”„]/g, ' ').replace(/\s{2,}/g, ' ').trim());
+  return { form, inner };
+};
+const cleanName = (raw) => splitName(raw).inner;
+const registryName = (raw) => {
+  const { form, inner } = splitName(raw);
+  return form ? `${form} «${inner}»` : inner;
+};
 const normAddr = (s) => s.toLowerCase().replace(/[.,]/g, ' ').replace(/\s+/g, ' ').trim();
 
 const cityLc = cityName.toLowerCase();
-const inCity = rows.slice(1).filter((r) => {
-  const where = idx.settlement >= 0 ? r[idx.settlement] : r[idx.address];
-  return (where ?? '').toLowerCase().includes(cityLc);
-});
+// Без колонки населеного пункту місто беремо з адреси «УКРАЇНА, … область, м. ХАРКІВ, вулиця»:
+// просте входження зачепило б «Харківське шосе» в Києві чи «Харківську область».
+const cityInAddress = new RegExp(`(^|,)\\s*м\\.\\s*${cityLc.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*(,|$)`, 'iu');
+const inCity = rows.slice(1).filter((r) =>
+  idx.settlement >= 0 ? (r[idx.settlement] ?? '').toLowerCase().trim() === cityLc : cityInAddress.test(r[idx.address] ?? ''),
+);
+// «УКРАЇНА, ХАРКІВСЬКА область, м. ХАРКІВ, ЯРОСЛАВА МУДРОГО 30-А» → «Ярослава Мудрого 30-А»
+const streetPart = (s) => {
+  const parts = s.split(',').map((x) => x.trim());
+  const i = parts.findIndex((x) => /^м\.\s/iu.test(x));
+  const street = (i >= 0 ? parts.slice(i + 1) : parts).join(', ');
+  return street.toLowerCase().replace(/(^|[\s(«"-])(\p{L})/gu, (_, a, b) => a + b.toUpperCase()).replace(/-(\p{L})\b/gu, (m) => m.toUpperCase());
+};
 
 const partners = JSON.parse(readFileSync('data/screening/partners.json', 'utf8')).partners.filter((p) => p.city === citySlug);
 const byEdrpou = new Map();
 for (const r of inCity) {
   const edrpou = (r[idx.edrpou] ?? '').replace(/\D/g, '');
-  const address = (r[idx.address] ?? '').trim();
+  const address = streetPart((r[idx.address] ?? '').trim());
   if (!edrpou) continue;
-  const inst = byEdrpou.get(edrpou) ?? { edrpou, registry_name: (r[idx.name] ?? '').trim(), name: cleanName(r[idx.name] ?? ''), addresses: [] };
+  const inst = byEdrpou.get(edrpou) ?? { edrpou, registry_name: registryName(r[idx.name] ?? ''), name: cleanName(r[idx.name] ?? ''), addresses: [] };
   if (address && !inst.addresses.some((a) => normAddr(a) === normAddr(address))) inst.addresses.push(address);
   byEdrpou.set(edrpou, inst);
 }
 
 const institutions = [...byEdrpou.values()].map((inst) => {
   const p = partners.find(
-    (p) => p.edrpou.includes(inst.edrpou) || inst.addresses.some((a) => p.addresses.some((pa) => normAddr(pa) === normAddr(a))),
+    (p) => p.edrpou.includes(inst.edrpou) || inst.addresses.some((a) => p.addresses.some((pa) => normAddr(a).endsWith(normAddr(pa)))),
   );
   return p
     ? { ...inst, is_partner: true, partner_brand: p.brand, clinic_slug: p.clinic_slug, online_booking: Boolean(p.online_booking) }

@@ -2,19 +2,30 @@
   "city": "kharkiv",
   "as_of": "2026-10-24",
   "source": "https://screening.moz.gov.ua/",
-  "_comment": "Тимчасово: лише партнер, адреси з нотатки Оркестратора (знімок реєстру 24.10). ЄДРПОУ і решту закладів заповнить scripts/import-screening-registry.mjs з повного файлу реєстру.",
+  "_comment": "Тимчасово: лише партнер. Рядки ОН Клінік з файлу screening-40-registry-2026-10-24.xlsx (знімок реєстру МОЗ 24.10, аркуш «ОН Клінік»); повного переліку Харкова у файлі немає. Решту закладів заповнить scripts/import-screening-registry.mjs з CSV реєстру.",
   "partial": true,
   "institutions": [
     {
-      "edrpou": "",
-      "registry_name": "",
+      "edrpou": "43703222",
+      "registry_name": "ТОВ «Медікал Адванст»",
       "name": "ОН Клінік Харків",
       "addresses": [
-        "вул. Ярослава Мудрого, 30-А",
-        "просп. Героїв Харкова, 257 (Палац Спорту)"
+        "вул. Ярослава Мудрого, 30-А"
       ],
       "is_partner": true,
       "partner_brand": "ОН Клінік Харків",
+      "clinic_slug": "onclinic-kharkiv",
+      "online_booking": true
+    },
+    {
+      "edrpou": "42254633",
+      "registry_name": "ТОВ «МЦ ОН Клінік Харків Палац Спорту»",
+      "name": "ОН Клінік Харків, Палац Спорту",
+      "addresses": [
+        "просп. Героїв Харкова, 257 (Палац Спорту)"
+      ],
+      "is_partner": true,
+      "partner_brand": "ОН Клінік Харків, Палац Спорту",
       "clinic_slug": "onclinic-kharkiv",
       "online_booking": true
     }
