@@ -20,7 +20,7 @@ function Card({ inst }: { inst: RegistryInstitution }) {
           </span>
         )}
         <h3 className="text-[17px] font-bold text-ink leading-snug">{inst.is_partner && inst.partner_brand ? inst.partner_brand : inst.name}</h3>
-        {inst.is_partner && <p className="mt-0.5 text-[13px] text-gray-500">{inst.registry_name}</p>}
+        {inst.is_partner && inst.registry_name && <p className="mt-0.5 text-[13px] text-gray-500">{inst.registry_name}</p>}
         <ul className="mt-2 space-y-1 text-[15px] text-text-secondary">
           {inst.addresses.map((a) => (
             <li key={a}>{a}</li>
@@ -41,11 +41,13 @@ export default function InstitutionList({
   asOfLabel,
   sourceUrl,
   partnerNote,
+  partial = false,
 }: {
   institutions: RegistryInstitution[];
   asOfLabel: string | null;
   sourceUrl: string;
   partnerNote: string;
+  partial?: boolean;
 }) {
   if (institutions.length === 0) {
     return (
@@ -64,7 +66,7 @@ export default function InstitutionList({
     <div className="mt-6">
       <ul className="space-y-3">
         {open.map((i) => (
-          <Card key={i.edrpou} inst={i} />
+          <Card key={i.edrpou || i.name} inst={i} />
         ))}
       </ul>
       {hidden.length > 0 && (
@@ -74,14 +76,15 @@ export default function InstitutionList({
           </summary>
           <ul className="space-y-3">
             {hidden.map((i) => (
-              <Card key={i.edrpou} inst={i} />
+              <Card key={i.edrpou || i.name} inst={i} />
             ))}
           </ul>
         </details>
       )}
       {partners.length > 0 && <p className="mt-5 text-[15px] leading-relaxed text-gray-500">{partnerNote}</p>}
       <p className="mt-3 text-[15px] leading-relaxed text-gray-500">
-        Повний перелік – на <a className="text-link underline" href={sourceUrl}>сайті МОЗ</a>
+        {partial ? 'Тут поки лише заклади партнерів платформи. Усі заклади міста – на ' : 'Повний перелік – на '}
+        <a className="text-link underline" href={sourceUrl}>сайті МОЗ</a>
         {asOfLabel ? `. Дані станом на ${asOfLabel}.` : '.'}
       </p>
     </div>

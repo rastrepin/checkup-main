@@ -21,7 +21,7 @@ export interface RegistryInstitution {
   clinic_slug?: string;
   online_booking: boolean;
 }
-export interface Registry { city: string; as_of: string | null; source: string; institutions: RegistryInstitution[] }
+export interface Registry { city: string; as_of: string | null; source: string; partial?: boolean; institutions: RegistryInstitution[] }
 
 const fill = (s: string) => s.split('{program_amount}').join(programAmountText());
 

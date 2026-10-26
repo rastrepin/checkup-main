@@ -164,7 +164,7 @@ export default function Screening40KharkivPage() {
 
         <Section id={INSTITUTIONS_ID} tone="muted">
           <H2>Заклади програми в Харкові</H2>
-          <InstitutionList institutions={registry.institutions} asOfLabel={dateLabel(registry.as_of)} sourceUrl={SCREENING_40.officialUrl} partnerNote={PARTNER_NOTE} />
+          <InstitutionList institutions={registry.institutions} asOfLabel={dateLabel(registry.as_of)} sourceUrl={SCREENING_40.officialUrl} partnerNote={PARTNER_NOTE} partial={registry.partial} />
         </Section>
 
         <Section width="read">

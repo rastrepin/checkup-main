@@ -1,6 +1,22 @@
 {
   "city": "kharkiv",
-  "as_of": null,
+  "as_of": "2026-10-24",
   "source": "https://screening.moz.gov.ua/",
-  "institutions": []
+  "_comment": "Тимчасово: лише партнер, адреси з нотатки Оркестратора (знімок реєстру 24.10). ЄДРПОУ і решту закладів заповнить scripts/import-screening-registry.mjs з повного файлу реєстру.",
+  "partial": true,
+  "institutions": [
+    {
+      "edrpou": "",
+      "registry_name": "",
+      "name": "ОН Клінік Харків",
+      "addresses": [
+        "вул. Ярослава Мудрого, 30-А",
+        "просп. Героїв Харкова, 257 (Палац Спорту)"
+      ],
+      "is_partner": true,
+      "partner_brand": "ОН Клінік Харків",
+      "clinic_slug": "onclinic-kharkiv",
+      "online_booking": true
+    }
+  ]
 }
