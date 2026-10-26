@@ -1,10 +1,13 @@
 #!/usr/bin/env node
 // Синхронізація цін клініки з таблиці цін у Supabase (clinic_services, checkup_programs).
 //
-// Вхід — CSV-експорт аркуша клініки з таблиці цін (одна позиція на рядок, заголовок
-// у першому рядку; назви колонок — scripts/prices/columns.json).
+// Вхід — CSV-експорт аркуша «ОНКЛІНІК ціни» з таблиці цін (одна позиція на рядок).
+// Рядок заголовка шукається серед перших 10 (над ним можуть бути назва й примітка);
+// дані закінчуються першим рядком з порожнім ID. Назви колонок — columns.json.
+// Рядок без «Нової ціни» — без змін, пропускається.
 //
-// Ключ зіставлення (колонка «Ключ БД»; якщо порожня — код клініки):
+// Ключ зіставлення (перше непорожнє): колонка «Ключ БД», файл --map (ID → ключ),
+// код послуги клініки:
 //   program:<slug>   → checkup_programs (clinic, slug): price_discount = ціна,
 //                      price_regular = ціна без знижки (або ціна, якщо її немає)
 //   service:<code>   → clinic_services (clinic, city, code): price
@@ -38,6 +41,7 @@ export function parseArgs(argv) {
     else if (a === '--apply') args.apply = true;
     else if (a === '--json') args.json = true;
     else if (a === '--db-json') args.dbJson = next();
+    else if (a === '--map') args.map = next();
   }
   return args;
 }
@@ -108,16 +112,24 @@ export function parseDate(raw) {
 }
 
 export function readSheetRows(csvText, columns) {
-  const [header, ...body] = parseCsv(csvText);
-  if (!header) throw new Error('CSV порожній');
-  const idx = mapColumns(header, columns);
-  for (const required of ['price', 'valid_from']) {
-    if (idx[required] == null) throw new Error(`у CSV немає колонки для «${required}» (див. columns.json)`);
-  }
-  if (idx.code == null && idx.db_key == null) throw new Error('у CSV немає ні коду клініки, ні ключа БД');
+  const all = parseCsv(csvText);
+  if (!all.length) throw new Error('CSV порожній');
+  const headerAt = all.slice(0, 10).findIndex((r) => {
+    const m = mapColumns(r, columns);
+    return m.price != null && m.valid_from != null;
+  });
+  if (headerAt < 0) throw new Error('у перших 10 рядках CSV немає заголовка з «Нова ціна» і «Діє з» (див. columns.json)');
+  const idx = mapColumns(all[headerAt], columns);
+  if (idx.code == null && idx.db_key == null && idx.id == null) throw new Error('у CSV немає ні ID, ні коду клініки, ні ключа БД');
   const cell = (r, f) => (idx[f] == null ? '' : (r[idx[f]] ?? '').trim());
+  let body = all.slice(headerAt + 1);
+  if (idx.id != null) {
+    const end = body.findIndex((r) => !cell(r, 'id'));
+    if (end >= 0) body = body.slice(0, end);
+  }
   return body.map((r, n) => ({
-    line: n + 2,
+    line: headerAt + n + 2,
+    id: cell(r, 'id'),
     code: cell(r, 'code'),
     name: cell(r, 'name'),
     city: cell(r, 'city'),
@@ -129,7 +141,16 @@ export function readSheetRows(csvText, columns) {
   }));
 }
 
-/** Код клініки без пробілів, регістру і суфікса «-OH» (у базі ОН Клінік коди мають його, у прайсі — ні). */
+// Місто в таблиці пишуть назвою («Харків»), у базі — slug («kharkiv»).
+const CITY_SLUGS = {
+  'харків': 'kharkiv', 'дніпро': 'dnipro', 'київ': 'kyiv', 'львів': 'lviv', 'одеса': 'odesa',
+  'миколаїв': 'mykolaiv', 'рівне': 'rivne', 'запоріжжя': 'zaporizhzhia', 'вінниця': 'vinnytsia',
+};
+export function citySlug(name) {
+  const n = (name ?? '').trim().toLowerCase();
+  return CITY_SLUGS[n] ?? n;
+}
+
 export function normCode(code) {
   return String(code ?? '').trim().toUpperCase().replace(/\s+/g, '').replace(/-OH$/, '');
 }
@@ -137,7 +158,7 @@ export function normCode(code) {
 // ── План змін: чиста функція, без мережі ─────────────────────────────────────
 // db = { programs: [{id, slug, name_ua, price_regular, price_discount, price_date}],
 //        services: [{id, code, name_ua, city, price, price_date}] }
-export function planPriceUpdate(rows, db, { city, today, maxChangePct }) {
+export function planPriceUpdate(rows, db, { city, today, maxChangePct, map = {} }) {
   const programs = new Map(db.programs.map((p) => [p.slug, p]));
   const services = new Map(
     db.services.filter((s) => s.code && (!city || s.city === city)).map((s) => [normCode(s.code), s])
@@ -147,19 +168,22 @@ export function planPriceUpdate(rows, db, { city, today, maxChangePct }) {
   const seen = new Set();
 
   for (const row of rows) {
-    if (row.price == null && !row.code && !row.dbKey) continue; // порожній рядок
-    if (city && row.city && row.city.toLowerCase() !== city) continue; // інше місто
-    if (Number.isNaN(row.price) || row.price == null) { hold(row, 'ціна не число'); continue; }
+    if (row.price == null) continue; // нової ціни немає — без змін
+    if (city && row.city && citySlug(row.city) !== city) continue; // інше місто
+    if (Number.isNaN(row.price)) { hold(row, 'ціна не число'); continue; }
     if (row.price <= 0) { hold(row, 'ціна нуль або менше'); continue; }
     if (Number.isNaN(row.priceBefore)) { hold(row, 'ціна без знижки не число'); continue; }
     if (!row.validFrom) { hold(row, `дата «діє з» не розпізнана: «${row.validFromRaw}»`); continue; }
 
-    const key = row.dbKey || row.code;
+    const key = row.dbKey || (row.id && map[row.id]) || row.code;
+    if (!key) { hold(row, `${row.id || 'рядок'} ще не зіставлено з базою (немає ні ключа, ні коду клініки)`); continue; }
     let target;
     if (key.startsWith('program:')) {
       const p = programs.get(key.slice(8).trim());
       if (!p) { hold(row, `програми ${key.slice(8)} немає в базі`); continue; }
-      const before = row.priceBefore ?? row.price;
+      // Без «ціни без знижки» закреслена ціна зберігає ту саму пропорцію до ціни, що й зараз.
+      const ratio = p.price_regular && p.price_discount ? p.price_regular / p.price_discount : 1;
+      const before = row.priceBefore ?? Math.round(row.price * ratio);
       if (before < row.price) { hold(row, 'ціна без знижки менша за ціну'); continue; }
       target = {
         table: 'checkup_programs', id: p.id, label: p.name_ua,
@@ -199,13 +223,15 @@ export function planPriceUpdate(rows, db, { city, today, maxChangePct }) {
 export function formatReport(plan, { clinic, city, today, apply }) {
   const L = [];
   const money = (n) => (n == null ? '—' : `${n.toLocaleString('uk-UA').replace(/ /g, ' ')} грн`);
+  const line = (c) => `- ${c.label}: ${money(c.old)} → ${money(c.row.price)} з ${c.row.validFrom}`
+    + (c.patch.price_regular != null ? ` (закреслена ${money(c.patch.price_regular)})` : '');
   L.push(`Ціни ${clinic}${city ? ` (${city})` : ''} на ${today}${apply ? '' : ' — перевірка, нічого не змінено'}`);
   L.push('');
   L.push(`${apply ? 'Оновлено' : 'Буде оновлено'}: ${plan.apply.length}`);
-  for (const c of plan.apply) L.push(`- ${c.label}: ${money(c.old)} → ${money(c.row.price)} з ${c.row.validFrom}`);
+  for (const c of plan.apply) L.push(line(c));
   if (plan.scheduled.length) {
     L.push('', `Чекають дати: ${plan.scheduled.length}`);
-    for (const c of plan.scheduled) L.push(`- ${c.label}: ${money(c.old)} → ${money(c.row.price)} з ${c.row.validFrom}`);
+    for (const c of plan.scheduled) L.push(line(c));
   }
   if (plan.held.length) {
     L.push('', `Потребує рішення: ${plan.held.length}`);
@@ -255,7 +281,7 @@ async function applyPlan(cfg, plan) {
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   if (!args.clinic || !args.csv) {
-    console.error('Використання: --clinic <slug> --csv <файл> [--city <slug>] [--today YYYY-MM-DD] [--apply]');
+    console.error('Використання: --clinic <slug> --csv <файл> [--city <slug>] [--map <id→ключ.json>] [--today YYYY-MM-DD] [--apply]');
     process.exit(2);
   }
   const columns = JSON.parse(readFileSync(join(HERE, 'columns.json'), 'utf8'));
@@ -264,7 +290,8 @@ async function main() {
   if (args.dbJson && args.apply) throw new Error('--db-json не можна поєднувати з --apply');
   const cfg = args.dbJson ? null : sbConfig(!!args.apply);
   const db = args.dbJson ? JSON.parse(readFileSync(args.dbJson, 'utf8')) : await loadDb(cfg, args.clinic);
-  const plan = planPriceUpdate(rows, db, args);
+  const map = args.map ? JSON.parse(readFileSync(args.map, 'utf8')) : {};
+  const plan = planPriceUpdate(rows, db, { ...args, map });
   if (args.apply) await applyPlan(cfg, plan);
   console.log(args.json ? JSON.stringify(plan, null, 2) : formatReport(plan, args));
 }
