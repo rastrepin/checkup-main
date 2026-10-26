@@ -34,7 +34,7 @@ export function loadT3(city: string, slug: string): T3Doc {
 /** Порядок (spec §5 п.3): спершу партнери платформи, далі решта за алфавітом. */
 export function loadRegistry(city: string): Registry {
   const reg = JSON.parse(readFileSync(join(process.cwd(), 'data', 'screening', `registry-${city}.json`), 'utf8')) as Registry;
-  reg.institutions.sort((a, b) => Number(b.is_partner) - Number(a.is_partner) || a.name.localeCompare(b.name, 'uk'));
+  reg.institutions.sort((a, b) => Number(b.is_partner) - Number(a.is_partner) || a.name.localeCompare(b.name, 'uk', { numeric: true }));
   return reg;
 }
 

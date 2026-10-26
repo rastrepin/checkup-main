@@ -24,6 +24,7 @@ const COLUMNS = {
   name: ['назва', 'найменування', 'заклад'],
   address: ['адреса', 'address'],
   settlement: ['населений пункт', 'місто', 'громада', 'settlement', 'city'],
+  ownership: ['форма власності'],
 };
 
 function parseCsv(text) {
@@ -50,14 +51,16 @@ const header = rows[0].map((h) => h.trim().toLowerCase());
 const idx = {};
 for (const [key, words] of Object.entries(COLUMNS)) {
   idx[key] = header.findIndex((h) => words.some((w) => h.includes(w)));
-  if (idx[key] < 0 && key !== 'settlement') {
+  if (idx[key] < 0 && key !== 'settlement' && key !== 'ownership') {
     console.error(`Не знайдено колонку «${key}». Заголовки CSV: ${header.join(' | ')}`);
     process.exit(1);
   }
 }
 
-// Організаційна форма з реєстру → коротка: «ТОВАРИСТВО З ОБМЕЖЕНОЮ ВІДПОВІДАЛЬНІСТЮ "МЕДІКАЛ АДВАНСТ"» → ТОВ «Медікал Адванст».
-// \b у JS не працює з кирилицею, тому межі слова – через пробіли й лапки.
+// Назви в реєстрі ВЕЛИКИМИ ЛІТЕРАМИ з повною формою власності. Для сторінки:
+//   КНП "МІСЬКА ПОЛІКЛІНІКА № 18" ХАРКІВСЬКОЇ МІСЬКОЇ РАДИ → name «Міська поліклініка № 18», registry_name КНП «Міська поліклініка № 18» Харківської міської ради
+//   ФОП КОНОВАЛЕНКО ТЕТЯНА МИКОЛАЇВНА → ФОП Коноваленко Т. М.
+// Що автоматика не вгадає – у data/screening/name-overrides.json (ключ – ЄДРПОУ).
 const FORMS = [
   ['ТОВАРИСТВО З ОБМЕЖЕНОЮ ВІДПОВІДАЛЬНІСТЮ', 'ТОВ'],
   ['КОМУНАЛЬНЕ НЕКОМЕРЦІЙНЕ ПІДПРИЄМСТВО', 'КНП'],
@@ -68,31 +71,70 @@ const FORMS = [
   ['АКЦІОНЕРНЕ ТОВАРИСТВО', 'АТ'],
   ['ДЕРЖАВНА УСТАНОВА', 'ДУ'],
 ];
-const SMALL = new Set(['та', 'і', 'й', 'імені', 'з', 'в', 'у', 'на', 'при']);
-const titleCase = (s) =>
-  s === s.toUpperCase()
-    ? s
-        .toLowerCase()
-        .replace(/(^|[\s(«".-])(\p{L}[\p{L}'’]*)/gu, (m, a, w, off) => (off > 0 && SMALL.has(w) ? m : a + w[0].toUpperCase() + w.slice(1)))
-    : s;
-const splitName = (raw) => {
-  let rest = raw.trim();
+// Власні прикметники (міста, країна) лишаються з великої: «Харківської міської ради».
+const PROPER = /^(харків|україн|рубіжан|луганськ|куп['’]ян|київ|львів|одес|дніпр|слобожан|європ)/u;
+const VOWELS = /[аеєиіїоуюяaeiou]/iu;
+const cap = (w) => (w ? w[0].toUpperCase() + w.slice(1) : w);
+const word = (w, first) => {
+  if (/^(\p{L}\.)+\p{L}?\.?$/u.test(w)) return w.toUpperCase(); // ініціали Л.Т.
+  if (w.length <= 3 && !VOWELS.test(w) && /\p{L}/u.test(w)) return w.toUpperCase(); // абревіатури МЗ, ЦНАП-подібні
+  return first || PROPER.test(w) ? cap(w) : w;
+};
+const sentence = (s, capFirst = true) =>
+  s
+    .toLowerCase()
+    .replace(/№\s*/g, '№ ')
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((w, i) => word(w, capFirst && i === 0))
+    .join(' ');
+// Коротка назва в лапках: до двох слів – кожне з великої («Доктор Алекс»), довша – як речення.
+const brand = (s) => {
+  const ws = s.trim().split(/\s+/);
+  return ws.length <= 2 ? ws.map((w) => word(w.toLowerCase(), true)).join(' ') : sentence(s);
+};
+const isUpper = (s) => s === s.toUpperCase();
+const fopName = (raw) => {
+  const [surname, ...given] = raw.trim().split(/\s+/);
+  return `ФОП ${cap(surname.toLowerCase())} ${given.map((g) => g[0].toUpperCase() + '.').join(' ')}`.trim();
+};
+const names = (raw, ownership) => {
+  const src = raw.replace(/\s{2,}/g, ' ').trim();
+  if (/фоп/i.test(ownership ?? '')) {
+    const n = fopName(src);
+    return { name: n, registry_name: n };
+  }
+  let rest = src;
   let form = '';
   for (const [full, short] of FORMS) {
     if (rest.toUpperCase().startsWith(full)) {
       form = short;
-      rest = rest.slice(full.length);
+      rest = rest.slice(full.length).trim();
       break;
     }
   }
-  const inner = titleCase(rest.replace(/["«»“”„]/g, ' ').replace(/\s{2,}/g, ' ').trim());
-  return { form, inner };
+  const fix = (t) => (isUpper(t) ? t : t); // назви не великими літерами лишаємо як є
+  const parts = rest.split(/["«»“”„]+/).map((x) => x.trim());
+  let name, full;
+  if (parts.length >= 2 && parts[1]) {
+    const before = parts[0] ? fix(isUpper(parts[0]) ? sentence(parts[0]) : parts[0]) : '';
+    const inside = isUpper(parts[1]) ? brand(parts[1]) : parts[1];
+    const after = parts.slice(2).filter(Boolean).join(' ');
+    const afterS = after ? (isUpper(after) ? sentence(after, false) : after) : '';
+    const quoted = `«${inside}»`;
+    full = [form, before, quoted, afterS].filter(Boolean).join(' ');
+    const shortAfter = /^харківської міської ради$/iu.test(afterS) ? '' : afterS;
+    name = [before ? `${before} ${quoted}` : inside, shortAfter].filter(Boolean).join(' ');
+  } else {
+    name = isUpper(rest) ? sentence(rest) : rest;
+    full = [form, name].filter(Boolean).join(' ');
+  }
+  return { name, registry_name: full };
 };
-const cleanName = (raw) => splitName(raw).inner;
-const registryName = (raw) => {
-  const { form, inner } = splitName(raw);
-  return form ? `${form} «${inner}»` : inner;
-};
+let overrides = {};
+try {
+  overrides = JSON.parse(readFileSync('data/screening/name-overrides.json', 'utf8'));
+} catch {}
 const normAddr = (s) => s.toLowerCase().replace(/[.,]/g, ' ').replace(/\s+/g, ' ').trim();
 
 const cityLc = cityName.toLowerCase();
@@ -103,11 +145,17 @@ const inCity = rows.slice(1).filter((r) =>
   idx.settlement >= 0 ? (r[idx.settlement] ?? '').toLowerCase().trim() === cityLc : cityInAddress.test(r[idx.address] ?? ''),
 );
 // «УКРАЇНА, ХАРКІВСЬКА область, м. ХАРКІВ, ЯРОСЛАВА МУДРОГО 30-А» → «Ярослава Мудрого 30-А»
+const STREET_TYPE = /^(вул|вулиця|пр|пр-т|просп|проспект|пров|провулок|пл|площа|бульв|бул|бульвар)\.?\s+/iu;
+const LOWER_WORDS = new Set(['шлях', 'узвіз', 'набережна', 'шосе', 'літ', 'літ.', 'корп', 'корп.']);
 const streetPart = (s) => {
   const parts = s.split(',').map((x) => x.trim());
   const i = parts.findIndex((x) => /^м\.\s/iu.test(x));
-  const street = (i >= 0 ? parts.slice(i + 1) : parts).join(', ');
-  return street.toLowerCase().replace(/(^|[\s(«"-])(\p{L})/gu, (_, a, b) => a + b.toUpperCase()).replace(/-(\p{L})\b/gu, (m) => m.toUpperCase());
+  const street = (i >= 0 ? parts.slice(i + 1) : parts).join(', ').toLowerCase().replace(STREET_TYPE, '');
+  return street
+    .split(/\s+/)
+    .map((w, k) => (k > 0 && LOWER_WORDS.has(w) ? w : w.replace(/(^|[(«"-])(\p{L})/gu, (_, a, b) => a + b.toUpperCase())))
+    .join(' ')
+    .replace(/(\d+)\s*-?\s*(\p{L})(?=$|[\s,/])/gu, (_, n, l) => `${n}-${l.toUpperCase()}`);
 };
 
 const partners = JSON.parse(readFileSync('data/screening/partners.json', 'utf8')).partners.filter((p) => p.city === citySlug);
@@ -116,7 +164,7 @@ for (const r of inCity) {
   const edrpou = (r[idx.edrpou] ?? '').replace(/\D/g, '');
   const address = streetPart((r[idx.address] ?? '').trim());
   if (!edrpou) continue;
-  const inst = byEdrpou.get(edrpou) ?? { edrpou, registry_name: registryName(r[idx.name] ?? ''), name: cleanName(r[idx.name] ?? ''), addresses: [] };
+  const inst = byEdrpou.get(edrpou) ?? { edrpou, ...names(r[idx.name] ?? '', idx.ownership >= 0 ? r[idx.ownership] : ''), ...(overrides[edrpou] ?? {}), addresses: [] };
   if (address && !inst.addresses.some((a) => normAddr(a) === normAddr(address))) inst.addresses.push(address);
   byEdrpou.set(edrpou, inst);
 }
@@ -126,7 +174,7 @@ const institutions = [...byEdrpou.values()].map((inst) => {
     (p) => p.edrpou.includes(inst.edrpou) || inst.addresses.some((a) => p.addresses.some((pa) => normAddr(a).endsWith(normAddr(pa)))),
   );
   return p
-    ? { ...inst, is_partner: true, partner_brand: p.brand, clinic_slug: p.clinic_slug, online_booking: Boolean(p.online_booking) }
+    ? { ...inst, is_partner: true, partner_brand: p.brands?.[inst.edrpou] ?? p.brand, clinic_slug: p.clinic_slug, online_booking: Boolean(p.online_booking) }
     : { ...inst, is_partner: false, online_booking: false };
 });
 
