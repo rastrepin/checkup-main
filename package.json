@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "prebuild": "node scripts/check-routes.mjs",
+    "prebuild": "node scripts/check-routes.mjs && node scripts/check-zona-dovity.mjs",
     "build": "next build",
     "start": "next start"
   },
