@@ -5,7 +5,8 @@ import { TILDA_ROBOTS_DISALLOW } from '@/lib/seo/tilda-robots-disallow';
 // Tilda віддає robots нестабільно). Правила:
 // 1. службові сторінки Tilda (знімок lib/seo/tilda-robots-disallow.ts);
 // 2. sitemap: /sitemap.xml (індекс next + tilda) і /sitemap-store.xml
-//    (каталог лікарів Tilda, віддається через проксі).
+//    (каталог товарів Tilda: через проксі, а коли діє 301 хвилі 1 – фільтр
+//    Next.js app/sitemap-store.xml, див. middleware.ts).
 // Окремих Disallow для чернеток Next.js немає: на домені їх не існує,
 // ці URL віддає Tilda (Р42).
 

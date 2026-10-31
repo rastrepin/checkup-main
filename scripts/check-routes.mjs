@@ -58,6 +58,43 @@ if (missing.length > 0) {
   process.exit(1);
 }
 
+// 301 хвилі 1 (lib/seo/redirects-wave1.json, SEO-MIGRATION v2.4 §3–4): один стрибок і лише на сторінку Next.js.
+// Ціль – буквальна сторінка в app/ (не адреса Tilda), не джерело іншого правила; джерела без дублів і не погоджені.
+// Активність (ціль у approved-routes.json) тут лише друкується – вмикає її next.config.ts.
+const REDIRECTS_FILE = join('lib', 'seo', 'redirects-wave1.json');
+const redirects = JSON.parse(readFileSync(REDIRECTS_FILE, 'utf8'));
+const redirectErrors = [];
+const sources = new Set();
+const sourceMatches = (r, p) => {
+  if (r.match === 'tproduct-id') {
+    const i = r.source.lastIndexOf('/');
+    const id = r.source.slice(i + 1).match(/^\d+-\d+/)?.[0] ?? r.source.slice(i + 1);
+    const prefix = `${r.source.slice(0, i)}/${id}`;
+    return p === prefix || p.startsWith(`${prefix}-`);
+  }
+  return p === r.source || p.startsWith(`${r.source}/`);
+};
+for (const r of redirects) {
+  const tag = `${r.source} → ${r.destination}`;
+  if (!r.source?.startsWith('/') || !r.destination?.startsWith('/')) redirectErrors.push(`${tag}: шляхи мають починатися з "/"`);
+  if (!['path-and-children', 'tproduct-id'].includes(r.match)) redirectErrors.push(`${tag}: невідомий match "${r.match}"`);
+  if (sources.has(r.source)) redirectErrors.push(`${tag}: дубль джерела`);
+  sources.add(r.source);
+  if (!routeSet.has(normalize(r.destination))) redirectErrors.push(`${tag}: ціль не має page.tsx у app/ (301 на Tilda заборонено)`);
+  if (approved.includes(normalize(r.source))) redirectErrors.push(`${tag}: джерело – погоджена сторінка Next.js`);
+  for (const other of redirects) {
+    if (other !== r && sourceMatches(other, normalize(r.destination))) redirectErrors.push(`${tag}: ціль – джерело іншого правила (ланцюжок)`);
+  }
+}
+if (redirectErrors.length > 0) {
+  console.error(`\n[check-routes] БІЛД ЗУПИНЕНО: помилки в ${REDIRECTS_FILE}:`);
+  for (const e of redirectErrors) console.error('  - ' + e);
+  console.error('');
+  process.exit(1);
+}
+const activeRedirects = redirects.filter((r) => approved.includes(normalize(r.destination)));
+console.log(`[check-routes] 301 хвилі 1: ${redirects.length}, активних (ціль погоджена): ${activeRedirects.length}.`);
+
 // Production без origin – чернетки стали б видимими.
 const origin = process.env.TILDA_ORIGIN?.replace(/\/$/, '');
 if (process.env.VERCEL_ENV === 'production' && !origin) {

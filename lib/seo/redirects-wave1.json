@@ -1,0 +1,74 @@
+[
+  {
+    "source": "/ukr/corporate/health-checkup/kharkiv",
+    "destination": "/ukr/kharkiv",
+    "class": "thematic-no-traffic",
+    "city": "kharkiv",
+    "match": "path-and-children",
+    "note": "SEO-MIGRATION §3: корпоративний, 0 кліків (GSC 12 міс.)"
+  },
+  {
+    "source": "/ukr/perevirka-zoru/kharkiv",
+    "destination": "/ukr/kharkiv",
+    "class": "thematic-no-traffic",
+    "city": "kharkiv",
+    "match": "path-and-children",
+    "note": "SEO-MIGRATION §3: перевірка зору, 8+4 кліки – клас «без трафіку»"
+  },
+  {
+    "source": "/ukr/corporate/health-checkup/dnipro",
+    "destination": "/ukr/dnipro",
+    "class": "thematic-no-traffic",
+    "city": "dnipro",
+    "match": "path-and-children",
+    "note": "checkup-tilda-content/dnipro.json other_city_pages"
+  },
+  {
+    "source": "/ukr/corporate/health-checkup/odesa",
+    "destination": "/ukr/odesa",
+    "class": "thematic-no-traffic",
+    "city": "odesa",
+    "match": "path-and-children",
+    "note": "checkup-tilda-content/odesa.json other_city_pages"
+  },
+  {
+    "source": "/ukr/female-checkup/uzhgorod/tproduct/959951761-815403394172-check-up-zhnki-18-29-r-v-kredoklnk",
+    "destination": "/ukr/female-checkup/do-30-rokiv/uzhgorod",
+    "class": "tproduct-program",
+    "city": "uzhgorod",
+    "match": "tproduct-id",
+    "note": "Check-up жінки 18–29 р., Кредо Клінік"
+  },
+  {
+    "source": "/ukr/female-checkup/uzhgorod/tproduct/959951761-394624645512-check-up-zhnki-30-39-r-v-kredoklnk",
+    "destination": "/ukr/female-checkup/do-40-rokiv/uzhgorod",
+    "class": "tproduct-program",
+    "city": "uzhgorod",
+    "match": "tproduct-id",
+    "note": "Check-up жінки 30–39 р., Кредо Клінік"
+  },
+  {
+    "source": "/ukr/female-checkup/uzhgorod/tproduct/959951761-143836691832-check-up-zhnki-40-49-r-v-kredoklnk",
+    "destination": "/ukr/female-checkup/40-50-rokiv/uzhgorod",
+    "class": "tproduct-program",
+    "city": "uzhgorod",
+    "match": "tproduct-id",
+    "note": "Check-up жінки 40–49 р., Кредо Клінік"
+  },
+  {
+    "source": "/ukr/female-checkup/uzhgorod/tproduct/959951761-853438779062-check-up-zhnki-50-v-kredoklnk",
+    "destination": "/ukr/female-checkup/vid-50-rokiv/uzhgorod",
+    "class": "tproduct-program",
+    "city": "uzhgorod",
+    "match": "tproduct-id",
+    "note": "Check-up жінки 50+, Кредо Клінік"
+  },
+  {
+    "source": "/ukr/female-checkup/uzhgorod/tproduct/959951761-526451835472-check-up-zhnki-50-rozshirenii-v-kredokln",
+    "destination": "/ukr/female-checkup/vid-50-rokiv/uzhgorod",
+    "class": "tproduct-program",
+    "city": "uzhgorod",
+    "match": "tproduct-id",
+    "note": "Check-up жінки 50+ розширений, Кредо Клінік"
+  }
+]
