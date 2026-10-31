@@ -149,6 +149,7 @@
   --brand-accent-text: #ffffff;    /* 4. 5.32 / 6.93 */
   --brand-secondary: #04D3D9;      /* 5. декор */
   --link: #005485;                 /* 7. 8.06 на білому, 7.70 на #f8fafc */
+  --star: #f59e0b;                 /* ★ рядка рейтингу Google (ui-kit §2.8, специфікація хабу міста §5.3) */
 
   /* 8–12. Темний hero (головна, чекапи) */
   --header-bg: linear-gradient(180deg, #0B3E5E 0%, #082F48 100%);
