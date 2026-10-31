@@ -55,6 +55,26 @@ export const CHECKUP_CITIES: Record<string, CheckupCity> = {
     contentDir: 'kharkiv',
     ruSlug: 'kharkov',
   },
+  // Дніпро й Одеса (31.10.2026): клініка – ОН Клінік міста (clinics.slug перевірено в базі і в
+  // checkup-tilda-content/{dnipro,odesa}.json → clinics[].db_slug). Рецензента не призначено.
+  dnipro: {
+    slug: 'dnipro',
+    name: 'Дніпро',
+    loc: 'Дніпрі',
+    clinicSlug: 'onclinic-dnipro',
+    reviewer: null,
+    contentDir: 'city-template',
+    ruSlug: null,
+  },
+  odesa: {
+    slug: 'odesa',
+    name: 'Одеса',
+    loc: 'Одесі',
+    clinicSlug: 'onclinic-odesa',
+    reviewer: null,
+    contentDir: 'city-template',
+    ruSlug: null,
+  },
 };
 
 export function getCheckupCity(slug: string): CheckupCity | null {
