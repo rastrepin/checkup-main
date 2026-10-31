@@ -305,13 +305,11 @@ export function geoText(params: {
   branches: { address_ua: string; metro_ua: string | null }[];
   programName?: string | null;
   missingText?: string | null;
-  /** clinics.phone (латка етапу 1, п. 2.7); порожній – фраза про телефон не виводиться. */
-  phone?: string | null;
 }): string {
-  const { subject, cityIn = 'у Харкові', clinicName, branches, programName, missingText, phone } = params;
+  const { subject, cityIn = 'у Харкові', clinicName, branches, programName, missingText } = params;
   const count = BRANCH_COUNT_WORDS[branches.length] ?? String(branches.length);
   const list = branches.map((b) => `${b.address_ua}${b.metro_ua ? ` (${b.metro_ua})` : ''}`).join('; ');
-  let text = `${subject} ${cityIn} можна пройти в ${clinicName}: ${count} ${branchesWord(branches.length)}, ${list}${phone?.trim() ? `, телефон ${phone.trim()}` : ''}.`;
+  let text = `${subject} ${cityIn} можна пройти в ${clinicName}: ${count} ${branchesWord(branches.length)}, ${list}.`;
   if (programName) text += ` Програма клініки: «${programName}».`;
   if (missingText) text += ` ${missingText}`;
   return text;
