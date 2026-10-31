@@ -10,6 +10,11 @@ const APPROVED: string[] = JSON.parse(
 const isApproved = (path: string) => APPROVED.includes(path.replace(/\/+$/, "") || "/");
 
 const nextConfig: NextConfig = {
+  // Необов'язкові блоки сторінок міста читаються з content/ під час рендеру (lib/content/city-md.ts);
+  // при ревалідації (ISR) файли мають бути в серверній збірці.
+  outputFileTracingIncludes: {
+    '/ukr/*': ['./content/kharkiv/*.md', './content/city-template/*.md'],
+  },
   // Проксі на Tilda під час міграції живе в middleware.ts (allow-list
   // lib/seo/approved-routes.json, рішення Р42). Fallback rewrites тут свідомо
   // немає: він віддавав би з Next.js будь-яку сторінку, що є в репо,
