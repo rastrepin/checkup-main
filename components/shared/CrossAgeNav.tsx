@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { AGE_STEP_PAGES, type AgeStepGender } from '@/lib/programs/age-pages';
+import { ageStepPagesFor, type AgeStepGender } from '@/lib/programs/age-pages';
 
 interface CrossAgeNavProps {
   /** href поточної сторінки — рядок у переліку рендериться без посилання */
@@ -7,6 +7,8 @@ interface CrossAgeNavProps {
   className?: string;
   /** Задача v2 (24.09.2026): коротке тире в підписах («30–40 років»). За замовчуванням – як у реєстрі. */
   typographicDash?: boolean;
+  /** Слаг міста, вікові сторінки якого показує блок. */
+  citySlug?: string;
 }
 
 const GENDER_LABEL: Record<AgeStepGender, string> = {
@@ -21,13 +23,13 @@ const GENDER_LABEL: Record<AgeStepGender, string> = {
 // заголовок полегшено (text-base замість text-lg, text-gray-700 замість -900) —
 // компонент відкриває "додаткову частину" сторінки, менша типографічна вага
 // сигналізує це без приховування контенту (він лишається повністю в DOM).
-export default function CrossAgeNav({ currentHref, className = '', typographicDash = false }: CrossAgeNavProps) {
+export default function CrossAgeNav({ currentHref, className = '', typographicDash = false, citySlug = 'kharkiv' }: CrossAgeNavProps) {
   const label = (s: string) => (typographicDash ? s.replace(/(\d)-(\d)/g, '$1–$2') : s);
   const genders: AgeStepGender[] = ['female', 'male'];
   const groups = genders
     .map((gender) => ({
       gender,
-      pages: AGE_STEP_PAGES.filter((p) => p.gender === gender),
+      pages: ageStepPagesFor(citySlug).filter((p) => p.gender === gender),
     }))
     .filter((group) => group.pages.length > 0);
 

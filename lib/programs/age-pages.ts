@@ -26,3 +26,8 @@ export const AGE_STEP_PAGES: AgeStepPage[] = [
   { gender: 'male', ageStepLabel: '40-50 років', href: '/ukr/male-checkup/40-50-rokiv/kharkiv' },
   { gender: 'male', ageStepLabel: 'Після 50', href: '/ukr/male-checkup/vid-50-rokiv/kharkiv' },
 ];
+
+/** Ті самі вікові кроки для іншого міста: слаг міста замість kharkiv у кінці адреси (конвеєр міграції, 30.10.2026). */
+export function ageStepPagesFor(citySlug: string): AgeStepPage[] {
+  return AGE_STEP_PAGES.map((p) => ({ ...p, href: p.href.replace(/\/kharkiv$/, `/${citySlug}`) }));
+}
