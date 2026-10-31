@@ -4,7 +4,8 @@
 // Рішення Координатора 01.10.2026: «Для корпоративних клієнтів» веде на одеську сторінку, як на Tilda;
 // Telegram-бот і Viber у шапку не переносяться.
 
-export type HeaderCity = 'kharkiv';
+/** Слаг міста. Меню є лише для міст з HEADER_NAV; для інших шапка – варіант без міста. */
+export type HeaderCity = string;
 
 /** Розділ сайту, до якого належить сторінка: відповідний пункт меню отримує aria-current="page". */
 export type HeaderSection = 'female' | 'male';
@@ -40,7 +41,7 @@ const ABOUT: HeaderItem = {
 };
 
 /** Міський варіант: повне меню, логотип веде на хаб міста. */
-export const HEADER_NAV: Record<HeaderCity, HeaderNav> = {
+export const HEADER_NAV: Record<string, HeaderNav> = {
   kharkiv: {
     logoHref: '/ukr/kharkiv',
     items: [
@@ -68,5 +69,5 @@ export const HEADER_NAV_NO_CITY: HeaderNav = {
 };
 
 export function headerNav(city: HeaderCity | null): HeaderNav {
-  return city ? HEADER_NAV[city] : HEADER_NAV_NO_CITY;
+  return (city && HEADER_NAV[city]) || HEADER_NAV_NO_CITY;
 }

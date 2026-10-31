@@ -3,6 +3,13 @@ import { db } from '@/lib/supabase';
 
 export const runtime = 'nodejs';
 
+// Доставка клініці: після запису в leads передаємо id заявки платформі
+// (POST /api/leads/checkup). Платформа читає заявку з бази і шле її в групу клініки
+// (clinics.telegram_chat_id) + контрольний чат — той самий шлях, що для піддоменів
+// і Tilda. Якщо платформа недоступна, як раніше шлемо заявку в контрольний чат
+// звідси (notifyTelegram), щоб її не загубити.
+const PLATFORM_ORIGIN = (process.env.LEADS_PLATFORM_ORIGIN ?? 'https://onclinic.check-up.in.ua').replace(/\/+$/, '');
+
 interface LeadPayload {
   name: string;
   phone: string;
@@ -31,7 +38,7 @@ interface LeadPayload {
 }
 
 /** Telegram-нотифікація: викликається через after() – виконується після відповіді користувачу, функція дочікується відправлення */
-function notifyTelegram(lead: LeadPayload): Promise<void> {
+function notifyTelegram(lead: LeadPayload, warning?: string): Promise<void> {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_CHAT_ID;
   if (!token || !chatId) {
@@ -40,6 +47,7 @@ function notifyTelegram(lead: LeadPayload): Promise<void> {
   }
 
   const lines = [
+    warning ?? null,
     '🟢 Нова заявка (check-up.in.ua)',
     `Ім'я: ${lead.name}`,
     `Телефон: ${lead.phone}`,
@@ -67,6 +75,28 @@ function notifyTelegram(lead: LeadPayload): Promise<void> {
     });
 }
 
+/** Передає заявку платформі для доставки клініці; при збої — запасна копія в контрольний чат. */
+async function deliverToClinic(leadId: string, lead: LeadPayload): Promise<void> {
+  // Превʼю і локальна розробка не пишуть у групу клініки: тестові заявки — лише в контрольний чат.
+  if (process.env.VERCEL_ENV !== 'production') {
+    await notifyTelegram(lead, '🧪 Тест (превʼю): клініці не надсилалось');
+    return;
+  }
+  try {
+    const res = await fetch(`${PLATFORM_ORIGIN}/api/leads/checkup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lead_id: leadId }),
+      cache: 'no-store',
+    });
+    if (res.ok) return;
+    console.error('[leads] platform delivery', res.status);
+  } catch (err: unknown) {
+    console.error('[leads] platform delivery', err instanceof Error ? err.message : String(err));
+  }
+  await notifyTelegram(lead, '⚠️ Клініці не доставлено автоматично - передайте вручну');
+}
+
 export async function POST(req: NextRequest) {
   let body: LeadPayload;
   try {
@@ -89,8 +119,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'missing context' }, { status: 422 });
   }
 
+  // id генеруємо тут: anon-ключ має право лише на INSERT, повернути id з бази не може.
+  const leadId = crypto.randomUUID();
+
   try {
     const { error } = await (db() as any).from('leads').insert({
+      id: leadId,
       name,
       phone: `+${phoneDigits}`,
       preferred_contact: body.preferred_contact ?? 'call',
@@ -119,6 +153,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'db error' }, { status: 500 });
   }
 
-  after(() => notifyTelegram(body));
+  after(() => deliverToClinic(leadId, body));
   return NextResponse.json({ ok: true });
 }
