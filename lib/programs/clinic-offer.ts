@@ -123,7 +123,7 @@ export async function fetchClinicOffers(
     }
 
     const compositions = await Promise.all(
-      programs.map((p) => fetchProgramComposition(p.id, { programName: p.name_ua, clinicName: clinic.name })),
+      programs.map((p) => fetchProgramComposition(p.id, { programName: p.name_ua, clinicName: clinic.name }, p.composition)),
     );
     return {
       clinic,

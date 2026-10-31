@@ -2,6 +2,8 @@
 // Шаблон кожної вікової сторінки – app/ukr/{female,male}-checkup/{вік}/city-page.tsx; сторінка міста –
 // тонка обгортка {вік}/{slug}/page.tsx (буквальна папка, як вимагає scripts/check-routes.mjs).
 // Програми, ціни і філії шаблон бере з Supabase за clinicSlug.
+// Сторінки типу 5 (хаб міста /ukr/{slug}, «Жінкам» /ukr/female-checkup/{slug}, «Чоловікам» /ukr/male-checkup/{slug})
+// зібрано так само: шаблони app/ukr/city-page.tsx, app/ukr/{female,male}-checkup/city-page.tsx + тонкі обгортки (31.10.2026).
 // Нове місто: запис у CHECKUP_CITIES → node scripts/cities/new-city-pages.mjs {slug} → меню шапки в
 // lib/nav/header.ts → перевірка на прев'ю (?drafts=1) → адреси в lib/seo/approved-routes.json
 // (останнє вмикає сторінки на домені, тому лише після погодження).
@@ -24,8 +26,16 @@ export interface CheckupCity {
   loc: string;
   /** clinics.slug клініки, програми якої показує сторінка. */
   clinicSlug: string;
-  /** Медичний рецензент жіночих вікових сторінок міста (лікар клініки міста). */
-  reviewer: CityReviewer;
+  /** Медичний рецензент жіночих сторінок міста (лікар клініки міста). null – рецензента немає:
+   *  блок «Медичний рецензент» і reviewedBy у JSON-LD не рендеряться (як на скринінгових сторінках). */
+  reviewer: CityReviewer | null;
+  /** Папка content/ з текстами сторінок типу 5 і необов'язковими блоками хабу (what-is-checkup.md,
+   *  how-it-works-single.md, how-it-works-multi.md, team.md). Харків – 'kharkiv' (власні MD),
+   *  нові міста – 'city-template' (спільні MD з плейсхолдерами {city}, {city_loc}). */
+  contentDir: 'kharkiv' | 'city-template';
+  /** Слаг російськомовних сторінок Tilda для hreflang ru («kharkov» → /kharkov, /female-checkup/kharkov).
+   *  null – hreflang ru не виводиться (відповідність ru-сторінок не перевірено). */
+  ruSlug: string | null;
 }
 
 export const CHECKUP_CITIES: Record<string, CheckupCity> = {
@@ -42,6 +52,28 @@ export const CHECKUP_CITIES: Record<string, CheckupCity> = {
       experience: '',
       reviewDate: '',
     },
+    contentDir: 'kharkiv',
+    ruSlug: 'kharkov',
+  },
+  // Дніпро й Одеса (31.10.2026): клініка – ОН Клінік міста (clinics.slug перевірено в базі і в
+  // checkup-tilda-content/{dnipro,odesa}.json → clinics[].db_slug). Рецензента не призначено.
+  dnipro: {
+    slug: 'dnipro',
+    name: 'Дніпро',
+    loc: 'Дніпрі',
+    clinicSlug: 'onclinic-dnipro',
+    reviewer: null,
+    contentDir: 'city-template',
+    ruSlug: null,
+  },
+  odesa: {
+    slug: 'odesa',
+    name: 'Одеса',
+    loc: 'Одесі',
+    clinicSlug: 'onclinic-odesa',
+    reviewer: null,
+    contentDir: 'city-template',
+    ruSlug: null,
   },
 };
 
