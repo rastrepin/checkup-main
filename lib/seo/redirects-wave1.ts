@@ -5,6 +5,7 @@ import { isApprovedRoute, normalizePath } from './approved-routes';
 //   class 'thematic-no-traffic' – тематичні сторінки без трафіку (корпоративний, перевірка зору) → хаб міста;
 //   class 'tproduct-program'    – картки програм Tilda в каталозі статі міста → вікова сторінка міста.
 // match: 'path-and-children' – адреса і все під нею (товари тематичної сторінки йдуть разом з нею, SEO-MIGRATION §3);
+//        'path'              – лише сама адреса (під нею є сторінки, яких не чіпаємо, напр. картка лікаря);
 //        'tproduct-id'       – картка товару Tilda за id «<частина каталогу>-<uid>» (хвіст-слаг Tilda може змінюватися).
 // Правило АКТИВНЕ лише тоді, коли ціль є в lib/seo/approved-routes.json: до перемикання сторінки злиття в main
 // нічого не змінює на домені (Tilda віддає джерело як зараз). Відкат – прибрати ціль з approved-routes.
@@ -16,7 +17,7 @@ export interface Wave1Redirect {
   destination: string;
   class: 'thematic-no-traffic' | 'tproduct-program';
   city: string;
-  match: 'path-and-children' | 'tproduct-id';
+  match: 'path-and-children' | 'path' | 'tproduct-id';
   note?: string;
 }
 
@@ -39,6 +40,7 @@ export function matchesRedirect(r: Wave1Redirect, pathname: string): boolean {
     const prefix = tproductPrefix(r.source);
     return p === prefix || p.startsWith(`${prefix}-`);
   }
+  if (r.match === 'path') return p === r.source;
   return p === r.source || p.startsWith(`${r.source}/`);
 }
 

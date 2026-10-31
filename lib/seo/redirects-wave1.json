@@ -12,8 +12,8 @@
     "destination": "/ukr/kharkiv",
     "class": "thematic-no-traffic",
     "city": "kharkiv",
-    "match": "path-and-children",
-    "note": "SEO-MIGRATION §3: перевірка зору, 8+4 кліки – клас «без трафіку»"
+    "match": "path",
+    "note": "SEO-MIGRATION §3: перевірка зору, 8+4 кліки – клас «без трафіку». Лише сама адреса: під нею картка лікаря (sitemap-store), лікарів не чіпаємо"
   },
   {
     "source": "/ukr/corporate/health-checkup/dnipro",

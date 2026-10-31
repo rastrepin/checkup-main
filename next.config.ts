@@ -11,7 +11,7 @@ const isApproved = (path: string) => APPROVED.includes(path.replace(/\/+$/, "") 
 
 // 301 хвилі 1 міграції міст (SEO-MIGRATION v2.4 §3–4): дані – lib/seo/redirects-wave1.json, логіка збігу – та сама,
 // що в lib/seo/redirects-wave1.ts (sitemap-фільтр). Правило активне лише коли ціль погоджена (approved-routes.json).
-type Wave1Redirect = { source: string; destination: string; match: "path-and-children" | "tproduct-id" };
+type Wave1Redirect = { source: string; destination: string; match: "path-and-children" | "path" | "tproduct-id" };
 const WAVE1: Wave1Redirect[] = JSON.parse(
   readFileSync(join(process.cwd(), "lib/seo/redirects-wave1.json"), "utf8"),
 );
@@ -25,6 +25,7 @@ function wave1Rules() {
       const id = r.source.slice(i + 1).match(/^\d+-\d+/)?.[0] ?? r.source.slice(i + 1);
       return [{ source: `${dir}/:p(${id}(?:-.*)?)`, destination: r.destination, permanent: true }];
     }
+    if (r.match === "path") return [{ source: r.source, destination: r.destination, permanent: true }];
     // Тематична сторінка разом із товарами під нею (SEO-MIGRATION §3).
     return [
       { source: r.source, destination: r.destination, permanent: true },

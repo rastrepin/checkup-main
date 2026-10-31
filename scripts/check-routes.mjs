@@ -72,12 +72,13 @@ const sourceMatches = (r, p) => {
     const prefix = `${r.source.slice(0, i)}/${id}`;
     return p === prefix || p.startsWith(`${prefix}-`);
   }
+  if (r.match === 'path') return p === r.source;
   return p === r.source || p.startsWith(`${r.source}/`);
 };
 for (const r of redirects) {
   const tag = `${r.source} → ${r.destination}`;
   if (!r.source?.startsWith('/') || !r.destination?.startsWith('/')) redirectErrors.push(`${tag}: шляхи мають починатися з "/"`);
-  if (!['path-and-children', 'tproduct-id'].includes(r.match)) redirectErrors.push(`${tag}: невідомий match "${r.match}"`);
+  if (!['path-and-children', 'path', 'tproduct-id'].includes(r.match)) redirectErrors.push(`${tag}: невідомий match "${r.match}"`);
   if (sources.has(r.source)) redirectErrors.push(`${tag}: дубль джерела`);
   sources.add(r.source);
   if (!routeSet.has(normalize(r.destination))) redirectErrors.push(`${tag}: ціль не має page.tsx у app/ (301 на Tilda заборонено)`);
