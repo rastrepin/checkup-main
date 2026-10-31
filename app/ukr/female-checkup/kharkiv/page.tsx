@@ -366,25 +366,10 @@ export default async function FemaleHubKharkivPage() {
                         {b.metro_ua ? `, ${b.metro_ua}` : ''}
                       </p>
                       {sch && <p className="text-[13px] text-gray-500 mt-1">{sch}</p>}
-                      {b.tracking_phone && (
-                        <p className="text-[14px] mt-1">
-                          <a href={`tel:${b.tracking_phone.replace(/\s/g, '')}`} className="text-[#005485] hover:underline">
-                            {b.tracking_phone}
-                          </a>
-                        </p>
-                      )}
                     </li>
                   );
                 })}
               </ul>
-            )}
-            {clinic.phone && (
-              <p className={P}>
-                Телефон:{' '}
-                <a href={`tel:${clinic.phone.replace(/\s/g, '')}`} className="text-[#005485] hover:underline">
-                  {clinic.phone}
-                </a>
-              </p>
             )}
             <div className="mt-6 flex flex-col sm:flex-row gap-3">
               {programs.length > 0 && (

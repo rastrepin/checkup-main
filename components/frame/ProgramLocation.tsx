@@ -11,7 +11,6 @@ export interface LocationBranch {
   address: string;
   metro?: string | null;
   schedule?: string | null;
-  phone?: string | null;
 }
 
 function branchesWord(n: number) {
@@ -35,7 +34,7 @@ export default function ProgramLocation({
   city: string;
   branches: LocationBranch[];
   moreLabel: string;
-  /** Телефон і посилання на сторінку клініки – під адресами. */
+  /** Посилання на сторінку клініки – під адресами. Телефонів на основному домені немає (PLATFORM-LINE 5). */
   footer?: ReactNode;
 }) {
   const metro = branches.map((b) => b.metro?.replace(/^м\.\s*/, '')).filter((m): m is string => Boolean(m));
@@ -72,13 +71,6 @@ export default function ProgramLocation({
                     {b.metro ? `, ${b.metro}` : ''}
                   </p>
                   {b.schedule && <p className="mt-0.5 text-[14px]">{b.schedule}</p>}
-                  {b.phone && (
-                    <p className="mt-0.5 text-[14px]">
-                      <a href={`tel:${b.phone.replace(/\s/g, '')}`} className="text-link hover:underline">
-                        {b.phone}
-                      </a>
-                    </p>
-                  )}
                 </li>
               ))}
             </ul>
