@@ -501,17 +501,9 @@ export default async function FemaleAgeVid50CityPage({ citySlug }: { citySlug: s
                 name={clinic.name}
                 city={`в ${city.loc}`}
                 moreLabel="Адреси і графік"
-                branches={branches.map((b) => ({ id: b.id, name: b.name_ua, address: b.address_ua, metro: b.metro_ua, schedule: scheduleText(b), phone: b.tracking_phone }))}
+                branches={branches.map((b) => ({ id: b.id, name: b.name_ua, address: b.address_ua, metro: b.metro_ua, schedule: scheduleText(b) }))}
                 footer={
                   <>
-                    {clinic.phone && (
-                      <span>
-                        Телефон:{' '}
-                        <a href={`tel:${clinic.phone.replace(/\s/g, '')}`} className="text-link hover:underline">
-                          {clinic.phone}
-                        </a>
-                      </span>
-                    )}
                     {clinic.website && (
                       <a href={clinic.website} className="font-semibold text-link hover:underline">
                         Сторінка клініки на check-up.in.ua →
@@ -744,7 +736,6 @@ export default async function FemaleAgeVid50CityPage({ citySlug }: { citySlug: s
                     subject: 'Чекап для жінок після 50 років',
                     clinicName: clinic.name,
                     branches,
-                    phone: clinic.phone,
                     programName: program?.name_ua,
                     missingText,
                   })}

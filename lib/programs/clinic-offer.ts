@@ -16,8 +16,6 @@ export interface OfferClinic {
   name: string;
   slug: string;
   website: string | null;
-  /** clinics.phone – станом на 23.09.2026 порожній; блок «Двері» без телефону. */
-  phone: string | null;
 }
 
 export interface OfferBranch {
@@ -26,7 +24,6 @@ export interface OfferBranch {
   address_ua: string;
   metro_ua: string | null;
   schedule: Record<string, string> | null;
-  tracking_phone: string | null;
 }
 
 export interface OfferProgram extends CheckupProgram {
@@ -57,14 +54,14 @@ const EMPTY: ClinicOffersData = { clinic: null, branches: [], clinicServiceNames
 async function fetchClinicAndBranches(sb: any, clinicSlug: string) {
   const { data: clinic } = await sb
     .from('clinics')
-    .select('id, name, slug, website, phone')
+    .select('id, name, slug, website')
     .eq('slug', clinicSlug)
     .single();
   if (!clinic?.id) return { clinic: null, branches: [] as OfferBranch[], clinicServiceNames: [] as string[] };
   const [{ data: branches }, { data: services }] = await Promise.all([
     sb
       .from('clinic_branches')
-      .select('id, name_ua, address_ua, metro_ua, schedule, tracking_phone')
+      .select('id, name_ua, address_ua, metro_ua, schedule')
       .eq('clinic_id', clinic.id)
       .order('sort_order', { ascending: true }),
     sb.from('clinic_services').select('name_ua').eq('clinic_id', clinic.id).eq('is_active', true),
