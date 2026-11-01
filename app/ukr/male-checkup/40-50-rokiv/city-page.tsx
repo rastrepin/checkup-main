@@ -12,6 +12,8 @@ import InfoFrame from '@/components/shared/InfoFrame';
 import CrossAgeNav from '@/components/shared/CrossAgeNav';
 import { getCheckupCity, type CheckupCity } from '@/lib/cities/checkup-cities';
 import BookingFlow, { BookCta } from '@/components/city/BookingFlow';
+import Header from '@/components/frame/Header';
+import { HERO_DISCLAIMER, programsItemListLd } from '@/lib/programs/age-page-shared';
 
 // Вікова сторінка міста – чернетка SPRINT-KHARKIV-v0, каркас 5.2 (12 блоків).
 // Контент: content/kharkiv/male-40-50-rokiv.md (v0) дослівно; файл згенеровано з того самого джерела, що й MD.
@@ -231,21 +233,21 @@ export default async function MaleAge4050CityPage({ citySlug }: { citySlug: stri
       mainEntity: FAQ.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })),
     },
   ];
-  if (program && clinic) {
-    jsonLd.push({
-      '@context': 'https://schema.org',
-      '@type': 'Offer',
-      name: program.name_ua,
-      price: program.price_discount,
-      priceCurrency: 'UAH',
-      ...(program.price_date ? { validFrom: program.price_date } : {}),
-      url: PAGE_URL,
-      seller: { '@type': 'MedicalClinic', name: clinic.name },
-    });
-  }
+  // Аудит Ужгорода S1 №3: Offer на рівні сторінки заборонено. Як на жіночих вікових – ItemList програм,
+  // ціна з датою лише всередині елемента програми (SEO-STANDARD р.5, тип 5a).
+  const programsLd = programsItemListLd({
+    listName: `Доступні програми в ${city.loc}`,
+    programsUrl: `${PAGE_URL}#gotovyi-variant`,
+    city: city.name,
+    clinic,
+    programs: program ? [program] : [],
+  });
+  if (programsLd) jsonLd.push(programsLd);
 
   return (
     <>
+      {/* Аудит Ужгорода S1 №1: шапка міста, активний пункт «Чоловікам». */}
+      <Header city={city.slug} section="male" />
       <main className="text-[#0b1a24] pb-24 md:pb-0">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
@@ -270,6 +272,8 @@ export default async function MaleAge4050CityPage({ citySlug }: { citySlug: stri
                 Чекап для чоловіків 40–50 років – що перевіряти і де пройти в {city.loc}
               </h1>
               <p className="text-lg text-gray-700 leading-relaxed mt-2">Сторінка для чоловіків 40–50 років без скарг. Спочатку перелік за клінічними настановами, потім готова програма клініки в {city.loc}.</p>
+              {/* Аудит Ужгорода S1 №2: медичне застереження під лідом, ui-kit §5.3. */}
+              <p className="text-sm text-gray-600 leading-relaxed mt-4">{HERO_DISCLAIMER}</p>
             </div>
           </div>
         </section>
