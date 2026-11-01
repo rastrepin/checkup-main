@@ -29,9 +29,11 @@ import {
   ADDITIONS_ADD_VIA_MANAGER,
   ANY_CLINIC_TEXT,
   DISCLOSURE_TEXT,
+  DISCLOSURE_TEXT_NO_REVIEWER,
   DISCLOSURE_TITLE,
   DOCTOR_DECIDES_TEXT,
   EDITORIAL_TEXT_V2,
+  EDITORIAL_TEXT_V2_NO_REVIEWER,
   FIRST_VISIT_TEXT,
   SECOND_VISIT_TEXT_V2,
   additionsIntro,
@@ -746,7 +748,7 @@ export default async function FemaleAgeVid50CityPage({ citySlug }: { citySlug: s
             {/* 10. Автор, рецензент, розкриття, джерела */}
             <div className="px-5 sm:px-6 lg:px-0 pt-8 pb-12">
               <div className="max-w-3xl text-[#374151] leading-relaxed space-y-3">
-                <p className="text-[#0b1a24]">{EDITORIAL_TEXT_V2}</p>
+                <p className="text-[#0b1a24]">{city.reviewer ? EDITORIAL_TEXT_V2 : EDITORIAL_TEXT_V2_NO_REVIEWER}</p>
                 {city.reviewer && (
                   <p className="text-[15px]">
                     <span className="font-semibold text-[#0b1a24]">Медичний рецензент:</span> {city.reviewer.name}, {city.reviewer.jobTitle},{' '}
@@ -754,7 +756,7 @@ export default async function FemaleAgeVid50CityPage({ citySlug }: { citySlug: s
                   </p>
                 )}
                 <GroupLabel className="pt-2">{DISCLOSURE_TITLE}</GroupLabel>
-                <p className="text-sm text-gray-500">{DISCLOSURE_TEXT}</p>
+                <p className="text-sm text-gray-500">{city.reviewer ? DISCLOSURE_TEXT : DISCLOSURE_TEXT_NO_REVIEWER}</p>
                 <p className="font-bold text-[#0b1a24] pt-2">Джерела</p>
                 <ol className="space-y-1.5 list-none text-sm">
                   {SOURCES.map((s, i) => (
