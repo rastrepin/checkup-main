@@ -86,7 +86,6 @@ export const HEADER_NAV: Record<string, HeaderNav> = {
           ABOUT_TEAM,
           { label: 'Для корпоративних клієнтів', href: '/ukr/corporate/health-checkup/dnipro' },
           ABOUT_CLINICS,
-          { label: 'Чек-ап в Турції', href: 'https://check-up.in.ua/turkey' },
         ],
       },
     ],
@@ -101,7 +100,6 @@ export const HEADER_NAV: Record<string, HeaderNav> = {
         children: [
           { label: 'Планування вагітності', href: '/ukr/akusherstvo/planirovanie-beremennosti/odesa' },
           { label: 'Колоноскопія', href: '/ukr/kolonoskopiya/odesa' },
-          { label: 'Чек-ап в Турції', href: 'https://abroad.check-up.in.ua/' },
         ],
       },
       { label: 'Лікарі', href: '/ukr/doctors/odesa' },
