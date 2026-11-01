@@ -315,12 +315,17 @@ export default async function FemaleAgeVid50CityPage({ citySlug }: { citySlug: s
       name: `Чекап для жінок після 50 років – що перевіряти і де пройти в ${city.loc}`,
       url: PAGE_URL,
       dateModified: UPDATED_ISO,
-      reviewedBy: {
-        '@type': 'Person',
-        name: city.reviewer.name,
-        jobTitle: city.reviewer.jobTitle,
-        worksFor: { '@type': 'MedicalClinic', name: city.reviewer.org },
-      },
+      // Рецензента міста може не бути (city.reviewer = null) – тоді reviewedBy не виводиться.
+      ...(city.reviewer
+        ? {
+            reviewedBy: {
+              '@type': 'Person',
+              name: city.reviewer.name,
+              jobTitle: city.reviewer.jobTitle,
+              worksFor: { '@type': 'MedicalClinic', name: city.reviewer.org },
+            },
+          }
+        : {}),
     },
     {
       '@context': 'https://schema.org',
@@ -742,10 +747,12 @@ export default async function FemaleAgeVid50CityPage({ citySlug }: { citySlug: s
             <div className="px-5 sm:px-6 lg:px-0 pt-8 pb-12">
               <div className="max-w-3xl text-[#374151] leading-relaxed space-y-3">
                 <p className="text-[#0b1a24]">{EDITORIAL_TEXT_V2}</p>
-                <p className="text-[15px]">
-                  <span className="font-semibold text-[#0b1a24]">Медичний рецензент:</span> {city.reviewer.name}, {city.reviewer.jobTitle},{' '}
-                  {city.reviewer.org}.
-                </p>
+                {city.reviewer && (
+                  <p className="text-[15px]">
+                    <span className="font-semibold text-[#0b1a24]">Медичний рецензент:</span> {city.reviewer.name}, {city.reviewer.jobTitle},{' '}
+                    {city.reviewer.org}.
+                  </p>
+                )}
                 <GroupLabel className="pt-2">{DISCLOSURE_TITLE}</GroupLabel>
                 <p className="text-sm text-gray-500">{DISCLOSURE_TEXT}</p>
                 <p className="font-bold text-[#0b1a24] pt-2">Джерела</p>

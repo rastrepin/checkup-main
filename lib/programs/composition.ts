@@ -319,11 +319,99 @@ const EMPTY: ProgramComposition = {
   preparationNotes: [],
 };
 
+// ---- Запасний шлях: склад з checkup_programs.composition (конвеєр міграції, 31.10.2026) ----------
+// Для міст, де таблиць послуг клініки (clinic_services, program_services) ще немає, склад записано
+// в checkup_programs.composition у форматі файлів міст:
+//   {"consultations": [..], "diagnostics": [..], "analyses": [..], "visits": N, "url": "...", "source": "..."}
+// Шлях вмикається, лише коли program_services для програми порожні І composition має саме цей формат
+// (масиви рядків і ключ visits). Старі записи Харкова (аналізи об'єктами з кодами, *_extra, note) під
+// формат не підпадають, тож сторінки Харкова рендеряться як раніше – через program_services.
+
+interface StoredComposition {
+  consultations: string[];
+  diagnostics: string[];
+  analyses: string[];
+  visits: number | null;
+}
+
+const isStringArray = (v: unknown): v is string[] => Array.isArray(v) && v.every((x) => typeof x === 'string');
+
+/** Розбір checkup_programs.composition; null – запис не у форматі файлів міст. */
+export function parseStoredComposition(raw: unknown): StoredComposition | null {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const r = raw as Record<string, unknown>;
+  if (!('visits' in r) || !(r.visits === null || typeof r.visits === 'number')) return null;
+  const consultations = r.consultations ?? [];
+  const diagnostics = r.diagnostics ?? [];
+  const analyses = r.analyses ?? [];
+  if (!isStringArray(consultations) || !isStringArray(diagnostics) || !isStringArray(analyses)) return null;
+  const clean = (a: string[]) => a.map((x) => x.trim()).filter(Boolean);
+  const out = {
+    consultations: clean(consultations),
+    diagnostics: clean(diagnostics),
+    analyses: clean(analyses),
+    visits: r.visits as number | null,
+  };
+  if (out.consultations.length + out.diagnostics.length + out.analyses.length === 0) return null;
+  return out;
+}
+
+/** Перелік назв як є: «A, B і C.»; якщо в назвах є коми (пакети з переліком показників) – через крапку з комою. */
+function namesAsIs(names: string[]): string {
+  if (names.length === 0) return '';
+  const text = names.some((n) => n.includes(',')) ? names.join('; ') : joinWithAnd(names);
+  return `${text.charAt(0).toUpperCase()}${text.slice(1)}.`;
+}
+
+/** Склад із checkup_programs.composition. Позиції без кодів клініки: аналізи й обстеження показуються
+ *  своїми назвами (без категорій за кодами -OH). Візит кожної позиції в записі не вказано, тому всі
+ *  позиції – перший візит; кількість візитів – з поля visits. */
+function compositionFromStored(stored: StoredComposition): ProgramComposition {
+  const items: CompositionServiceItem[] = [
+    ...stored.consultations.map((name) => ({ code: null, name, serviceType: 'consultation' as const, visitNumber: 1 })),
+    ...stored.diagnostics.map((name) => ({ code: null, name, serviceType: 'instrumental' as const, visitNumber: 1 })),
+    ...stored.analyses.map((name) => ({ code: null, name, serviceType: 'lab' as const, visitNumber: 1 })),
+  ];
+  return {
+    items,
+    counts: {
+      consultations: stored.consultations.length,
+      analyses: stored.analyses.length,
+      diagnostics: stored.diagnostics.length,
+    },
+    summaryGroups: groupByType(items),
+    consultationsSummary: buildConsultationsSummary(items),
+    visit2ConsultationsSummary: '',
+    instrumentalSummary: namesAsIs(stored.diagnostics),
+    labSummary: namesAsIs(stored.analyses),
+    labUncategorized: [],
+    visitCount: stored.visits ?? 0,
+    visit1Groups: groupByType(items),
+    visit2Items: [],
+    preparationNotes: derivePreparationNotes(items),
+  };
+}
+
+/**
+ * Склад програми: program_services ⨝ clinic_services; якщо звідти нічого не прийшло –
+ * запасний шлях зі stored (checkup_programs.composition програми), коли запис у форматі файлів міст.
+ */
 export async function fetchProgramComposition(
   checkupProgramId: string | null | undefined,
   context?: CompositionLogContext,
+  stored?: unknown,
 ): Promise<ProgramComposition> {
   if (!checkupProgramId) return EMPTY;
+  const fromServices = await fetchServicesComposition(checkupProgramId, context);
+  if (fromServices.items.length > 0) return fromServices;
+  const parsed = parseStoredComposition(stored);
+  return parsed ? compositionFromStored(parsed) : fromServices;
+}
+
+async function fetchServicesComposition(
+  checkupProgramId: string,
+  context?: CompositionLogContext,
+): Promise<ProgramComposition> {
   try {
     const sb = db() as any;
     const { data, error } = await sb
