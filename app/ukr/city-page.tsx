@@ -30,10 +30,11 @@ import { isApprovedRoute } from '@/lib/seo/approved-routes';
 
 // Хаб міста /ukr/{slug} – шаблон для всіх міст з lib/cities/checkup-cities.ts (хвиля 1: Харків, Дніпро, Одеса – варіант А,
 // Ужгород – варіант Б). Сторінка міста – тонка обгортка app/ukr/{slug}/page.tsx (scripts/cities/new-city-pages.mjs).
-// Тексти – content/{city.contentDir}/city.md (CITY-HUB-TEXTS v1.6 дослівно). Порядок і вигляд блоків –
-// docs/ux/specs/2026-11-city-hub.md v0.1, §1:
-//   1 шапка · 2 hero темний без кнопки · 3 хаби статі · 4 як пройти · 5 клініки · 6 окремі скринінги ·
+// Тексти – content/{city.contentDir}/city.md (CITY-HUB-TEXTS v1.9 дослівно). Порядок і вигляд блоків –
+// docs/ux/specs/2026-11-city-hub.md v0.1, §1, без блоку 6 «Окремі скринінги» (прибрано, CITY-HUB-TEXTS v1.9, рішення 15):
+//   1 шапка · 2 hero темний без кнопки (H1 з двох частин, ui-kit 5.5) · 3 хаби статі · 4 як пройти · 5 клініки ·
 //   7 навіщо потрібен Check-up · 8 FAQ і рецензент · 9 інші послуги · 10 про команду · 11 GEO (12 футер – не на цих сторінках).
+// Назви клінік у текстах, картках і GEO хабу – короткі («ОН Клінік», «Кредоклінік», рішення 21) з конфігурації міста.
 // Кнопки запису на хабі немає (специфікація §1, ui-kit §6.13): ні BookingFlow, ні закріпленої панелі.
 // Дані – Supabase: клініки й філії (lib/cities/hub-data.ts), {min_price} – один розрахунок для meta і рядка ціни.
 // Телефонів немає ніде (PLATFORM-LINE §5). hreflang немає (SEO-MIGRATION §4).
@@ -49,10 +50,14 @@ function pageCity(citySlug: string) {
 
 async function loadHub(city: CheckupCity) {
   const [clinics, minPrice] = await Promise.all([fetchCityClinics(city), minPriceFor(city, 'all')]);
-  const vars = hubVars(city, clinics, minPrice);
+  const vars = hubVars(city, clinics, minPrice, { shortNames: true });
   const pre = loadCityMdSections(city.contentDir, 'city', vars);
+  // Вкладені плейсхолдери FAQ: {faq6} – відповідь варіанта; {faq5_price} – перше речення FAQ 5, без ціни порожнє
+  // (CITY-HUB-TEXTS v1.9: без {min_price} перше речення не рендериться, решта відповіді лишається).
+  const nested: Record<string, string> = { faq5_price: nestedVar(pre, 'faq5_price', vars) ?? '' };
   const faq6 = nestedVar(pre, `faq6_${cityVariant(city)}`, vars);
-  const doc = faq6 ? loadCityMdSections(city.contentDir, 'city', { ...vars, faq6 }) : pre;
+  if (faq6) nested.faq6 = faq6;
+  const doc = loadCityMdSections(city.contentDir, 'city', { ...vars, ...nested });
   return { clinics, vars, doc };
 }
 
@@ -84,9 +89,9 @@ export default async function CityHubPage({ citySlug }: { citySlug: string }) {
   const variant = cityVariant(city);
   const s = doc.sections;
   const h1 = sectionText(s.h1) ?? '';
+  const h1Sub = sectionText(s.h1_sub);
 
   const genderCards = linkItems(s.gender);
-  const screenings = linkItems(s.screenings);
   const services = linkItems(s.other_services)
     .map((it) => ({ ...it, href: city.otherServices[it.href as OtherServiceKey] ?? '' }))
     .filter((it) => it.href);
@@ -103,7 +108,6 @@ export default async function CityHubPage({ citySlug }: { citySlug: string }) {
     'gender',
     'how',
     showClinics && 'clinics',
-    'screenings',
     'why',
     'faq',
     services.length > 0 && 'services',
@@ -122,8 +126,8 @@ export default async function CityHubPage({ citySlug }: { citySlug: string }) {
       { name: 'check-up.in.ua', item: SITE },
       { name: city.name, item: PAGE_URL },
     ],
-    // ItemList – лише видимі посилання: картки хабів статі і скринінги (SEO-MIGRATION §7, Н2).
-    itemList: [...genderCards, ...screenings].map((it) => ({ name: it.label, url: absUrl(it.href) })),
+    // ItemList – лише видимі посилання: картки хабів статі (SEO-MIGRATION §7, Н2).
+    itemList: genderCards.map((it) => ({ name: it.label, url: absUrl(it.href) })),
     faq,
   });
 
@@ -138,6 +142,7 @@ export default async function CityHubPage({ citySlug }: { citySlug: string }) {
           breadcrumbs={[{ label: 'check-up.in.ua', href: '/' }, { label: city.name }]}
           eyebrow={`Чекап · ${city.name}`}
           h1={h1}
+          h1Sub={h1Sub}
           lead={sectionText(s[`lead_${variant}`])}
         />
 
@@ -164,13 +169,7 @@ export default async function CityHubPage({ citySlug }: { citySlug: string }) {
         </Section>
 
         {/* 5. Клініки-партнери – рядок ціни і нейтральні картки (без телефону, запису, програм і цін у картці) */}
-        {showClinics && <ClinicsBlock doc={doc} city={city} clinics={clinics} tone={tone('clinics')} />}
-
-        {/* 6. Окремі скринінги */}
-        <Section tone={tone('screenings')} width="read" id="skryninhy">
-          <MdSectionBody section={s.screenings} paragraphsOnly />
-          <LinkRows items={screenings} />
-        </Section>
+        {showClinics && <ClinicsBlock doc={doc} city={city} clinics={clinics} tone={tone('clinics')} shortNames />}
 
         {/* 7. Навіщо потрібен Check-up */}
         <Section tone={tone('why')} width="read" id="navishcho">
@@ -203,7 +202,7 @@ export default async function CityHubPage({ citySlug }: { citySlug: string }) {
         </Section>
 
         {/* 11. GEO – без H2, статичний текст з даних */}
-        {showGeo && <GeoBlock doc={doc} city={city} clinics={clinics} vars={vars} tone={tone('geo')} />}
+        {showGeo && <GeoBlock doc={doc} city={city} clinics={clinics} vars={vars} tone={tone('geo')} shortNames />}
       </main>
     </>
   );

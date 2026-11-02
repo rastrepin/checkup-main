@@ -1,6 +1,7 @@
 // Медичні рецензенти FAQ хабу міста і сторінок статі (хвиля 1). Однакові для всіх міст хвилі.
-// Джерело: CITY-HUB-TEXTS v1.6 §6 (хаб міста), §9.1 (жіночий хаб), §9.2 (чоловічий хаб); SEO-MIGRATION v2.4, блокер 6:
-// дата перегляду 31.10.2026, письмові згоди 01.11.2026.
+// Джерело: CITY-HUB-TEXTS v1.9 §6 (хаб міста), §9.1 (жіночий хаб), §9.2 (чоловічий хаб); SEO-MIGRATION v2.4, блокер 6.
+// Дати перегляду: хаб міста – 01.11.2026 (нові відповіді FAQ 1–7, v1.7); жіночий і чоловічий хаби – 31.10.2026;
+// письмові згоди 01.11.2026.
 // Рядок під FAQ: «Медичні відповіді {verb}: {name}, {specialty}, {org}, {ДД.ММ.РРРР}»; ім'я – посилання на профіль.
 // reviewedBy у JSON-LD – лише цей лікар (Physician), лише коли є дата перегляду (reviewedAt).
 // Автор сторінки (author) – Ігор Растрепін, окремо (CITY-HUB-TEXTS §5).
@@ -39,8 +40,11 @@ const BONDARENKO: HubReviewer = {
   schemaSpecialty: 'Urologic',
 };
 
+// Балан А. В. рецензує FAQ хабу міста і жіночого хабу; дата перегляду в них різна (CITY-HUB-TEXTS v1.9 §6, §9.1).
+const BALAN_CITY: HubReviewer = { ...BALAN, reviewedAt: '2026-11-01' };
+
 export const HUB_REVIEWERS: Record<'city' | 'female' | 'male', HubReviewer> = {
-  city: BALAN,
+  city: BALAN_CITY,
   female: BALAN,
   male: BONDARENKO,
 };

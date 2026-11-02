@@ -21,6 +21,9 @@ export interface HubBranch {
 export interface HubClinic {
   slug: string;
   name: string;
+  /** Коротка назва з конфігурації міста (CityClinic.shortName): «ОН Клінік», «Кредоклінік». Тексти, картка і GEO
+   *  хабу міста (CITY-HUB-TEXTS v1.9). Сторінки статі поки показують name. */
+  shortName: string;
   /** clinics.facility_type – нова nullable-колонка (ще не в базі); немає – рядка в картці немає. */
   facilityType: string | null;
   /** clinics.license; немає – рядка в картці немає. */
@@ -51,6 +54,7 @@ export const fetchHubClinic = cache(async (slug: string, tildaPath: string): Pro
     return {
       slug,
       name: clinic.name.trim(),
+      shortName: clinic.name.trim(),
       facilityType: textOrNull(clinic.facility_type),
       license: textOrNull(clinic.license),
       url: textOrNull(clinic.website) ?? `${SITE}${tildaPath}`,
@@ -63,7 +67,12 @@ export const fetchHubClinic = cache(async (slug: string, tildaPath: string): Pro
 
 /** Клініки міста з бази в порядку з конфігурації (PLATFORM-LINE 2.2). Відсутні в базі – пропускаються. */
 export async function fetchCityClinics(city: CheckupCity): Promise<HubClinic[]> {
-  const rows = await Promise.all(city.clinics.map((c: CityClinic) => fetchHubClinic(c.slug, c.tildaPath)));
+  const rows = await Promise.all(
+    city.clinics.map(async (c: CityClinic) => {
+      const row = await fetchHubClinic(c.slug, c.tildaPath);
+      return row ? { ...row, shortName: c.shortName } : null;
+    }),
+  );
   return rows.filter((c): c is HubClinic => c !== null);
 }
 
