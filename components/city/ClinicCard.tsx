@@ -5,7 +5,11 @@ import { branchesWord, scheduleText, type HubClinic } from '@/lib/cities/hub-dat
 // (docs/ux/specs/2026-11-city-hub.md §3.2–3.3, ui-kit §6.13, PLATFORM-LINE §5 «Двері до клініки»).
 // Картка платформи: білий фон, рамка --border, радіус 12 (--radius-lg), відступ --space-card. Кольорів, логотипа
 // і теми клініки немає.
-// Склад: назва (H3) · тип закладу · dl «Філії / Графік / Ліцензія» · акордеон «Адреси філій» · «Сторінка клініки →».
+// Склад: назва (H3) · тип закладу · dl · акордеон «Адреси філій» · «Сторінка клініки →».
+// Одна філія: dl «Адреса / Графік / Ліцензія», акордеона немає – адреса видна одразу.
+// Кілька філій: dl «Філії / Ліцензія» (кількість і метро), адреси – в акордеоні; графіків філій у картці немає
+// (рішення Ігоря 02.11: графіки кожної філії в картці зайві).
+// Відхилення від docs/ux/specs/2026-11-city-hub.md §3.2–3.3 – на оновлення специфікації чатом UX.
 // Порожнє поле – рядок не рендериться. Немає: телефону, кнопки запису, програм, цін, рейтингів, бейджів.
 // Кілька клінік – однакові картки в порядку з конфігурації; сітку задає сторінка (1 колонка, з md – 2).
 
@@ -18,10 +22,15 @@ function metroList(c: HubClinic): string | null {
 export default function ClinicCard({ clinic, name }: { clinic: HubClinic; name?: string }) {
   const n = clinic.branches.length;
   const metro = metroList(clinic);
-  const schedules = [...new Set(clinic.branches.map(scheduleText).filter((s): s is string => Boolean(s)))];
   const rows: [string, string][] = [];
-  if (n > 0) rows.push(['Філії', `${n} ${branchesWord(n)}${metro ? ` · ${metro}` : ''}`]);
-  if (schedules.length) rows.push(['Графік', schedules.join('; ')]);
+  if (n === 1) {
+    const b = clinic.branches[0];
+    rows.push(['Адреса', `${b.address_ua}${b.metro_ua ? `, ${b.metro_ua}` : ''}`]);
+    const schedule = scheduleText(b);
+    if (schedule) rows.push(['Графік', schedule]);
+  } else if (n > 1) {
+    rows.push(['Філії', `${n} ${branchesWord(n)}${metro ? ` · ${metro}` : ''}`]);
+  }
   if (clinic.license) rows.push(['Ліцензія', clinic.license]);
 
   return (
@@ -38,7 +47,7 @@ export default function ClinicCard({ clinic, name }: { clinic: HubClinic; name?:
           ))}
         </dl>
       )}
-      {n > 0 && (
+      {n > 1 && (
         <Accordion summary="Адреси філій" size="sm" className="mt-4">
           <ul className="space-y-2 text-[14px]">
             {clinic.branches.map((b) => (
