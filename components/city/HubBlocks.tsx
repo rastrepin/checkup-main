@@ -68,11 +68,12 @@ export function hubVars(
   if (minPrice !== null) vars.min_price = priceText(minPrice);
   if (clinics.length > 0) {
     vars.clinic_names = joinWithI(clinics.map((c) => clinicLabel(c, shortNames)));
-    // «[коротка назва](clinic_url) (адреса філії)»; філії немає – лише посилання.
+    // «[коротка назва](clinic_url) (адреса філії)»; кілька філій – адреси через «; » без метро (щоб не було дужок у
+    // дужках); філії немає – лише посилання.
     vars.clinic_links = joinWithI(
       clinics.map((c) => {
-        const bl = branchList(c.branches);
-        return `[${clinicLabel(c, shortNames)}](${c.url})${bl ? ` (${bl})` : ''}`;
+        const addrs = c.branches.map((b) => b.address_ua).join('; ');
+        return `[${clinicLabel(c, shortNames)}](${c.url})${addrs ? ` (${addrs})` : ''}`;
       }),
     );
   }
