@@ -20,7 +20,6 @@ import {
   hubVars,
   linkItems,
   MdSectionBody,
-  SourcesList,
 } from '@/components/city/HubBlocks';
 import { faqItems, loadCityMdSections, resolvedBlocks, sectionHeading, sectionText } from '@/lib/content/city-md';
 import { getCheckupCity, type CheckupCity } from '@/lib/cities/checkup-cities';
@@ -31,9 +30,11 @@ import { HUB_REVIEWERS } from '@/lib/cities/hub-reviewers';
 // Обгортки: app/ukr/{stat}-checkup/city-page.tsx → app/ukr/{stat}-checkup/{slug}/page.tsx.
 // Тексти – content/{city.contentDir}/{stat}-checkup.md: CITY-HUB-TEXTS v1.6 §9 (title, H1, лід, meta, H2, анкори,
 // нові питання FAQ, рядок рецензента) і решта – {stat}-checkup.md v0 без змін.
-// Блоки 5 (клініки), 8 (рецензент FAQ), 10 (автор, рейтинг), 11 (GEO) – за правилами хабу міста
+// Блоки 5 (клініки), 8 (FAQ), 10 (автор, рейтинг), 11 (GEO) – за правилами хабу міста
 // (docs/ux/specs/2026-11-city-hub.md §8); блок «Контакти клініки» v0 замінено блоком клінік (CITY-HUB-TEXTS §9).
-// Порядок: hero · вікові картки · що змінюється з віком · клініки · FAQ і рецензент · автор і джерела · GEO.
+// Порядок: hero · вікові картки · як обрати програму · клініки · FAQ · автор · GEO.
+// Рецензента FAQ на сторінках статі немає до повторного погодження (CITY-HUB-TEXTS v1.10, рішення 26):
+// HUB_REVIEWERS.female і .male = null – рядка під FAQ і reviewedBy у JSON-LD немає, author лишається.
 // Запис – кнопки «Записатися» на вікових картках (BookingFlow → /api/leads, source_cta на кожну картку), лише у
 // варіанті А: у варіанті Б програму однієї клініки на картці не показуємо (порядок і рівність клінік, PLATFORM-LINE 2.2, 6).
 // Телефонів немає (PLATFORM-LINE §5). hreflang немає (SEO-MIGRATION §4).
@@ -190,24 +191,23 @@ export default async function GenderHubPage({ gender, citySlug }: { gender: HubG
           )}
         </Section>
 
-        {/* Що змінюється з віком – v0 без змін */}
-        <Section tone={tone('changes')} width="read" id="shcho-zminiuietsia">
+        {/* Як обрати програму (розділ what_changes у MD) */}
+        <Section tone={tone('changes')} width="read" id="yak-obraty">
           <MdSectionBody section={s.what_changes} />
         </Section>
 
         {/* 5. Клініки-партнери – замість «Контакти клініки» v0 */}
         {showClinics && <ClinicsBlock doc={doc} city={city} clinics={clinics} shortNames tone={tone('clinics')} />}
 
-        {/* 8. FAQ і рядок медичного рецензента */}
+        {/* 8. FAQ; рядок рецензента – лише коли рецензент є (зараз null, рішення 26) */}
         <FaqBlock heading={sectionHeading(s.faq)} items={faq} reviewer={reviewer} tone={tone('faq')} />
 
-        {/* 10. Автор: текст v0, рядок автора, рейтинг Google; джерела */}
+        {/* 10. Автор: текст v0, рядок автора, рейтинг Google */}
         <Section tone={tone('author')} width="read" id="avtor">
           <div className="[&>p:first-child]:mt-0">
             <CityMdBlocks blocks={resolvedBlocks(s.author)} />
           </div>
           <AuthorAndRating doc={doc} />
-          <SourcesList section={s.sources} />
         </Section>
 
         {/* 11. GEO – без H2, статичний текст з даних */}

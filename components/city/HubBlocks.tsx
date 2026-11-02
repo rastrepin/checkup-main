@@ -264,8 +264,8 @@ export function ClinicsBlock({
 }
 
 /** Рядок медичного рецензента під FAQ (специфікація хабу §4). Немає дати перегляду – рядка немає. */
-export function ReviewerLine({ reviewer }: { reviewer: HubReviewer }) {
-  if (!reviewer.reviewedAt) return null;
+export function ReviewerLine({ reviewer }: { reviewer: HubReviewer | null }) {
+  if (!reviewer?.reviewedAt) return null;
   return (
     <p className="mt-6 pt-6 border-t border-section-border text-[14px] text-text-secondary">
       Медичні відповіді {reviewer.verb}:{' '}
@@ -290,7 +290,8 @@ export function FaqBlock({
 }: {
   heading: string | null;
   items: CityFaqItem[];
-  reviewer: HubReviewer;
+  /** null – рецензента немає, рядка під FAQ немає. */
+  reviewer: HubReviewer | null;
   tone: 'white' | 'muted';
 }) {
   return (
@@ -440,7 +441,8 @@ export function hubJsonLd(opts: {
   name: string;
   description?: string;
   dateModified: string;
-  reviewer: HubReviewer;
+  /** null – без reviewedBy і lastReviewed; author лишається. */
+  reviewer: HubReviewer | null;
   breadcrumbs: { name: string; item: string }[];
   itemList: { name: string; url: string }[];
   faq: CityFaqItem[];
@@ -458,7 +460,7 @@ export function hubJsonLd(opts: {
     author: { '@type': 'Person', name: HUB_AUTHOR.name },
     publisher: { '@id': ORGANIZATION_ID },
   };
-  if (reviewer.reviewedAt) {
+  if (reviewer?.reviewedAt) {
     page.reviewedBy = {
       '@type': 'Physician',
       name: reviewer.name,
