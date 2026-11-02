@@ -23,7 +23,7 @@ import { dateLabel, HUB_AUTHOR, ORGANIZATION_ID, type HubReviewer } from '@/lib/
 // Спільні блоки хабу міста (app/ukr/city-page.tsx) і сторінок статі (components/city/GenderHubPage.tsx),
 // хвиля 1, 01.11.2026. Специфікація – docs/ux/specs/2026-11-city-hub.md v0.1 (§2 hero, §3 клініки, §4 рецензент FAQ,
 // §5 «Про команду», §6 списки посилань, §7 GEO; §8 – сторінки статі беруть блоки 5, 8, 10, 11).
-// Тексти – лише з content/{city.contentDir}/*.md (CITY-HUB-TEXTS v1.6); тут – вигляд і дані.
+// Тексти – лише з content/{city.contentDir}/*.md (хаб міста – CITY-HUB-TEXTS v1.9, сторінки статі – v1.6); тут – вигляд і дані.
 // Кольори – ролі з app/globals.css; телефонів немає (PLATFORM-LINE §5).
 
 /** Підпис-застереження під лідом hero (специфікація хабу §2, ui-kit §5.3). */
@@ -37,20 +37,49 @@ export function H2({ children, id }: { children: ReactNode; id?: string }) {
   );
 }
 
-/** Значення плейсхолдерів сторінки міста. Немає даних – ключа немає (текст з ним не рендериться). */
-export function hubVars(city: CheckupCity, clinics: HubClinic[], minPrice: number | null): CityMdVars {
+/** Назва клініки для тексту: коротка (хаб міста, CITY-HUB-TEXTS v1.9) або clinics.name (сторінки статі). */
+export function clinicLabel(c: HubClinic, shortNames: boolean): string {
+  return shortNames ? c.shortName : c.name;
+}
+
+/** «A і B», «A, B і C» – перелік через «і» (CITY-HUB-TEXTS v1.9: {clinic_names}, {clinic_links}). */
+function joinWithI(parts: string[]): string {
+  if (parts.length <= 1) return parts.join('');
+  return `${parts.slice(0, -1).join(', ')} і ${parts[parts.length - 1]}`;
+}
+
+/** Значення плейсхолдерів сторінки міста. Немає даних – ключа немає (текст з ним не рендериться).
+ *  shortNames – хаб міста (CITY-HUB-TEXTS v1.9): {clinic} – коротка назва, є {In_city}, {clinic_names}, {clinic_links}. */
+export function hubVars(
+  city: CheckupCity,
+  clinics: HubClinic[],
+  minPrice: number | null,
+  { shortNames = false }: { shortNames?: boolean } = {},
+): CityMdVars {
   const variant = cityVariant(city);
   const vars: CityMdVars = {
     city: city.name,
     city_loc: city.loc,
     in_city: city.inCity,
+    In_city: city.inCity.charAt(0).toUpperCase() + city.inCity.slice(1),
     slug: city.slug,
     city_slug: city.slug,
   };
   if (minPrice !== null) vars.min_price = priceText(minPrice);
+  if (clinics.length > 0) {
+    vars.clinic_names = joinWithI(clinics.map((c) => clinicLabel(c, shortNames)));
+    // «[коротка назва](clinic_url) (адреса філії)»; кілька філій – адреси через «; » без метро (щоб не було дужок у
+    // дужках); філії немає – лише посилання.
+    vars.clinic_links = joinWithI(
+      clinics.map((c) => {
+        const addrs = c.branches.map((b) => b.address_ua).join('; ');
+        return `[${clinicLabel(c, shortNames)}](${c.url})${addrs ? ` (${addrs})` : ''}`;
+      }),
+    );
+  }
   if (variant === 'a') {
     const c = clinics[0];
-    if (c) vars.clinic = c.name;
+    if (c) vars.clinic = clinicLabel(c, shortNames);
     // Двері до клініки: субдомен, інакше сторінка клініки на Tilda – навіть коли клініки ще немає в базі.
     vars.clinic_url = c?.url ?? `${SITE}${city.clinics[0].tildaPath}`;
     const bl = c ? branchList(c.branches) : null;
@@ -84,18 +113,21 @@ export function nestedVar(doc: CityMdDoc | null, key: string, vars: CityMdVars):
   const raw = doc?.raw[key];
   if (!raw) return undefined;
   const text = fillPlaceholders(raw, vars).replace(/\s*\n\s*/g, ' ').trim();
-  return /\{[a-z_0-9]+\}/.test(text) ? undefined : text;
+  return /\{[A-Za-z_0-9]+\}/.test(text) ? undefined : text;
 }
 
 export function HubHero({
   breadcrumbs,
   eyebrow,
   h1,
+  h1Sub,
   lead,
 }: {
   breadcrumbs: { label: string; href?: string }[];
   eyebrow: string;
   h1: string;
+  /** Друга частина H1 у тому самому <h1>: другим рядком курсивом, роздільник візуально прихований (ui-kit 5.5). */
+  h1Sub?: string | null;
   lead: string | null;
 }) {
   return (
@@ -113,6 +145,7 @@ export function HubHero({
       }
       eyebrow={eyebrow}
       h1={h1}
+      h1Tail={h1Sub || undefined}
       lead={lead ? <p>{lead}</p> : undefined}
       reassurance={HERO_DISCLAIMER}
     />
@@ -205,11 +238,14 @@ export function ClinicsBlock({
   city,
   clinics,
   tone,
+  shortNames = false,
 }: {
   doc: CityMdDoc;
   city: CheckupCity;
   clinics: HubClinic[];
   tone: 'white' | 'muted';
+  /** Коротка назва в картці (хаб міста, CITY-HUB-TEXTS v1.9 §3). */
+  shortNames?: boolean;
 }) {
   const variant = cityVariant(city);
   const section = doc.sections[`clinic_${variant}`];
@@ -220,7 +256,7 @@ export function ClinicsBlock({
       {price && <p className="mt-5 font-serif text-[20px] font-bold text-text-primary">{price}</p>}
       <div className={`mt-6 grid grid-cols-1 gap-[var(--space-grid)] ${variant === 'b' ? 'md:grid-cols-2' : ''}`}>
         {clinics.map((c) => (
-          <ClinicCard key={c.slug} clinic={c} />
+          <ClinicCard key={c.slug} clinic={c} name={clinicLabel(c, shortNames)} />
         ))}
       </div>
     </Section>
@@ -312,12 +348,15 @@ export function GeoBlock({
   clinics,
   vars,
   tone,
+  shortNames = false,
 }: {
   doc: CityMdDoc;
   city: CheckupCity;
   clinics: HubClinic[];
   vars: CityMdVars;
   tone: 'white' | 'muted';
+  /** Коротка назва в рядку клініки (хаб міста, CITY-HUB-TEXTS v1.9 §8). */
+  shortNames?: boolean;
 }) {
   const lines: CityMdSection[] = [];
   let intro: string | null = null;
@@ -330,7 +369,7 @@ export function GeoBlock({
     for (const c of clinics) {
       const bl = branchList(c.branches);
       if (!bl) continue;
-      const text = fillPlaceholders(raw, { ...vars, clinic: c.name, branch_list: bl, clinic_url: c.url });
+      const text = fillPlaceholders(raw, { ...vars, clinic: clinicLabel(c, shortNames), branch_list: bl, clinic_url: c.url });
       lines.push({ heading: null, eyebrow: null, blocks: [{ type: 'p', content: parseLine(text) }] });
     }
   }

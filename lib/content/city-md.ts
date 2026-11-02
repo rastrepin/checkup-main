@@ -11,7 +11,8 @@ import { join } from 'node:path';
 // - «H2: текст», «# текст», «## текст» – заголовок блоку (перший) або підзаголовок; «## 1_hero»-подібні
 //   ключі розділів (латиниця, цифри, _) пропускаються; «### текст» – підзаголовок;
 // - абзаци, списки «- …» і «1. …», **жирний**, [посилання](/адреса);
-// - плейсхолдери {city}, {city_loc}, {city_slug}, {clinic}, {clinics_count} замінюються даними міста.
+// - плейсхолдери {city}, {city_loc}, {city_slug}, {clinic}, {In_city} … замінюються даними міста (ключ – латиниця,
+//   цифри, _; велика перша літера – окремий ключ, напр. {In_city} – {in_city} з великої літери).
 
 export type MdInline =
   | { type: 'text'; text: string }
@@ -54,7 +55,7 @@ function parseInline(text: string): MdInline[] {
 }
 
 function substitute(text: string, vars: CityMdVars, file: string, silent = false): string {
-  return text.replace(/\{([a-z_0-9]+)\}/g, (whole, key: string) => {
+  return text.replace(/\{([A-Za-z_0-9]+)\}/g, (whole, key: string) => {
     if (key in vars && vars[key] !== null && vars[key] !== undefined) return String(vars[key]);
     if (!silent) console.warn(`[city-md] ${file}: плейсхолдер ${whole} не має значення – лишається як є.`);
     return whole;
@@ -169,7 +170,7 @@ export type CityMdDoc = {
   raw: Record<string, string>;
 };
 
-const UNRESOLVED = /\{[a-z_0-9]+\}/;
+const UNRESOLVED = /\{[A-Za-z_0-9]+\}/;
 
 export function inlineText(parts: MdInline[]): string {
   return parts.map((p) => (p.type === 'ref' ? '' : p.text)).join('');

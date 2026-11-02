@@ -25,6 +25,9 @@ export interface CityClinic {
   /** Сторінка клініки на Tilda – запасне посилання «Сторінка клініки →», коли в базі немає clinics.website
    *  (субдомену). Ці сторінки лишаються на Tilda (SEO-MIGRATION §0, §6). */
   tildaPath: string;
+  /** Коротка назва клініки в текстах хабу міста ({clinic}, {clinic_names}, {clinic_links}), у картці і GEO хабу:
+   *  «ОН Клінік», «Кредоклінік» (CITY-HUB-TEXTS v1.9, рішення 21). clinics.name у базі не змінюється. */
+  shortName: string;
 }
 
 /** Тематичні сторінки міста, що лишаються на Tilda, – блок «Інші послуги в {city_loc}» хабу міста
@@ -40,7 +43,7 @@ export interface CheckupCity {
   /** Місцевий відмінок без прийменника: «Харкові». Прийменник «в»/«у» лишається в тексті сторінки. */
   loc: string;
   /** Місцевий відмінок з прийменником для позиції після приголосного: «у Харкові», «в Одесі»
-   *  (CITY-HUB-TEXTS v1.6, плейсхолдер {in_city}). */
+   *  (CITY-HUB-TEXTS v1.9, плейсхолдер {in_city}; {In_city} – те саме з великої літери). */
   inCity: string;
   /** clinics.slug клініки, програми якої показують вікові сторінки (одна клініка на вікову сторінку). */
   clinicSlug: string;
@@ -53,7 +56,7 @@ export interface CheckupCity {
    *  блок «Медичний рецензент» і reviewedBy у JSON-LD не рендеряться (як на скринінгових сторінках). */
   reviewer: CityReviewer | null;
   /** Папка content/ з текстами хабу і сторінок статі (city.md, female-checkup.md, male-checkup.md).
-   *  Хвиля 1 (Харків, Дніпро, Одеса, Ужгород) – 'city-template': тексти CITY-HUB-TEXTS v1.6 дослівно,
+   *  Хвиля 1 (Харків, Дніпро, Одеса, Ужгород) – 'city-template': тексти хабу міста – CITY-HUB-TEXTS v1.9 дослівно,
    *  з плейсхолдерами. Старі v0-тексти Харкова в content/kharkiv/ шаблони більше не читають. */
   contentDir: 'city-template';
   /** Слаг російськомовних сторінок Tilda («kharkov» → /kharkov). Довідково: hreflang у хвилі 1 не виводиться
@@ -68,7 +71,7 @@ export const CHECKUP_CITIES: Record<string, CheckupCity> = {
     loc: 'Харкові',
     inCity: 'у Харкові',
     clinicSlug: 'onclinic-kharkiv',
-    clinics: [{ slug: 'onclinic-kharkiv', tildaPath: '/ukr/onclinic-kharkiv' }],
+    clinics: [{ slug: 'onclinic-kharkiv', tildaPath: '/ukr/onclinic-kharkiv', shortName: 'ОН Клінік' }],
     otherServices: {
       kolonoskopiya: '/ukr/kolonoskopiya/kharkiv',
       'planuvannya-vahitnosti': '/ukr/materynstvo/planuvannya-vahitnosti/kharkiv',
@@ -94,7 +97,7 @@ export const CHECKUP_CITIES: Record<string, CheckupCity> = {
     loc: 'Дніпрі',
     inCity: 'у Дніпрі',
     clinicSlug: 'onclinic-dnipro',
-    clinics: [{ slug: 'onclinic-dnipro', tildaPath: '/ukr/onclinic-dnipro' }],
+    clinics: [{ slug: 'onclinic-dnipro', tildaPath: '/ukr/onclinic-dnipro', shortName: 'ОН Клінік' }],
     otherServices: {
       kolonoskopiya: '/ukr/kolonoskopiya/dnipro',
       'planuvannya-vahitnosti': '/ukr/materynstvo/planuvannya-vahitnosti/dnipro',
@@ -111,7 +114,7 @@ export const CHECKUP_CITIES: Record<string, CheckupCity> = {
     loc: 'Одесі',
     inCity: 'в Одесі',
     clinicSlug: 'onclinic-odesa',
-    clinics: [{ slug: 'onclinic-odesa', tildaPath: '/ukr/onclinic-odesa' }],
+    clinics: [{ slug: 'onclinic-odesa', tildaPath: '/ukr/onclinic-odesa', shortName: 'ОН Клінік' }],
     // Дитячого чекапу в Одесі немає (CITY-HUB-TEXTS §7).
     otherServices: {
       kolonoskopiya: '/ukr/kolonoskopiya/odesa',
@@ -122,8 +125,8 @@ export const CHECKUP_CITIES: Record<string, CheckupCity> = {
     contentDir: 'city-template',
     ruSlug: null,
   },
-  // Ужгород (01.11.2026, хвиля 1): варіант Б – ОН Клінік Ужгород і Кредо Клінік (CITY-HUB-TEXTS, SEO-MIGRATION §0).
-  // Клінік Ужгорода в базі ще немає (запис – після погодження власника): блоки з даними не рендеряться.
+  // Ужгород (01.11.2026, хвиля 1): варіант Б – ОН Клінік Ужгород і Кредоклінік (CITY-HUB-TEXTS v1.9, SEO-MIGRATION §0).
+  // Обидві клініки є в базі (clinics, clinic_branches – по одній філії; перевірено 02.11.2026).
   uzhgorod: {
     slug: 'uzhgorod',
     name: 'Ужгород',
@@ -132,8 +135,8 @@ export const CHECKUP_CITIES: Record<string, CheckupCity> = {
     // provisional – owner to confirm: клініка вікових сторінок Ужгорода (одна на вікову сторінку).
     clinicSlug: 'onclinic-uzhgorod',
     clinics: [
-      { slug: 'onclinic-uzhgorod', tildaPath: '/ukr/onclinic-uzhgorod' },
-      { slug: 'credoclinic', tildaPath: '/ukr/credoclinic' },
+      { slug: 'onclinic-uzhgorod', tildaPath: '/ukr/onclinic-uzhgorod', shortName: 'ОН Клінік' },
+      { slug: 'credoclinic', tildaPath: '/ukr/credoclinic', shortName: 'Кредоклінік' },
     ],
     // Колоноскопії і планування вагітності в Ужгороді немає (CITY-HUB-TEXTS §7).
     otherServices: {

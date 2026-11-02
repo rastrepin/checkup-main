@@ -14,7 +14,8 @@ function metroList(c: HubClinic): string | null {
   return metro.length ? metro.join(', ') : null;
 }
 
-export default function ClinicCard({ clinic }: { clinic: HubClinic }) {
+/** name – назва в картці; без неї – clinics.name (хаб міста передає коротку назву, CITY-HUB-TEXTS v1.9 §3). */
+export default function ClinicCard({ clinic, name }: { clinic: HubClinic; name?: string }) {
   const n = clinic.branches.length;
   const metro = metroList(clinic);
   const schedules = [...new Set(clinic.branches.map(scheduleText).filter((s): s is string => Boolean(s)))];
@@ -25,7 +26,7 @@ export default function ClinicCard({ clinic }: { clinic: HubClinic }) {
 
   return (
     <article className="flex flex-col bg-white border border-[var(--border)] rounded-[var(--radius-lg)] p-[var(--space-card)]">
-      <h3 className="text-[20px] font-bold leading-[1.3] text-ink">{clinic.name}</h3>
+      <h3 className="text-[20px] font-bold leading-[1.3] text-ink">{name ?? clinic.name}</h3>
       {clinic.facilityType && <p className="mt-1 text-[14px] text-text-secondary">{clinic.facilityType}</p>}
       {rows.length > 0 && (
         <dl className="mt-4 space-y-2 text-[14px]">
