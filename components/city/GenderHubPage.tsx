@@ -78,7 +78,7 @@ async function loadGenderHub(gender: HubGender, city: CheckupCity) {
     minPriceFor(city, gender),
     fetchScopeOffers(gender, city.clinicSlug),
   ]);
-  const vars = hubVars(city, clinics, minPrice);
+  const vars = hubVars(city, clinics, minPrice, { shortNames: true });
   const doc = loadCityMdSections(city.contentDir, `${gender}-checkup`, vars);
   return { clinics, vars, doc, offersData };
 }
@@ -196,7 +196,7 @@ export default async function GenderHubPage({ gender, citySlug }: { gender: HubG
         </Section>
 
         {/* 5. Клініки-партнери – замість «Контакти клініки» v0 */}
-        {showClinics && <ClinicsBlock doc={doc} city={city} clinics={clinics} tone={tone('clinics')} />}
+        {showClinics && <ClinicsBlock doc={doc} city={city} clinics={clinics} shortNames tone={tone('clinics')} />}
 
         {/* 8. FAQ і рядок медичного рецензента */}
         <FaqBlock heading={sectionHeading(s.faq)} items={faq} reviewer={reviewer} tone={tone('faq')} />
@@ -211,7 +211,7 @@ export default async function GenderHubPage({ gender, citySlug }: { gender: HubG
         </Section>
 
         {/* 11. GEO – без H2, статичний текст з даних */}
-        {showGeo && <GeoBlock doc={doc} city={city} clinics={clinics} vars={vars} tone={tone('geo')} />}
+        {showGeo && <GeoBlock doc={doc} city={city} clinics={clinics} vars={vars} shortNames tone={tone('geo')} />}
       </main>
 
       {bookingClinic && programs.length > 0 && (
