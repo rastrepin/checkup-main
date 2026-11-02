@@ -130,6 +130,62 @@ export const CHECKUP_CITIES: Record<string, CheckupCity> = {
     contentDir: 'city-template',
     ruSlug: null,
   },
+  // Рівне (02.11.2026): РОКЛ ім. Юрія Семенюка (clinics.slug rokl – у базі з вересня: 2 філії, 12 програм).
+  // «100% життя» (дитячий чекап на Tilda) у базі для Рівного немає – на хабі не показується.
+  // Тематичні сторінки Рівного на Tilda (колоноскопія, планування вагітності, сертифікат) – 404 на 02.11.2026;
+  // дитячий чекап – 200.
+  rivne: {
+    slug: 'rivne',
+    name: 'Рівне',
+    loc: 'Рівному',
+    inCity: 'у Рівному',
+    clinicSlug: 'rokl',
+    clinics: [{ slug: 'rokl', tildaPath: '/ukr/rokl', shortName: 'РОКЛ' }],
+    otherServices: {
+      'child-checkup': '/ukr/child-checkup/rivne',
+    },
+    reviewer: null,
+    contentDir: 'city-template',
+    // /rovno на Tilda – 404 (02.11.2026).
+    ruSlug: null,
+  },
+  // Полтава (02.11.2026): ОН Клінік Полтава (clinics.slug onclinic-poltava, 1 філія в базі; програми – після запису
+  // в базу). ЦМСД і «100% життя» є на Tilda, але в базі для Полтави їх немає – на хабі не показуються.
+  // Планування вагітності: /ukr/materynstvo/... у Полтаві – 404, робоча адреса – /ukr/akusherstvo/... (02.11.2026).
+  poltava: {
+    slug: 'poltava',
+    name: 'Полтава',
+    loc: 'Полтаві',
+    inCity: 'у Полтаві',
+    clinicSlug: 'onclinic-poltava',
+    clinics: [{ slug: 'onclinic-poltava', tildaPath: '/ukr/onclinic-poltava', shortName: 'ОН Клінік' }],
+    otherServices: {
+      kolonoskopiya: '/ukr/kolonoskopiya/poltava',
+      'planuvannya-vahitnosti': '/ukr/akusherstvo/planirovanie-beremennosti/poltava',
+      'child-checkup': '/ukr/child-checkup/poltava',
+      podarunok: '/ukr/podarunok/poltava',
+    },
+    reviewer: null,
+    contentDir: 'city-template',
+    ruSlug: 'poltava',
+  },
+  // Черкаси (02.11.2026): ОН Клінік Черкаси (clinics.slug onclinic-cherkasy). Філія і програми – після запису в базу.
+  // Колоноскопія і сертифікат Черкас на Tilda – 404 (02.11.2026). Дитячий чекап відповідає 200, але сторінка
+  // пише, що обстеження тимчасово не виконується, – у «Інші послуги» поки не додано (питання до власника).
+  cherkasy: {
+    slug: 'cherkasy',
+    name: 'Черкаси',
+    loc: 'Черкасах',
+    inCity: 'у Черкасах',
+    clinicSlug: 'onclinic-cherkasy',
+    clinics: [{ slug: 'onclinic-cherkasy', tildaPath: '/ukr/onclinic-cherkasy', shortName: 'ОН Клінік' }],
+    otherServices: {
+      'planuvannya-vahitnosti': '/ukr/materynstvo/planuvannya-vahitnosti/cherkasy',
+    },
+    reviewer: null,
+    contentDir: 'city-template',
+    ruSlug: 'cherkassy',
+  },
 };
 
 export function getCheckupCity(slug: string): CheckupCity | null {
