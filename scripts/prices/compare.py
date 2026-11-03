@@ -94,15 +94,12 @@ class Plan:
 
     def build(self, db, previous):
         t = self.cfg['targets']
-        disc = self.cfg.get('checkup_discount_pct', {})
         for d in t.get('tilda_doctors', []):
             where = f'Лікар {d["doctor"]} ({d["sku"]})'
             it = self.item(d['item'], where)
             row = {**d, 'clinic_name': it['name'] if it else '', 'clinic_price': rnd(it['price']) if it else None,
                    'marked': it['marked'] if it else '', 'row': it['row'] if it else ''}
             if it:
-                share = disc.get(it['kind'])
-                row['with_checkup_discount'] = rnd(it['price'] * (1 - share / 100)) if share else None
                 row['new_site_price'] = row['clinic_price']
                 row['diff'] = row['new_site_price'] - d['site_price']
                 row['ok'] = self.check_jump(where, d['site_price'], row['new_site_price'])
@@ -239,12 +236,12 @@ def write_report(plan, cfg, out_dir, meta):
 
     hl = lambda r: YELLOW if (isinstance(r[-2], (int, float)) and r[-2]) else None
     sheet(wb, 'Лікарі', ['Лікар', 'Спеціальність', 'SKU Tilda', 'Послуга в прайсі', 'Рядок прайсу', 'Позначка в прайсі',
-                         'На сайті (перевірено)', 'Ціна клініки', 'Зі знижкою check-up (довідково)', 'Нова ціна на сайт', 'Різниця', 'Питання'],
+                         'На сайті (перевірено)', 'Ціна клініки', 'Нова ціна на сайт', 'Різниця', 'Питання'],
           [[d['doctor'], d['specialty'], d['sku'], d['clinic_name'], d['row'], d['marked'],
-            f'{d["site_price"]} ({d["site_checked"]})', d.get('clinic_price'), d.get('with_checkup_discount'),
+            f'{d["site_price"]} ({d["site_checked"]})', d.get('clinic_price'),
             d.get('new_site_price'), d.get('diff'), d.get('open_question', '')] for d in plan.doctors],
-          [30, 18, 20, 45, 8, 10, 18, 12, 14, 14, 10, 60],
-          highlight=lambda r: YELLOW if r[10] else None)
+          [30, 18, 20, 45, 8, 10, 18, 12, 14, 10, 60],
+          highlight=lambda r: YELLOW if r[9] else None)
     sheet(wb, 'Чекапи', ['Чекап', 'SKU Tilda', 'Назва в прайсі', 'Ціна на сайті', 'Стара ціна на сайті',
                          'Нова ціна (з вигодою, округлено)', 'Нова стара ціна (повна)', 'Різниця'],
           [[c['label'], c['sku'], c['clinic_name'], c['site_price'], c['site_old_price'],
