@@ -1,0 +1,36 @@
+{
+  "_note": "Зв'язок обстежень планів віку (content/plans/*.md, поле slug) з послугами ОН Клінік Ужгород. Ціни – з таблиці клініки «ОН КЛИНИК Ужгород/Check-Up Центр», колонка «Стоимость 30.09.2026». Знижки на окремі позиції немає: ОН Клінік дає знижку лише на власні програми, тож discount_percent 0, до сплати = ціна прайсу. Коди в таблиці клініки мають кириличний суфікс «-ОН»; тут – латинський «-OH», як у clinic_services Харкова.",
+  "clinic": "onclinic-uzhgorod",
+  "city": "uzhgorod",
+  "source": {
+    "title": "ОН КЛИНИК Ужгород/Check-Up Центр",
+    "drive_id": "1Ih_vx_SxkDXkuodGrEhjS4fKGR_-kLKI1-OziokuCfA",
+    "column": "Стоимость 30.09.2026",
+    "price_date": "2026-09-30"
+  },
+  "discount_percent": 0,
+  "items": {
+    "konsultatsiia-likaria": {
+      "status": "pending_decision",
+      "_note": "Спеціальність у рядку консультації ще не обрана (запит UX, 2.3). Варіанти з прайсу 30.09.",
+      "variants": {
+        "hinekoloh": {"code": null, "name": "Гинеколог, первичная консультация без УЗИ", "price": 700},
+        "urolog": {"code": null, "name": "Уролог, первичная консультация без УЗИ", "price": 700},
+        "terapevt": {"code": null, "name": "Сімейний лікар (Терапевт), консультация", "price": 650}
+      }
+    },
+    "vymiriuvannia-tysku": {"status": "included_in_consultation", "price": 0},
+    "analiz-na-kholesteryn": {
+      "status": "mapped", "code": "10044-OH",
+      "name": "Комплекс «Ліпідограма» (холестерин, тригліцериди; ЛПВЩ, ЛПНЩ, ЛПДНЩ, індекс атерогенності)", "price": 655,
+      "_note": "На жіночих сторінках обстеження названо ліпідограмою. Окремо в прайсі є «Холестерин» 10041-OH, 220 грн."
+    },
+    "analiz-na-tsukor": {"status": "mapped", "code": "10033-OH", "name": "Глюкоза (сироватка)", "price": 190},
+    "pap-test": {"status": "mapped", "code": "11221-OH", "name": "Рідинна цитологія ПАП-тест", "price": 810},
+    "analiz-kalu-na-prykhovanu-krov": {"status": "mapped", "code": "11098-OH", "name": "Аналіз калу на приховану кров", "price": 315},
+    "mamografiia": {"status": "not_in_source"},
+    "mrt-molochnykh-zaloz": {"status": "not_in_source"},
+    "densytometriia": {"status": "not_in_source"},
+    "psa": {"status": "not_in_source"}
+  }
+}
