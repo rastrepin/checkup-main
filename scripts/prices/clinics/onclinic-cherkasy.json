@@ -1,0 +1,103 @@
+{
+  "_note": "Конфіг клініки для інструменту оновлення цін. Звідки брати прайс, як його читати, що з чим зіставлено і як рахувати. Позиції прайсу — ключем «розділ|назва» (нормалізовано, див. intake.py).",
+  "clinic": "onclinic-cherkasy",
+  "clinic_name": "ОН Клінік Черкаси",
+  "city": "cherkasy",
+  "network": "onclinic",
+  "scenario": "Прайс послуг — у спільній таблиці мережі для Doc.ua і Likarni.ua (вкладка міста, змінені ціни виділені кольором, кодів немає). Чекапи — окрема таблиця мережі (повна ціна і ціна з вигодою). Лабораторних аналізів у цих файлах немає.",
+  "sources": [
+    {
+      "id": "services",
+      "title": "Прайси для Doc.ua та Likarni.ua",
+      "drive_id": "1WT60JWpjDRKm5VTnHfiBzDH4H29EKmGvWvGKwCv7pg4",
+      "tab": "Черкаси прайс",
+      "first_row": 2,
+      "city_value": "Черкаси",
+      "columns": {"city": "A", "section": "B", "name": "C", "price": "D", "note": "E", "note2": "F"},
+      "marks": {"FFCCCCCC": "змінено", "FFD9D9D9": "змінено"}
+    },
+    {
+      "id": "checkups",
+      "title": "Прайси чек-ап",
+      "drive_id": "1uwYnCpgEYBFANl949K3_lMlM6XEhRZH8G1NPoR85QIk",
+      "tab": "Черкаси",
+      "first_row": 2,
+      "city_value": "Черкаси",
+      "section": "Чекапи",
+      "kind": "checkup",
+      "columns": {"city": "A", "name": "B", "price_full": "C", "price": "D"}
+    }
+  ],
+  "kind_rules": [
+    {"match": "виклик .*додому", "kind": "procedure"},
+    {"match": "консультац|прийом", "kind": "consultation"},
+    {"match": "^(ультразвукове|рентгенологія|функціональна діагностика|ендоскопія)|узд|електрокардіограф|рентген|холтер", "kind": "diagnostics"},
+    {"match": "лаборатор|аналіз", "kind": "lab"}
+  ],
+  "checkup_discount_pct": {
+    "_note": "Знижка check-up за видом послуги. Чи діє для Черкас і чи показувати ціну зі знижкою на сайті — питання до Ігоря; поки site_price_rule = clinic_price.",
+    "consultation": 20, "lab": 10, "diagnostics": 15
+  },
+  "site_price_rule": "clinic_price",
+  "max_change_pct": 20,
+  "targets": {
+    "tilda_doctors": [
+      {"sku": "onclinic chrks -101", "doctor": "Петруша Максим Олександрович", "specialty": "Сімейний лікар", "item": "сімейна медицина|консультація сімейного лікаря", "site_price": 650, "site_checked": "2026-10-26"},
+      {"sku": "onclinic chrks -102", "doctor": "Джумеля Світлана Валентинівна", "specialty": "Гінеколог", "item": "гінекологія|первинний прийом лікаря акушера-гінеколога без узд", "site_price": 700, "site_checked": "2026-10-26"},
+      {"sku": "onclinic chrks -103", "doctor": "Жук Світлана Іванівна", "specialty": "Гінеколог", "item": "гінекологія|первинний прийом лікаря акушера-гінеколога без узд", "site_price": 700, "site_checked": "2026-10-26"},
+      {"sku": "onclinic chrks -104", "doctor": "Залозний Андрій Сергійович", "specialty": "Уролог", "item": "урологія|первинний прийом лікаря-уролога", "site_price": 600, "site_checked": "2026-10-26"},
+      {"sku": "onclinic chrks -105", "doctor": "Мальована Юлія Валентинівна", "specialty": "Невролог", "item": "неврологія|консультація невролога", "site_price": 650, "site_checked": "2026-10-26"},
+      {"sku": "onclinic chrks -106", "doctor": "Андрущенко Юлія Василівна", "specialty": "Кардіолог", "item": "кардіологія|консультація кардіолога", "site_price": 600, "site_checked": "2026-10-26"},
+      {"sku": "onclinic chrks -107", "doctor": "Кан Олена Олександрівна", "specialty": "Кардіолог", "item": "кардіологія|консультація кардіолога", "site_price": 600, "site_checked": "2026-10-26", "open_question": "На сайті «прийом включно з ехокардіографією»; такої послуги в прайсі немає."},
+      {"sku": "onclinic chrks -108", "doctor": "Фролова Еліна Юріївна", "specialty": "Гастроентеролог", "item": "гастроентерологія|консультація гастроентеролога", "site_price": 600, "site_checked": "2026-10-26", "open_question": "На сайті «кандидат медичних наук»; якщо прийом за ціною КМН — позиція «консультація гастроентеролога кмн» (650)."},
+      {"sku": "onclinic chrks -109", "doctor": "Бондар Олена Павлівна", "specialty": "Дерматолог-трихолог", "item": "дерматологія|первинний прийом лікаря-дерматовенеролога", "site_price": 700, "site_checked": "2026-10-26"},
+      {"sku": "onclinic chrks -110", "doctor": "Федоткін Вадим Борисович", "specialty": "Проктолог", "item": "проктологія|первинний прийом лікаря-колопроктолога", "site_price": 700, "site_checked": "2026-10-26"}
+    ],
+    "tilda_checkups": [
+      {"sku": "onclinic-chsy-2", "label": "Check-up Minimum для жінок", "item": "чекапи|chek-up minimum жіночій варіант", "site_price": 10849, "site_old_price": 12490, "site_checked": "2026-10-26"},
+      {"sku": "onclinic-chsy-1", "label": "Check-up Medium для жінок", "item": "чекапи|chek-up medium жіночий варіант", "site_price": 14489, "site_old_price": 16690, "site_checked": "2026-10-26"},
+      {"sku": "onclinic-chsy-4", "label": "Check-up Minimum для чоловіків", "item": "чекапи|chek-up minimum чоловічий варіант", "site_price": 8221, "site_old_price": 9500, "site_checked": "2026-10-26"},
+      {"sku": "onclinic-chsy-3", "label": "Check-up Medium для чоловіків", "item": "чекапи|chek-up medium чоловічий варіант", "site_price": 12769, "site_old_price": 14870, "site_checked": "2026-10-26"}
+    ],
+    "db_programs": [
+      {"slug": "minimum-zhinochyi", "item": "чекапи|chek-up minimum жіночій варіант"},
+      {"slug": "medium-zhinochyi", "item": "чекапи|chek-up medium жіночий варіант"},
+      {"slug": "minimum-cholovichyi", "item": "чекапи|chek-up minimum чоловічий варіант"},
+      {"slug": "medium-cholovichyi", "item": "чекапи|chek-up medium чоловічий варіант"}
+    ],
+    "unmapped_ok": [
+      "чекапи|chek-up попередження інсульту",
+      "чекапи|chek-up уклон чоловічий minimum",
+      "чекапи|chek-up уклон жіночий minimum",
+      "чекапи|chek-up здоровий водій"
+    ],
+    "age_programs": {
+      "_note": "Програми check-up за віком (Tilda, блок ST310N, ціни вручну). Нова ціна = ціна на сайті + різниця цін складових, які є в прайсі. price_in_program — ціна складової, з якою рахована поточна ціна на сайті. Після внесення нової ціни на сайт оновити site_price і price_in_program.",
+      "components": {
+        "therapist": {"label": "терапевт", "item": "терапія|консультація терапевта", "price_in_program": 500},
+        "gynecologist": {"label": "гінеколог", "item": "гінекологія|первинний прийом лікаря акушера-гінеколога без узд", "price_in_program": 600},
+        "urologist": {"label": "уролог", "item": "урологія|первинний прийом лікаря-уролога", "price_in_program": 550},
+        "ecg": {"label": "ЕКГ", "item": "терапія|електрокардіографія з розшифровкою", "price_in_program": 200},
+        "colposcopy": {"label": "кольпоскопія", "item": "гінекологія|відеокольпоскопія", "price_in_program": 550}
+      },
+      "programs": [
+        {"page": "female-checkup/cherkasy", "label": "Повне обстеження, жінки до 30", "site_price": 5430, "site_checked": "2026-11-03", "components": ["therapist", "gynecologist", "ecg"]},
+        {"page": "female-checkup/cherkasy", "label": "Регулярне обстеження, жінки до 30", "site_price": 2900, "site_checked": "2026-11-03", "components": ["therapist", "gynecologist"]},
+        {"page": "female-checkup/cherkasy", "label": "Повне обстеження, жінки 30-40", "site_price": 6850, "site_checked": "2026-11-03", "components": ["therapist", "gynecologist", "ecg"]},
+        {"page": "female-checkup/cherkasy", "label": "Регулярне обстеження, жінки 30-40", "site_price": 3400, "site_checked": "2026-11-03", "components": ["therapist", "gynecologist"]},
+        {"page": "female-checkup/cherkasy", "label": "Повне обстеження, жінки 40-50", "site_price": 8425, "site_checked": "2026-11-03", "components": ["therapist", "gynecologist", "ecg", "colposcopy"]},
+        {"page": "female-checkup/cherkasy", "label": "Регулярне обстеження, жінки 40-50", "site_price": 4100, "site_checked": "2026-11-03", "components": ["therapist", "gynecologist"]},
+        {"page": "female-checkup/cherkasy", "label": "Повне обстеження, жінки від 50", "site_price": 8975, "site_checked": "2026-11-03", "components": ["therapist", "gynecologist", "ecg", "colposcopy"]},
+        {"page": "female-checkup/cherkasy", "label": "Регулярне обстеження, жінки від 50", "site_price": 5880, "site_checked": "2026-11-03", "components": ["therapist", "gynecologist", "ecg", "colposcopy"]},
+        {"page": "male-checkup/cherkasy", "label": "Повне обстеження, чоловіки до 30", "site_price": 2890, "site_checked": "2026-11-03", "components": ["therapist", "ecg"]},
+        {"page": "male-checkup/cherkasy", "label": "Регулярне обстеження, чоловіки до 30", "site_price": 1250, "site_checked": "2026-11-03", "components": ["therapist"]},
+        {"page": "male-checkup/cherkasy", "label": "Повне обстеження, чоловіки 30-40", "site_price": 3970, "site_checked": "2026-11-03", "components": ["therapist", "ecg"]},
+        {"page": "male-checkup/cherkasy", "label": "Регулярне обстеження, чоловіки 30-40", "site_price": 1250, "site_checked": "2026-11-03", "components": ["therapist"]},
+        {"page": "male-checkup/cherkasy", "label": "Повне обстеження, чоловіки 40-50", "site_price": 5845, "site_checked": "2026-11-03", "components": ["therapist", "ecg", "urologist"]},
+        {"page": "male-checkup/cherkasy", "label": "Регулярне обстеження, чоловіки 40-50", "site_price": 1905, "site_checked": "2026-11-03", "components": ["therapist"]},
+        {"page": "male-checkup/cherkasy", "label": "Повне обстеження, чоловіки від 50", "site_price": 6395, "site_checked": "2026-11-03", "components": ["therapist", "ecg", "urologist"]},
+        {"page": "male-checkup/cherkasy", "label": "Регулярне обстеження, чоловіки від 50", "site_price": 3715, "site_checked": "2026-11-03", "components": ["therapist", "ecg", "urologist"]}
+      ]
+    }
+  }
+}
