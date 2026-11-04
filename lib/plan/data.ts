@@ -4,7 +4,7 @@ import type { CheckupCity } from '@/lib/cities/checkup-cities';
 import { AGE_GROUPS, ageOverlaps, groupSlug, type AgeSegment, type PlanGender } from './age-groups';
 import { MY_PLAN_CONFIG } from './config';
 
-// Дані блоку «Мій план» – лише з бази, за правилами DATABASE.md 2.1 §6.2 (docs/ux/specs/2026-11-my-plan.md v0.3 §8).
+// Дані блоку «Мій план» – лише з бази, за правилами DATABASE.md 2.1 §6.2 (docs/ux/specs/2026-11-my-plan.md v0.4 §8, §8в).
 // Анонімний ключ: RLS віддає лише активні обстеження і фактори та переглянуті рядки плану (reviewed_at).
 // content/plans/*.md шаблон не читає. Немає жодного публічного рядка Базового плану – null, блоку немає.
 
@@ -44,10 +44,18 @@ export interface PlanService {
 /** Ціна обстеження в клініці: послуги з in_price = true; 'none' – зв'язків немає; 'noprice' – є послуга без точної ціни. */
 export type ExamPrice = { services: string[]; total: number; date: string } | 'none' | 'noprice';
 
+export interface PlanBranch {
+  id: string;
+  address: string;
+  metro: string | null;
+}
+
 export interface PlanClinic {
   slug: string;
   id: string;
   shortName: string;
+  /** Філії клініки для форми запису за планом (my-plan v0.4 §8в), порядок – clinic_branches.sort_order. */
+  branches: PlanBranch[];
   /** Найстаріша дата прайсу серед послуг клініки, що закривають обстеження цього блоку. */
   priceDate: string | null;
   services: Record<string, PlanService>;
@@ -144,7 +152,14 @@ export const fetchMyPlan = cache(async (gender: PlanGender, seg: AgeSegment, cit
 
     let services: Row[] = [];
     let links: Row[] = [];
+    let branchRows: Row[] = [];
     if (ids.length > 0) {
+      const { data: br } = await sb
+        .from('clinic_branches')
+        .select('id, clinic_id, address_ua, metro_ua, sort_order')
+        .in('clinic_id', ids)
+        .order('sort_order', { ascending: true });
+      branchRows = (br ?? []) as Row[];
       const { data: svc } = await sb
         .from('clinic_services')
         .select('id, clinic_id, price, price_type, price_date, is_active')
@@ -189,7 +204,10 @@ export const fetchMyPlan = cache(async (gender: PlanGender, seg: AgeSegment, cit
         if (!oldest || date < oldest) oldest = date;
       }
       if (Object.keys(used).length === 0) continue;
-      clinics.push({ slug: cfg.slug, id, shortName: cfg.shortName, priceDate: oldest, services: used, prices });
+      const branches: PlanBranch[] = branchRows
+        .filter((b) => b.clinic_id === id && str(b.address_ua))
+        .map((b) => ({ id: b.id, address: b.address_ua.trim(), metro: str(b.metro_ua) }));
+      clinics.push({ slug: cfg.slug, id, shortName: cfg.shortName, branches, priceDate: oldest, services: used, prices });
     }
 
     const extras = extraCandidates.filter((s) => (MY_PLAN_CONFIG.extraWithoutAnyPrice ? true : hasAnyPrice(clinics, s)));
