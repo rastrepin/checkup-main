@@ -291,6 +291,9 @@ export default async function MaleAgeDo30CityPage({ citySlug }: { citySlug: stri
           <p className="mt-3 text-sm"><Link href="/ukr/screening/psa" className="font-semibold text-[#005485] hover:underline">Докладніше про аналіз PSA →</Link></p>
         </Section>
 
+        {/* «Мій план обстеження» – docs/ux/specs/2026-11-my-plan.md v0.4 §0: одразу після «Які обстеження рекомендують»; дані з бази, блоку немає без Базового плану. */}
+        <MyPlan gender="male" seg="do-30-rokiv" city={city} />
+
         {/* 3. Що залежить від вашої історії */}
         <Section bg={BG_GRAY} eyebrow="Ваша історія">
           <H2 id="istoriia">Що залежить від вашої історії</H2>
@@ -300,9 +303,6 @@ export default async function MaleAgeDo30CityPage({ citySlug }: { citySlug: stri
           <h3 className="text-lg font-semibold text-[#0b1a24] mt-8">Надлишкова вага</h3>
           <p className={P}>Якщо індекс маси тіла 25 або більше, з 35 років додають скринінг переддіабету і діабету 2 типу раз на 3 роки<S n={[4]} />.</p>
         </Section>
-
-        {/* «Мій план обстеження» – docs/ux/specs/2026-11-my-plan.md v0.3; дані з бази, блоку немає без Базового плану. */}
-        <MyPlan gender="male" seg="do-30-rokiv" city={city} />
 
         {/* 4. Готовий варіант – програма клініки з даних */}
         <Section bg={BG_WHITE} eyebrow="Програма клініки">
@@ -602,7 +602,7 @@ export default async function MaleAgeDo30CityPage({ citySlug }: { citySlug: stri
             city={city.slug}
             programsComposition={{ [program.slug]: composition.counts }}
           />
-          <StickyMobileCta programNameShort={program.name_ua} programSlug={program.slug} sourceCta={`${SOURCE_CTA}_sticky`} />
+          <StickyMobileCta programNameShort={program.name_ua} programSlug={program.slug} sourceCta={`${SOURCE_CTA}_sticky`} hideWhenVisibleId="plan-zone" />
         </>
       )}
     </>
