@@ -296,6 +296,9 @@ export default async function MaleAge4050CityPage({ citySlug }: { citySlug: stri
           <p className="mt-3 text-sm"><Link href="/ukr/screening/psa" className="font-semibold text-[#005485] hover:underline">Докладніше про аналіз PSA →</Link></p>
         </Section>
 
+        {/* «Мій план обстеження» – docs/ux/specs/2026-11-my-plan.md v0.4 §0: одразу після «Які обстеження рекомендують»; дані з бази, блоку немає без Базового плану. */}
+        <MyPlan gender="male" seg="40-50-rokiv" city={city} />
+
         {/* 3. Що залежить від вашої історії */}
         <Section bg={BG_GRAY} eyebrow="Ваша історія">
           <H2 id="istoriia">Що залежить від вашої історії</H2>
@@ -303,9 +306,6 @@ export default async function MaleAge4050CityPage({ citySlug }: { citySlug: stri
           <h3 className="text-lg font-semibold text-[#0b1a24] mt-8">Фактори ризику колоректального раку</h3>
           <p className={P}>Скринінг починають з 40 років і роблять щороку, а не раз на 2 роки<S n={[3]} />. Які фактори ризику є саме у вас, оцінює лікар.</p>
         </Section>
-
-        {/* «Мій план обстеження» – docs/ux/specs/2026-11-my-plan.md v0.3; дані з бази, блоку немає без Базового плану. */}
-        <MyPlan gender="male" seg="40-50-rokiv" city={city} />
 
         {/* 4. Готовий варіант – програма клініки з даних */}
         <Section bg={BG_WHITE} eyebrow="Програма клініки">
@@ -605,7 +605,7 @@ export default async function MaleAge4050CityPage({ citySlug }: { citySlug: stri
             city={city.slug}
             programsComposition={{ [program.slug]: composition.counts }}
           />
-          <StickyMobileCta programNameShort={program.name_ua} programSlug={program.slug} sourceCta={`${SOURCE_CTA}_sticky`} />
+          <StickyMobileCta programNameShort={program.name_ua} programSlug={program.slug} sourceCta={`${SOURCE_CTA}_sticky`} hideWhenVisibleId="plan-zone" />
         </>
       )}
     </>
