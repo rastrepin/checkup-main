@@ -449,6 +449,14 @@ export default async function FemaleAgeVid50CityPage({ citySlug }: { citySlug: s
               <p className={P}>Особливо важливо не пропускати аналіз, якщо є надлишкова вага (індекс маси тіла 25 і більше), діабет 2 типу був у батьків, братів чи сестер, під час вагітності був гестаційний діабет або є синдром полікістозних яєчників<S n={[5]} />.</p>
               </ClampMobile>
             </Block>
+          </div>
+        </div>
+
+        {/* «Мій план обстеження» – docs/ux/specs/2026-11-my-plan.md v0.4 §0: одразу після «Які обстеження рекомендують»; дані з бази, блоку немає без Базового плану. */}
+        <MyPlan gender="female" seg="vid-50-rokiv" city={city} />
+
+        <div className="max-w-[1200px] mx-auto lg:px-14 lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-x-12">
+          <div className="min-w-0">
             {/* 2b. Що залежить від вашої історії */}
             <Block eyebrow="Ваша історія" id={ID.history}>
               <H2>Що залежить від вашої історії</H2>
@@ -484,9 +492,6 @@ export default async function FemaleAgeVid50CityPage({ citySlug }: { citySlug: s
             </Block>
           </div>
         </div>
-
-        {/* «Мій план обстеження» – docs/ux/specs/2026-11-my-plan.md v0.3; дані з бази, блоку немає без Базового плану. */}
-        <MyPlan gender="female" seg="vid-50-rokiv" city={city} />
 
         {/* ЗОНА ПРОГРАМИ (макет v2, 21.10; рішення Ігоря 1А 2А): локація – один раз на клініку, над її програмами;
             програма – картка: перший шар для рішення, решта – акордеон; ціна і запис – у картці. Сайдбара немає.
@@ -794,7 +799,7 @@ export default async function FemaleAgeVid50CityPage({ citySlug }: { citySlug: s
             sourceCta={`${SOURCE_CTA}_sticky`}
             revealAfterId="hero"
             zoneId={ID.programs}
-            hideWhenVisibleId="program-buy"
+            hideWhenVisibleId={['program-buy', 'plan-zone']}
             look="v2"
           />
         </>
