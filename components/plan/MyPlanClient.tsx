@@ -1,13 +1,12 @@
 'use client';
 
-// «Мій план обстеження» – клієнтська частина (docs/ux/specs/2026-11-my-plan.md v0.3).
+// «Мій план обстеження» – клієнтська частина (docs/ux/specs/2026-11-my-plan.md v0.4).
 // Порядок (§1): план → «Додано вами» → «Я в групі ризику →» → підсумок (вибір клініки, сума, дії) →
 // «Додати дослідження» → ризик-флоу. Дані – з бази (lib/plan/data.ts), стан людини – лише в хеші (lib/plan/state.ts).
 // Кольори – лише токени app/globals.css. Жодних підказок про ризик у Базовому плані, тривожних кольорів, знижок.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { buttonClass } from '@/components/frame/Button';
-import { countText } from '@/components/frame/ProgramCard';
 import ExamCard from './ExamCard';
 import PlanBooking, { type PlanBookingRequest } from './PlanBooking';
 import { planEvents } from '@/lib/ga4';
@@ -156,7 +155,7 @@ export default function MyPlanClient({ data }: { data: MyPlanData }) {
   const book = () => {
     if (!active || !sum) return;
     planEvents.bookStart({ ...EV, items: sum.items, clinic: active.slug, price: sum.total });
-    setBooking({ clinicId: active.id, clinicSlug: active.slug, clinicName: active.shortName, serviceIds: sum.ids, price: sum.total, items: sum.items });
+    setBooking({ clinicId: active.id, clinicSlug: active.slug, clinicName: active.shortName, branches: active.branches, serviceIds: sum.ids, price: sum.total, items: sum.items });
   };
 
   const addedSlugs = Object.keys(state.added).filter((s) => exams[s]);
@@ -382,7 +381,7 @@ export default function MyPlanClient({ data }: { data: MyPlanData }) {
       {booking && (
         <PlanBooking
           city={data.city.slug}
-          request={{ ...booking, clinicName: `${booking.clinicName} · ${countText(booking.items, ['дослідження', 'дослідження', 'досліджень'])}` }}
+          request={booking}
           onClose={() => setBooking(null)}
         />
       )}
