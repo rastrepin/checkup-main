@@ -111,7 +111,7 @@
   font-display: swap;
 }
 
-/* ─── CSS Custom Properties ───────────────────────────────────────────── */
+/* ─── CSS Custom Properties ─────────────────────────────────────────────── */
 :root {
   --background: #ffffff;
   --foreground: #0b1a24;
@@ -302,7 +302,7 @@
   --shadow-cta: 0 8px 24px rgba(0, 84, 133, 0.18);
 }
 
-/* ─── Base ──────────────────────────────────────────────────────────────────── */
+/* ─── Base ──────────────────────────────────────────────────────────────── */
 body {
   background: var(--background);
   color: var(--foreground);
@@ -310,7 +310,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* ─── Utility classes ─────────────────────────────────────────────────────── */
+/* ─── Utility classes ───────────────────────────────────────────────────── */
 .h1-teal-line {
   display: block;
   width: 48px;
