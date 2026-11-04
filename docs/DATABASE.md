@@ -23,10 +23,10 @@
 | platform_program_offers | checkup-main | міграції | checkup-main | 41 | read public | 2.3 |
 | clinic_services | checkup-main | міграції | checkup-main | 43 | read public | 2.4 |
 | program_services | checkup-main | міграції | checkup-main | 64 | read public | 2.4 |
-| examinations | checkup-main | Ігор (Table Editor); міграції | checkup-main | план (крок 2 A9) | read public (is_active) | 6.2 |
-| risk_factors | checkup-main | Ігор (Table Editor) | checkup-main | план (крок 2 A9) | read public (is_active) | 6.2 |
-| examination_recommendations | checkup-main | Ігор (Table Editor) | checkup-main | план (крок 2 A9) | read public (is_active і reviewed_at) | 6.2 |
-| clinic_service_examinations | checkup-main | Ігор (Table Editor) | checkup-main | план (крок 2 A9) | read public | 6.2 |
+| examinations | checkup-main | Ігор (Table Editor); міграції | checkup-main | 0 | read public (is_active) | 6.2 |
+| risk_factors | checkup-main | Ігор (Table Editor) | checkup-main | 0 | read public (is_active) | 6.2 |
+| examination_recommendations | checkup-main | Ігор (Table Editor) | checkup-main | 0 | read public (is_active і reviewed_at) | 6.2 |
+| clinic_service_examinations | checkup-main | Ігор (Table Editor) | checkup-main | 0 | read public | 6.2 |
 | patient_criteria | заморожений квіз (Р40, Р48) | не знайдено | не знайдено | 0 | insert public | 2.5 |
 | quiz_configs | заморожений квіз | не знайдено | не знайдено | 2 | read public (is_active) | 2.5 |
 | clinics | спільна | міграції обох репо | обидва репо | 33 | read public (is_active) | 3.1 |
@@ -483,4 +483,4 @@ where tablename in ('examinations', 'risk_factors', 'examination_recommendations
 - 2.0 · 27.09.2026 – файл перебудовано за live-схемою: карта 26 таблиць з власниками, деталі таблиць основного домену і спільних, контракт A9. Виправлено застарілі твердження 1.0 (`clinic_services.price` nullable з 30.08; `program_services` наповнено; кількість рядків).
 - 1.0 · 09.08.2026 – checkup_programs.program_type і price_date, clinic_services, program_services, 6 оферів (Р29). Фактичні дати міграцій у базі – 15.08.2026.
 
-Останні міграції live: add_photo_card_url_to_doctors (21.10: `doctors.photo_card_url` – кадр картки лікаря на check-up.in.ua, `public/assets/doctors/cards/`, генерує `scripts/doctor-card-photo.py`; читає `lib/hub/prolaps-offers.ts`); add_booking_status_to_doctors, add_is_active_to_doctor_services (08.09); seed_program_services_zhinochyi_profilaktychnyi, seed_program_services_zhinochyi_pislya_40, seed_clinic_services_zhinochyi_pislya_40_composition, make_clinic_services_price_nullable (30.08); drop_leads_clinic_id_hard_fk (27.08).
+Останні міграції live: my_plan_step2_examinations (04.11: крок 2 A9 – `examinations`, `risk_factors`, `examination_recommendations`, `clinic_service_examinations`, RLS і 4 політики читання, SQL §6.2 дослівно); add_photo_card_url_to_doctors (21.10: `doctors.photo_card_url` – кадр картки лікаря на check-up.in.ua, `public/assets/doctors/cards/`, генерує `scripts/doctor-card-photo.py`; читає `lib/hub/prolaps-offers.ts`); add_booking_status_to_doctors, add_is_active_to_doctor_services (08.09); seed_program_services_zhinochyi_profilaktychnyi, seed_program_services_zhinochyi_pislya_40, seed_clinic_services_zhinochyi_pislya_40_composition, make_clinic_services_price_nullable (30.08); drop_leads_clinic_id_hard_fk (27.08).
