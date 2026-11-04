@@ -1,7 +1,7 @@
 # DATABASE.md – checkup-main
 
 Проект Supabase: `apuivrfokciooovrpmgj` (одна база для checkup-main, checkup-platform і medok).
-Версія: 2.0 · 27.09.2026 · 5 · НОРМАТИВ. Схему знято з live-бази 27.09.2026 (information_schema, pg_policies, pg_constraint, schema_migrations), використання таблиць – grep коду checkup-main (sprint/kharkiv-v0) і checkup-platform (dev).
+Версія: 2.1 · 04.11.2026 · 5 · НОРМАТИВ (§1 – 4 таблиці кроку 2 A9; §6.2 – нова редакція під «Мій план»; §6.6, §6.7). Попередня: 2.0 · 27.09.2026. Схему знято з live-бази 27.09.2026 (information_schema, pg_policies, pg_constraint, schema_migrations), використання таблиць – grep коду checkup-main (sprint/kharkiv-v0) і checkup-platform (dev).
 
 Файл – довідник, не джерело правди. Перед міграцією або запитом, що спирається на структуру, звіряти live-схему через Supabase MCP.
 
@@ -23,6 +23,10 @@
 | platform_program_offers | checkup-main | міграції | checkup-main | 41 | read public | 2.3 |
 | clinic_services | checkup-main | міграції | checkup-main | 43 | read public | 2.4 |
 | program_services | checkup-main | міграції | checkup-main | 64 | read public | 2.4 |
+| examinations | checkup-main | Ігор (Table Editor); міграції | checkup-main | план (крок 2 A9) | read public (is_active) | 6.2 |
+| risk_factors | checkup-main | Ігор (Table Editor) | checkup-main | план (крок 2 A9) | read public (is_active) | 6.2 |
+| examination_recommendations | checkup-main | Ігор (Table Editor) | checkup-main | план (крок 2 A9) | read public (is_active і reviewed_at) | 6.2 |
+| clinic_service_examinations | checkup-main | Ігор (Table Editor) | checkup-main | план (крок 2 A9) | read public | 6.2 |
 | patient_criteria | заморожений квіз (Р40, Р48) | не знайдено | не знайдено | 0 | insert public | 2.5 |
 | quiz_configs | заморожений квіз | не знайдено | не знайдено | 2 | read public (is_active) | 2.5 |
 | clinics | спільна | міграції обох репо | обидва репо | 33 | read public (is_active) | 3.1 |
@@ -214,65 +218,157 @@ alter table public.leads
 
 Наслідок: legacy BookingModal і ContactForm (insert + select) перестають працювати. Вони лише на незатверджених сторінках; чинна форма BookingFlow → /api/leads не зачеплена.
 
-### 6.2 Крок 2 – довідник обстежень (Р57). Нічого не ламає
+### 6.2 Крок 2 – довідник обстежень, Базовий план, ризик-флоу, ціни (Р57, «Мій план»). Нічого не ламає
+
+Редакція 2.1 (04.11.2026) – під специфікацію `docs/ux/specs/2026-11-my-plan.md` v0.2 (checkup-platform dev, PR #192) і задачу UX → Нормативу від 04.11. Замінює редакцію 2.0: рівня «Повний план» і `condition_code` немає (рішення Ігоря 04.11); ризик-рядки – через `risk_factor_code`; групу «стать × вік» задає `platform_program_slug` (текстовий ключ – щоб Ігор вносив дані без uuid).
 
 Назви таблиць – від об'єкта «Обстеження» (словник PLATFORM-LINE §8): слова «тест», «скринінг», «позиція» в назвах не вживаються.
 
 ```sql
+-- 1. Довідник обстежень
 create table public.examinations (
-  slug text primary key check (slug ~ '^[a-z0-9-]+$'),  -- = /ukr/screening/[slug]
-  name_ua text not null,                                 -- назва мовою пацієнта
-  gender_scope text not null default 'any' check (gender_scope in ('female', 'male', 'any')),
+  slug text primary key check (slug ~ '^[a-z0-9-]+$'),          -- = /ukr/screening/[slug]
+  name_ua text not null,                                         -- назва мовою пацієнта
+  gender_scope text not null default 'any'
+    check (gender_scope in ('female', 'male', 'any')),
+  min_age smallint check (min_age between 0 and 120),            -- фільтр «Додати дослідження»; null – без обмеження
+  purpose_ua text check (char_length(purpose_ua) <= 80),         -- «для чого», рядок картки
+  rationale_type text
+    check (rationale_type in ('guideline', 'know_your_norm', 'doctor')),
+  rationale_ua text check (char_length(rationale_ua) <= 160),    -- обґрунтування, 1–2 речення
+  source_ref text,                                               -- назва джерела для позначки «Настанова · {джерело}»
+  harm_ua text check (char_length(harm_ua) <= 300),              -- зворот картки; null – картка не перегортається
+  harm_reviewed_at date,                                         -- без дати текст шкоди не показується
+  included_in_slug text references public.examinations(slug) on update cascade,
+                                                                 -- входить в інше (тиск → консультація): без ціни, без «Не потрібно»
+  offer_as_extra boolean not null default true,                  -- false – лише Базовий план і ризик-флоу, не «Додати дослідження»
   is_active boolean not null default true,
   sort_order integer not null default 0,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  check (included_in_slug is null or included_in_slug <> slug)
 );
 
+-- 2. Фактори ризику (чипи ризик-флоу)
+create table public.risk_factors (
+  code text primary key check (code ~ '^[a-z0-9-]+$'),
+  name_ua text not null check (char_length(name_ua) <= 60),
+  gender_scope text not null default 'any'
+    check (gender_scope in ('female', 'male', 'any')),
+  min_age smallint check (min_age between 0 and 120),
+  max_age smallint check (max_age between 0 and 120),
+  is_active boolean not null default true,
+  sort_order integer not null default 0,
+  created_at timestamptz not null default now(),
+  check (min_age is null or max_age is null or min_age <= max_age)
+);
+
+-- 3. Склад Базового плану і ризик-флоу для групи «стать × вік»
 create table public.examination_recommendations (
   id uuid primary key default gen_random_uuid(),
-  examination_slug text not null references public.examinations(slug) on update cascade,
-  platform_program_id uuid not null references public.platform_programs(id) on delete cascade,  -- стать і вік
-  condition_code text not null default 'all',  -- 'all' = для всіх у групі; інакше код фактора
-  condition_ua text not null,                  -- «для всіх жінок 40–50», «якщо в сім'ї…»
+  examination_slug text not null
+    references public.examinations(slug) on update cascade on delete cascade,
+  platform_program_slug text not null
+    references public.platform_programs(slug) on update cascade,  -- female-checkup-30-40 тощо
+  risk_factor_code text
+    references public.risk_factors(code) on update cascade,        -- null – Базовий план; заповнений – ризик-флоу
+  condition_ua text,                                               -- як бачить людина: «Раз на 3 роки», «З 35 років»
   periodicity_ua text,
-  source_ref text not null,                    -- розділ screening-evidence-matrix і настанова
+  locked boolean not null default false,                           -- рядок без «Не потрібно» (консультація)
+  source_ref text not null,                                        -- джерело рядка: наказ, настанова, розділ матриці
   reviewed_by text,
-  reviewed_at date,
+  reviewed_at date,                                                -- без дати рядок не читається публічно (PLATFORM-LINE 9.1)
   is_active boolean not null default true,
   sort_order integer not null default 0,
-  unique (examination_slug, platform_program_id, condition_code)
+  created_at timestamptz not null default now(),
+  check (reviewed_at is null or reviewed_by is not null),
+  check (risk_factor_code is null or not locked),
+  unique nulls not distinct (examination_slug, platform_program_slug, risk_factor_code)
 );
+create index examination_recommendations_program_idx
+  on public.examination_recommendations (platform_program_slug);
 
+-- 4. Послуга клініки ↔ обстеження
 create table public.clinic_service_examinations (
-  clinic_service_id uuid not null references public.clinic_services(id) on delete cascade,
-  examination_slug text not null references public.examinations(slug) on update cascade,
+  clinic_service_id uuid not null
+    references public.clinic_services(id) on delete cascade,
+  examination_slug text not null
+    references public.examinations(slug) on update cascade on delete cascade,
+  in_price boolean not null default true,   -- послуга входить у ціну обстеження в цій клініці
+  created_at timestamptz not null default now(),
   primary key (clinic_service_id, examination_slug)
 );
+create index clinic_service_examinations_exam_idx
+  on public.clinic_service_examinations (examination_slug);
 
 alter table public.examinations enable row level security;
+alter table public.risk_factors enable row level security;
 alter table public.examination_recommendations enable row level security;
 alter table public.clinic_service_examinations enable row level security;
 
 create policy "Public read examinations" on public.examinations
   for select using (is_active);
--- PLATFORM-LINE 9.1: без рецензента рекомендація не публікується
+create policy "Public read risk_factors" on public.risk_factors
+  for select using (is_active);
+-- PLATFORM-LINE 9.1: без рецензента рядок плану не публікується
 create policy "Public read reviewed recommendations" on public.examination_recommendations
   for select using (is_active and reviewed_at is not null);
 create policy "Public read clinic_service_examinations" on public.clinic_service_examinations
   for select using (true);
+-- Запис – лише власником проєкту (Table Editor Supabase) і міграціями. Політик insert/update немає.
 ```
 
-Правила моделі (обстеження = мета скринінгу, Р21):
+Відкат: `drop table` чотирьох таблиць у зворотному порядку (4, 3, 2, 1). Інших таблиць крок не змінює.
 
-- Одне обстеження – один slug, навіть якщо методів кілька. `pap-test` закривають і ПАП-тест, і тест на ВПЛ: обидві послуги зв'язуються з `pap-test`.
-- Обстеження закрите програмою, якщо хоча б одна послуга програми зв'язана з ним:
-  `exists (program_services ps join clinic_service_examinations cse using (clinic_service_id) where ps.checkup_program_id = :program and cse.examination_slug = :exam)`.
-- Рівень показників (Р34) на етапі 1 не будується. Послуга зв'язується з обстеженням напряму, пакет – з кожним обстеженням, яке він закриває.
-- План будується лише з `examination_recommendations`. Статуси Р36 («обов'язковий / зайвий») не є джерелом плану і в інтерфейс не потрапляють.
-- Групи плану етапу 1 обчислюються, а не зберігаються:
-  - «Головне зараз» – `condition_code = 'all'` і в місті є активна послуга клініки, зв'язана з обстеженням;
-  - «Запитати у лікаря» – усе інше.
-- «Додати до запису» – послуги клініки (`is_active`, не `is_service_position`), зв'язані з обстеженням з плану, якого немає в обраній програмі.
+#### Правила моделі (обстеження = мета скринінгу, Р21)
+
+- Одне обстеження – один slug, навіть якщо методів кілька. `pap-test` закривають і ПАП-тест, і тест на ВПЛ.
+- Рівень показників (Р34) не будується. Послуга зв'язується з обстеженням напряму; пакет – з кожним обстеженням, яке він закриває.
+- Межі вікових груп (для `min_age` і факторів ризику): `do-30` – 18–29; `30-40` – 30–39; `40-50` – 40–49; `50+` – від 50. Мапа – у коді (константа поруч з мапою URL-слаг ↔ slug, Р12), не в базі.
+
+Базовий план групи (my-plan §3):
+- рядки `examination_recommendations` з `platform_program_slug` групи і `risk_factor_code is null`, публічні (переглянуті), за `sort_order`;
+- `locked` – «Завжди», без «Не потрібно»;
+- обстеження з `included_in_slug` – «У консультації», без ціни і без «Не потрібно»;
+- блоку немає, якщо в групи немає жодного публічного рядка Базового плану.
+
+«Додати дослідження» (my-plan §6) – обстеження, у яких одночасно:
+- `is_active` і `offer_as_extra`;
+- `gender_scope` = стать сторінки або `any`;
+- `min_age` порожній або ≤ нижньої межі групи;
+- немає в Базовому плані групи;
+- є ціна хоча б в одній клініці міста (правило ціни нижче).
+
+Ризик-флоу (my-plan §7):
+- чип фактора показується, якщо `gender_scope` збігається, вікові межі фактора перетинаються з групою і для групи є хоча б один публічний рядок з цим `risk_factor_code`;
+- картки під обраними чипами – обстеження з цих рядків; одне обстеження – одна картка.
+- Фактор ризику живе лише в хеші посилання на план. У базу, аналітику і заявку не потрапляє (PLATFORM-LINE 7.1).
+
+Ціна обстеження в клініці (my-plan §5, правило `price_rule` з брифу):
+- беруться зв'язки `clinic_service_examinations` з `in_price = true` до активних послуг цієї клініки (`clinic_services.clinic_id`);
+- ціна обстеження = сума `clinic_services.price` цих послуг;
+- «комплекс клініки» – зв'язати комплекс з `in_price = true`, окремі позиції не зв'язувати або зв'язати з `false`;
+- «сума окремих позицій» – зв'язати кожну позицію з `in_price = true`;
+- альтернатива (ПАП-тест або тест на ВПЛ) – основна послуга `true`, інша `false`;
+- зв'язків з `in_price = true` немає – «Немає в {клініка}»;
+- хоча б одна з цих послуг без ціни або з `price_type = 'from'` – ціни немає (Р27: ціна лише точна);
+- обстеження з `included_in_slug` ціни не має і в суму не входить;
+- знижка (`clinic_services.discount_percent`) не застосовується: ціна – повна за прайсом.
+
+Сума плану в клініці:
+- послуги всіх обраних обстежень без повторів: пакет, що закриває два обстеження, рахується один раз;
+- дата під сумою – найстаріша `price_date` серед цих послуг;
+- обстеження без ціни в клініці – у суму не входить, рядок «Не входить у суму» (за замовчуванням my-plan §12 п. 2).
+
+Клініки у виборі (my-plan §2): клініки міста з конфігурації міста (`lib/cities/checkup-cities.ts`, порядок – PLATFORM-LINE 2.2), у яких є ціна хоча б одного обстеження плану.
+
+Заявка «Записатися за цим планом» (my-plan §5, Р47, Р52, Р60):
+- `leads.clinic_slug`, `leads.added_service_ids` – id послуг з правила суми, `leads.price` – сума, `leads.variant = 2`;
+- без назви плану, без прибраних рядків, без факторів ризику, без позначки «додаткове / за фактором ризику».
+
+Що вносить Ігор (Table Editor Supabase, без SQL; інструкція – `docs/MY-PLAN-DATA-ENTRY.md`):
+- `clinic_services` клінік міста з прайсу з датою;
+- `examinations`, `risk_factors`, `examination_recommendations`, `clinic_service_examinations`;
+- `reviewed_by`, `reviewed_at` – Ігор, після погодження з лікарем офлайн. Інших підтверджень немає.
 
 ### 6.3 Крок 3 – план пацієнта. Потребує ключа service_role
 
@@ -345,11 +441,16 @@ alter table public.patient_criteria
 Незворотно. Live 27.09: quiz_answers – 0 рядків зі значенням, selected_criteria – 2 рядки, patient_criteria – 0. Legacy ContactForm (заморожений квіз) після цього не працює – він і так недоступний на домені.
 Ім'я constraint – звірити live перед виконанням.
 
-### 6.6 Крок 6 – наповнення (після A8, рецензія матриці)
+### 6.6 Крок 6 – наповнення (Ігор, з 05.11.2026)
 
-1. `examinations` – обстеження з screening-evidence-matrix для 8 вікових груп. Slug збігається з наявними сторінками довідника: `mamografiia`, `pap-test`, `psa`.
-2. `examination_recommendations` – лише з рядків матриці з ПІБ і датою рецензента. Рядки чоловічих груп – після рішення PLATFORM-LINE 9.2.8.
-3. `clinic_service_examinations` – для 43 послуг ОН Клінік Харків. Послуга, що не закриває жодного обстеження, лишається без зв'язку. Вона не надлишок у тексті, а просто поза планом (Р53).
+Дані вносить Ігор у Table Editor Supabase (інструкція – `docs/MY-PLAN-DATA-ENTRY.md`). Виконавці записів складу і цін замість Ігоря не роблять (задача UX → Нормативу 04.11, §2).
+
+1. `clinic_services` – послуги клінік міста з прайсу з датою. Перше місто – Ужгород (live 04.11: 0 рядків).
+2. `examinations` – обстеження зі сторінок вікових груп і screening-evidence-matrix. Slug збігається з наявними сторінками довідника: `mamografiia`, `pap-test`, `psa`.
+3. `risk_factors`, `examination_recommendations` – рядки з `reviewed_by` і `reviewed_at` після погодження з лікарем.
+4. `clinic_service_examinations` – зв'язок послуг з обстеженнями. Послуга, що не закриває жодного обстеження, лишається без зв'язку (Р53).
+
+Чернетка складу – `content/plans/*.md`. Шаблон сторінки її не читає (my-plan §1.4 задачі).
 
 ### 6.7 Перевірка (Координатор, інструментом)
 
@@ -362,10 +463,13 @@ where table_name = 'leads' and column_name in ('variant', 'entry_point', 'added_
 -- 3: у плані немає ПД і зв'язку з лідом
 select column_name from information_schema.columns where table_name = 'patient_plans';
 -- 4: публічно видно лише рецензовані рекомендації (запит анонімним ключем)
--- 5: кожна вікова сторінка Харкова має хоча б одну рекомендацію 'all'
-select pp.slug, count(*) from examination_recommendations r
-join platform_programs pp on pp.id = r.platform_program_id
-where r.condition_code = 'all' and r.reviewed_at is not null group by pp.slug;
+-- 5: групи, у яких є публічний Базовий план
+select platform_program_slug, count(*) from examination_recommendations
+where risk_factor_code is null and is_active and reviewed_at is not null
+group by platform_program_slug;
+-- 5а: таблиці кроку 2 і RLS
+select tablename, policyname from pg_policies
+where tablename in ('examinations', 'risk_factors', 'examination_recommendations', 'clinic_service_examinations');
 -- 6: після кроку 5 колонок здоров'я в leads немає
 ```
 
@@ -375,6 +479,7 @@ where r.condition_code = 'all' and r.reviewed_at is not null group by pp.slug;
 
 ## 7. Історія
 
+- 2.1 · 04.11.2026 – крок 2 A9 у новій редакції під `docs/ux/specs/2026-11-my-plan.md` v0.2: `examinations` з полями картки (min_age, purpose_ua, rationale_type, rationale_ua, source_ref, harm_ua, harm_reviewed_at, included_in_slug, offer_as_extra); нова `risk_factors`; `examination_recommendations` – `platform_program_slug`, `risk_factor_code`, `locked` замість `platform_program_id` і `condition_code`; `clinic_service_examinations.in_price` – правило ціни; правила Базового плану, «Додати дослідження», ризик-флоу, ціни і заявки; крок 6 – наповнює Ігор. Чернетка 2.1 від 30.09 у dev не потрапила, її зміни тут не відтворено.
 - 2.0 · 27.09.2026 – файл перебудовано за live-схемою: карта 26 таблиць з власниками, деталі таблиць основного домену і спільних, контракт A9. Виправлено застарілі твердження 1.0 (`clinic_services.price` nullable з 30.08; `program_services` наповнено; кількість рядків).
 - 1.0 · 09.08.2026 – checkup_programs.program_type і price_date, clinic_services, program_services, 6 оферів (Р29). Фактичні дати міграцій у базі – 15.08.2026.
 
