@@ -33,6 +33,11 @@ interface LeadPayload {
   utm_medium?: string | null;
   utm_campaign?: string | null;
   consent_given: boolean;
+  /** «Мій план» (my-plan §5, DATABASE.md 6.1): 2 – запис за планом без програми клініки (Р60). */
+  variant?: number | null;
+  entry_point?: 'page' | 'quiz' | 'search' | null;
+  /** id послуг клініки (clinic_services.id) з правила суми плану. Без назв, причин і факторів (PLATFORM-LINE 7.1). */
+  added_service_ids?: string[] | null;
   /** honeypot — має бути порожнім */
   website?: string;
 }
@@ -54,6 +59,7 @@ function notifyTelegram(lead: LeadPayload, warning?: string): Promise<void> {
     lead.preferred_contact ? `Зв'язок: ${lead.preferred_contact}` : null,
     lead.program_name ? `Програма: ${lead.program_name}` : null,
     lead.price ? `Ціна: ${lead.price} грн` : null,
+    lead.variant === 2 ? `Запис за планом: ${lead.added_service_ids?.length ?? 0} послуг клініки` : null,
     lead.branch_address ? `Філія: ${lead.branch_address}` : null,
     lead.selected_date_label ? `Бажаний день: ${lead.selected_date_label}` : null,
     lead.comment ? lead.comment : null,
@@ -119,6 +125,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'missing context' }, { status: 422 });
   }
 
+  // Поля «Мій план»: лише значення з контракту DATABASE.md 6.1, решта відкидається.
+  const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const variant = body.variant === 1 || body.variant === 2 || body.variant === 3 ? body.variant : null;
+  const entryPoint = body.entry_point === 'page' || body.entry_point === 'quiz' || body.entry_point === 'search' ? body.entry_point : null;
+  const addedServiceIds = Array.isArray(body.added_service_ids)
+    ? [...new Set(body.added_service_ids.filter((id) => typeof id === 'string' && UUID.test(id)))].slice(0, 50)
+    : [];
+
   // id генеруємо тут: anon-ключ має право лише на INSERT, повернути id з бази не може.
   const leadId = crypto.randomUUID();
 
@@ -144,6 +158,9 @@ export async function POST(req: NextRequest) {
       utm_source: body.utm_source ?? null,
       utm_medium: body.utm_medium ?? null,
       utm_campaign: body.utm_campaign ?? null,
+      variant,
+      entry_point: entryPoint,
+      added_service_ids: addedServiceIds,
       consent_given: true,
       consent_given_at: new Date().toISOString(),
       status: 'new',

@@ -46,6 +46,7 @@ import {
   programsItemListLd,
   visitsText,
 } from '@/lib/programs/age-page-shared';
+import MyPlan from '@/components/plan/MyPlan';
 
 // Вікова сторінка міста – SPRINT-KHARKIV-v0, тип 5a. Шаблон для всіх міст з lib/cities/checkup-cities.ts (конвеєр міграції, 30.10.2026).
 // Контент: content/kharkiv/female-do-30-rokiv.md дослівно.
@@ -437,6 +438,9 @@ export default async function FemaleAgeDo30CityPage({ citySlug }: { citySlug: st
             </Block>
           </div>
         </div>
+
+        {/* «Мій план обстеження» – docs/ux/specs/2026-11-my-plan.md v0.3; дані з бази, блоку немає без Базового плану. */}
+        <MyPlan gender="female" seg="do-30-rokiv" city={city} />
 
         {/* ЗОНА ПРОГРАМИ (макет v2, 21.10; рішення Ігоря 1А 2А): локація – один раз на клініку, над її програмами;
             програма – картка: перший шар для рішення, решта – акордеон; ціна і запис – у картці. Сайдбара немає.

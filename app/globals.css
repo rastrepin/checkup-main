@@ -134,6 +134,8 @@
   --border: #e5e7eb;
   --section-border: #e8edf3;
   --bg-muted: #f8fafc;
+  --bg-subtle: #eef2f6;             /* ui-kit v1.9 §2.4: позначка типу картки, чип «Не потрібно» */
+  --border-strong: #7b8794;         /* ui-kit v1.9 §2.4: межа нейтральної кнопки, 3.66 на білому */
   --danger: #dc2626;
   --danger-bg: #fef2f2;
   --danger-text: #991b1b;
@@ -285,6 +287,8 @@
   --color-link: var(--link);
   --color-section-border: var(--section-border);
   --color-bg-muted: var(--bg-muted);
+  --color-bg-subtle: var(--bg-subtle);
+  --color-border-strong: var(--border-strong);
   --color-danger: var(--danger);
   --color-danger-bg: var(--danger-bg);
   --color-danger-text: var(--danger-text);
@@ -328,3 +332,9 @@ body {
   justify-content: center;
   flex-shrink: 0;
 }
+
+/* «Мій план»: зворот картки дослідження (my-plan §4) – поворот до 12° і поява за 220 мс; без анімації,
+   якщо людина просить менше руху. */
+@keyframes exam-flip-in { from { opacity: 0; transform: perspective(800px) rotateY(12deg); } to { opacity: 1; transform: none; } }
+.exam-flip-in:not([hidden]) { animation: exam-flip-in 220ms var(--ease-out-cu, ease-out); }
+@media (prefers-reduced-motion: reduce) { .exam-flip-in:not([hidden]) { animation: none; } }

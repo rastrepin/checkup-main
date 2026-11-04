@@ -14,6 +14,7 @@ import { getCheckupCity, type CheckupCity } from '@/lib/cities/checkup-cities';
 import BookingFlow, { BookCta } from '@/components/city/BookingFlow';
 import Header from '@/components/frame/Header';
 import { HERO_DISCLAIMER, programsItemListLd } from '@/lib/programs/age-page-shared';
+import MyPlan from '@/components/plan/MyPlan';
 
 // Вікова сторінка міста – чернетка SPRINT-KHARKIV-v0, каркас 5.2 (12 блоків).
 // Контент: content/kharkiv/male-do-40-rokiv.md (v0) дослівно; файл згенеровано з того самого джерела, що й MD.
@@ -300,6 +301,9 @@ export default async function MaleAge3040CityPage({ citySlug }: { citySlug: stri
           <h3 className="text-lg font-semibold text-[#0b1a24] mt-8">Фактори серцево-судинного ризику</h3>
           <p className={P}>Тиск вимірюють щороку, а не раз на 3–5 років<S n={[2]} />. Які фактори ризику є саме у вас, оцінює лікар.</p>
         </Section>
+
+        {/* «Мій план обстеження» – docs/ux/specs/2026-11-my-plan.md v0.3; дані з бази, блоку немає без Базового плану. */}
+        <MyPlan gender="male" seg="do-40-rokiv" city={city} />
 
         {/* 4. Готовий варіант – програма клініки з даних */}
         <Section bg={BG_WHITE} eyebrow="Програма клініки">
