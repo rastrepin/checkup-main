@@ -301,15 +301,7 @@ export default async function MaleAgeVid50CityPage({ citySlug }: { citySlug: str
           <p className={P}>До 70 років чоловікам із надлишковою вагою або ожирінням, тобто з індексом маси тіла 25 і більше, скринінг переддіабету і діабету 2 типу роблять раз на 3 роки<S n={[4]} />.</p>
         </Section>
 
-        {/* 3. Що залежить від вашої історії */}
-        <Section bg={BG_GRAY} eyebrow="Ваша історія">
-          <H2 id="istoriia">Що залежить від вашої історії</H2>
-          <p className={P}>Перелік вище розрахований на чоловіка без скарг і без особливої історії. Він змінюється, якщо:</p>
-          <h3 className="text-lg font-semibold text-[#0b1a24] mt-8">Фактори ризику колоректального раку</h3>
-          <p className={P}>Скринінг починають з 40 років і роблять щороку, а не раз на 2 роки<S n={[1]} />. Які фактори ризику є саме у вас, оцінює лікар.</p>
-        </Section>
-
-        {/* «Мій план обстеження» – docs/ux/specs/2026-11-my-plan.md v0.3; дані з бази, блоку немає без Базового плану. */}
+        {/* «Мій план обстеження» – docs/ux/specs/2026-11-my-plan.md v0.4 §0: одразу після «Які обстеження рекомендують»; дані з бази, блоку немає без Базового плану. */}
         <MyPlan gender="male" seg="vid-50-rokiv" city={city} />
 
         {/* 4. Готовий варіант – програма клініки з даних */}
@@ -529,6 +521,14 @@ export default async function MaleAgeVid50CityPage({ citySlug }: { citySlug: str
           </Section>
         )}
 
+        {/* 3. Що залежить від вашої історії – після зони клініки, перед FAQ (задача НОРМАТИВ 05.11, п. 1) */}
+        <Section bg={BG_GRAY} eyebrow="Ваша історія">
+          <H2 id="istoriia">Що залежить від вашої історії</H2>
+          <p className={P}>Перелік вище розрахований на чоловіка без скарг і без особливої історії. Він змінюється, якщо:</p>
+          <h3 className="text-lg font-semibold text-[#0b1a24] mt-8">Фактори ризику колоректального раку</h3>
+          <p className={P}>Скринінг починають з 40 років і роблять щороку, а не раз на 2 роки<S n={[1]} />. Які фактори ризику є саме у вас, оцінює лікар.</p>
+        </Section>
+
         {/* 9. FAQ – нативний <details>, відповіді в DOM */}
         <Section bg={BG_WHITE} eyebrow="Питання">
           <H2 id="faq">Часті запитання</H2>
@@ -610,7 +610,7 @@ export default async function MaleAgeVid50CityPage({ citySlug }: { citySlug: str
             city={city.slug}
             programsComposition={{ [program.slug]: composition.counts }}
           />
-          <StickyMobileCta programNameShort={program.name_ua} programSlug={program.slug} sourceCta={`${SOURCE_CTA}_sticky`} />
+          <StickyMobileCta programNameShort={program.name_ua} programSlug={program.slug} sourceCta={`${SOURCE_CTA}_sticky`} hideWhenVisibleId="plan-zone" />
         </>
       )}
     </>

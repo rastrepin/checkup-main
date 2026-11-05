@@ -28,8 +28,9 @@ export interface StickyMobileCtaProps {
   /** Напис кнопки до зони програми. */
   browseLabel?: string;
   /** Макет зони програми v2 (21.10): id блоку ціни в картці програми. Поки він на екрані, панель схована –
-   *  дві кнопки «Записатися» одночасно не видно. */
-  hideWhenVisibleId?: string;
+   *  дві кнопки «Записатися» одночасно не видно. Кілька id – панель схована, поки на екрані будь-який з них
+   *  («Мій план» v0.4 §8б: 'plan-zone' – від H2 блоку до кінця ризик-флоу). */
+  hideWhenVisibleId?: string | string[];
   /** Хаб діагнозу (рішення Ігоря 21.10, 3А): лише кнопка-перехід у зону лікарів (`zoneId`) на всю ширину,
    *  без назви і ціни; у зоні панель схована (у картках лікарів – свої кнопки запису). Кнопка – structural (не запис). */
   browseOnly?: boolean;
@@ -46,9 +47,11 @@ export default function StickyMobileCta({ programNameShort, price, programSlug, 
   useEffect(() => {
     const onScroll = () => {
       const el = revealAfterId ? document.getElementById(revealAfterId) : null;
-      const buy = hideWhenVisibleId ? document.getElementById(hideWhenVisibleId) : null;
-      const r = buy?.getBoundingClientRect();
-      const buyOnScreen = r ? r.top < window.innerHeight && r.bottom > 0 : false;
+      const hideIds = hideWhenVisibleId ? ([] as string[]).concat(hideWhenVisibleId) : [];
+      const buyOnScreen = hideIds.some((id) => {
+        const r = document.getElementById(id)?.getBoundingClientRect();
+        return r ? r.top < window.innerHeight && r.bottom > 0 : false;
+      });
       setVisible((el ? el.getBoundingClientRect().bottom < 0 : window.scrollY > 400) && !buyOnScreen);
       if (zoneId) {
         const z = document.getElementById(zoneId);

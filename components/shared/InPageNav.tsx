@@ -23,8 +23,16 @@ export interface InPageNavItem {
 // до першої прокрутки активний перший пункт. Компонент досі не використовувався на інших сторінках.
 // ОНОВЛЕНО 25.09.2026 (рішення Ігоря після задачі v2): закріплене лише на desktop (≥ 1024 px);
 // на mobile меню прокручується разом зі сторінкою, закріплена тільки кнопка запису знизу.
+// ОНОВЛЕНО 05.11.2026 («Мій план» v0.5, п. 6): пункт, якого на сторінці немає (блок «Мій план» без даних міста),
+// ховається після завантаження – меню не веде на порожній якір.
 export default function InPageNav({ items }: { items: InPageNavItem[] }) {
   const [activeId, setActiveId] = useState<string | null>(items[0]?.id ?? null);
+  const [missing, setMissing] = useState<string[]>([]);
+
+  useEffect(() => {
+    setMissing(items.filter((item) => !document.getElementById(item.id)).map((item) => item.id));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items.length]);
 
   useEffect(() => {
     if (items.length === 0) return;
@@ -59,7 +67,7 @@ export default function InPageNav({ items }: { items: InPageNavItem[] }) {
       className="lg:sticky lg:top-0 z-30 bg-white/95 backdrop-blur border-b border-gray-200 text-sm"
     >
       <div className="max-w-[1200px] mx-auto flex gap-2 overflow-x-auto px-5 sm:px-6 lg:px-14 py-3 [scrollbar-width:none]">
-      {items.map((item) => {
+      {items.filter((item) => !missing.includes(item.id)).map((item) => {
         const isActive = activeId === item.id;
         return (
           <a
