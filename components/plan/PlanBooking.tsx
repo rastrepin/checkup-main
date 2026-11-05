@@ -166,7 +166,7 @@ export default function PlanBooking({ city, request, onClose }: { city: string; 
                             branchId === b.id ? 'border-link bg-brand-primary-soft' : 'border-[var(--border)]'
                           }`}
                         >
-                          <input type="radio" name="pb-branch" checked={branchId === b.id} onChange={() => setBranchId(b.id)} className="mt-1" />
+                          <input type="radio" name="pb-branch" checked={branchId === b.id} onChange={() => setBranchId(b.id)} className="mt-1 accent-[var(--link)]" />
                           <span className="text-sm">
                             <span className="font-semibold text-ink">{b.address}</span>
                             {b.metro && <span className="text-text-secondary"> · м. {b.metro}</span>}
