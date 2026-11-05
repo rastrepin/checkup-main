@@ -1,11 +1,13 @@
 'use client';
 
-// «Мій план обстеження» – клієнтська частина (docs/ux/specs/2026-11-my-plan.md v0.4).
-// Порядок (§1): план → «Додано вами» → «Я в групі ризику →» → підсумок (вибір клініки, сума, дії) →
-// «Додати дослідження» → ризик-флоу. Дані – з бази (lib/plan/data.ts), стан людини – лише в хеші (lib/plan/state.ts).
+// «Мій план обстеження» – клієнтська частина (docs/ux/specs/2026-11-my-plan.md v0.5).
+// Mobile (§1): план → «Додано вами» → «Я в групі ризику →» → підсумок (вибір клініки, сума, дії) →
+// «Додати дослідження» → ризик-флоу. Desktop від 1024 (§1.1): сітка minmax(0,1fr) 360px, ліворуч план, картки
+// і ризик-флоу, праворуч підсумок – плаваючий сайдбар (sticky top 24 у межах блоку).
+// Панель плану mobile (§8б): видно, коли блок на екрані, а підсумок поза екраном (IntersectionObserver). Дані – з бази (lib/plan/data.ts), стан людини – лише в хеші (lib/plan/state.ts).
 // Кольори – лише токени app/globals.css. Жодних підказок про ризик у Базовому плані, тривожних кольорів, знижок.
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { buttonClass } from '@/components/frame/Button';
 import ExamCard from './ExamCard';
 import PlanBooking, { type PlanBookingRequest } from './PlanBooking';
@@ -23,7 +25,7 @@ function priced(c: PlanClinic | null, slug: string) {
   return p && typeof p === 'object' ? p : null;
 }
 
-export default function MyPlanClient({ data }: { data: MyPlanData }) {
+export default function MyPlanClient({ data, header }: { data: MyPlanData; header?: ReactNode }) {
   const [state, setState] = useState<PlanUserState>(EMPTY_STATE);
   const [riskOpen, setRiskOpen] = useState(false);
   const [flipped, setFlipped] = useState<string | null>(null);
@@ -32,6 +34,13 @@ export default function MyPlanClient({ data }: { data: MyPlanData }) {
   const [status, setStatus] = useState('');
   const riskRef = useRef<HTMLDivElement>(null);
   const planRef = useRef<HTMLDivElement>(null);
+  const summaryRef = useRef<HTMLDivElement>(null);
+  const clinicRadio = useRef<HTMLInputElement>(null);
+  const clinicSet = useRef<HTMLFieldSetElement>(null);
+  const [inZone, setInZone] = useState(false);
+  const [summaryOn, setSummaryOn] = useState(false);
+  const [flash, setFlash] = useState(false);
+  const [sideTop, setSideTop] = useState(24);
 
   const { exams, base, extras, risk, clinics } = data;
   const known = useMemo(() => new Set(Object.keys(exams)), [exams]);
@@ -76,6 +85,51 @@ export default function MyPlanClient({ data }: { data: MyPlanData }) {
     const date = svc.map((s) => s.date).sort()[0] ?? null;
     return { total, date, ids: [...ids], missing, items: slugs.length - missing.length };
   }, [active, base, exams, state.added, state.dropped]);
+
+  // Панель плану (§8б): блок «Мій план» (#plan-zone, від H2 до кінця ризик-флоу) на екрані, підсумок – поза екраном.
+  useEffect(() => {
+    const zone = document.getElementById('plan-zone');
+    const summary = summaryRef.current;
+    if (!zone || !summary || typeof IntersectionObserver === 'undefined') return;
+    const zo = new IntersectionObserver(([e]) => setInZone(e.isIntersecting));
+    const so = new IntersectionObserver(([e]) => setSummaryOn(e.isIntersecting));
+    zo.observe(zone);
+    so.observe(summary);
+    return () => {
+      zo.disconnect();
+      so.disconnect();
+    };
+  }, []);
+
+  // Зміна суми – коротке підсвічування фоном --bg-subtle 600 мс; prefers-reduced-motion – без підсвічування.
+  const prevTotal = useRef<number | null>(null);
+  const total = sum?.total ?? null;
+  useEffect(() => {
+    const prev = prevTotal.current;
+    prevTotal.current = total;
+    if (prev === null || total === null || prev === total) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    setFlash(true);
+    const t = window.setTimeout(() => setFlash(false), 600);
+    return () => window.clearTimeout(t);
+  }, [total]);
+
+  // Сайдбар desktop: top 24 (§1.1). На жіночих сторінках з 1024 закріплене внутрішнє меню – сайдбар стає під ним.
+  useEffect(() => {
+    const measure = () => {
+      const nav = document.querySelector('nav[aria-label="Зміст сторінки"]');
+      const fixedNav = nav && getComputedStyle(nav).position === 'sticky' ? nav.getBoundingClientRect().height : 0;
+      setSideTop(Math.round(fixedNav) + 24);
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, []);
+
+  const chooseClinic = () => {
+    clinicSet.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    clinicRadio.current?.focus({ preventScroll: true });
+  };
 
   const cardPrice = (slug: string): { text: string; strong: boolean } | null => {
     if (exams[slug]?.includedIn || clinics.length === 0) return null;
@@ -163,9 +217,15 @@ export default function MyPlanClient({ data }: { data: MyPlanData }) {
   const textBtn =
     'shrink-0 inline-flex items-center min-h-11 px-1 text-[14px] font-semibold text-link underline decoration-1 underline-offset-[3px] hover:decoration-2 rounded-[var(--radius-sm)]';
 
+  const showPanel = clinics.length > 0 && inZone && !summaryOn;
+
   return (
     <>
-      <div ref={planRef} className="max-w-[720px] scroll-mt-20">
+      <div className="max-w-[1120px] lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-x-8">
+        {/* 1. H2 і лід – на desktop у лівій колонці */}
+        <div className="lg:col-start-1 lg:row-start-1">{header}</div>
+
+      <div ref={planRef} className="max-w-[720px] lg:max-w-none lg:col-start-1 lg:row-start-2 scroll-mt-20">
         {/* 3. Базовий план + 4. «Додано вами» + 5. «Я в групі ризику →» – картка плану */}
         <div className="mt-[var(--space-block)] bg-white border border-[var(--border)] rounded-[var(--radius-lg)] px-[var(--space-card)]">
           <ul aria-label={PLAN_T.title}>
@@ -231,24 +291,36 @@ export default function MyPlanClient({ data }: { data: MyPlanData }) {
             </button>
           </p>
         </div>
+      </div>
 
-        {/* 6. Підсумок: вибір клініки, сума, дії */}
-        <div className="mt-6">
+        {/* 6. Підсумок: вибір клініки, сума, дії. Desktop – плаваючий сайдбар (§1.1). */}
+        <div
+          ref={summaryRef}
+          style={{ ['--plan-side-top' as string]: `${sideTop}px` }}
+          className="mt-6 max-w-[720px] lg:max-w-none lg:mt-0 lg:col-start-2 lg:row-start-1 lg:row-span-4 lg:self-start lg:sticky lg:top-[var(--plan-side-top)] lg:bg-white lg:border lg:border-[var(--border)] lg:rounded-[var(--radius-lg)] lg:p-[18px]"
+        >
           {clinics.length === 0 ? (
             <p className="text-[15px] leading-relaxed text-ink">{PLAN_T.noPricesCity(data.city.inCity)}</p>
           ) : (
             multi && (
-              <fieldset>
+              <fieldset ref={clinicSet}>
                 <legend className="text-[15px] font-semibold text-ink mb-2">{PLAN_T.clinicLegend}</legend>
                 <div className="flex flex-col gap-2">
-                  {clinics.map((c) => (
+                  {clinics.map((c, i) => (
                     <label
                       key={c.slug}
                       className={`flex items-center gap-3 min-h-14 px-4 py-2 rounded-[var(--radius-lg)] border cursor-pointer ${
                         state.clinic === c.slug ? 'border-link bg-brand-primary-soft' : 'border-[var(--border)] bg-white'
                       }`}
                     >
-                      <input type="radio" name="plan-clinic" checked={state.clinic === c.slug} onChange={() => pickClinic(c.slug)} className="w-5 h-5 shrink-0" />
+                      <input
+                        ref={i === 0 ? clinicRadio : undefined}
+                        type="radio"
+                        name="plan-clinic"
+                        checked={state.clinic === c.slug}
+                        onChange={() => pickClinic(c.slug)}
+                        className="w-5 h-5 shrink-0 accent-[var(--link)]"
+                      />
                       <span className="flex-1 min-w-0">
                         <span className="block text-[16px] font-semibold text-ink">{c.shortName}</span>
                         {c.priceDate && <span className="block text-[13px] text-text-secondary">{PLAN_T.clinicPriceFrom(fmtDate(c.priceDate))}</span>}
@@ -291,10 +363,9 @@ export default function MyPlanClient({ data }: { data: MyPlanData }) {
           </p>
           <p className="mt-3 text-[13px] leading-relaxed text-text-secondary">{PLAN_T.disclaimer}</p>
         </div>
-      </div>
 
-      {/* 7. «Додати дослідження» */}
-      <div className="mt-12 max-w-[1120px]">
+      {/* 7. «Додати дослідження» – на desktop картки по 2 в ряд у лівій колонці */}
+      <div className="mt-12 lg:col-start-1 lg:row-start-3">
         {extras.length === 0 ? (
           <p className="max-w-[720px] text-[15px] text-text-secondary">{PLAN_T.extraNone(data.city.loc)}</p>
         ) : (
@@ -326,7 +397,7 @@ export default function MyPlanClient({ data }: { data: MyPlanData }) {
       </div>
 
       {/* 8. Ризик-флоу */}
-      <div id="plan-risk" ref={riskRef} hidden={!riskOpen} className="mt-12 max-w-[1120px] scroll-mt-20">
+      <div id="plan-risk" ref={riskRef} hidden={!riskOpen} className="mt-12 lg:col-start-1 lg:row-start-4 scroll-mt-20">
         <h3 className="text-[22px] font-bold text-ink">{PLAN_T.riskTitle}</h3>
         {risk.length === 0 ? (
           <p className="mt-2 max-w-[720px] text-[15px] leading-relaxed text-text-secondary">
@@ -344,7 +415,7 @@ export default function MyPlanClient({ data }: { data: MyPlanData }) {
                     type="button"
                     aria-pressed={on}
                     onClick={() => toggleFactor(f.code)}
-                    className={`inline-flex items-center min-h-11 px-4 rounded-[var(--radius-pill)] border-[1.5px] text-[14px] ${
+                    className={`inline-flex items-center justify-start text-left min-h-11 px-[14px] py-[10px] rounded-[var(--radius-md)] border-[1.5px] text-[14px] leading-snug ${
                       on ? 'border-link bg-brand-primary-soft text-link font-semibold' : 'border-[var(--border)] bg-white text-ink'
                     }`}
                   >
@@ -377,6 +448,43 @@ export default function MyPlanClient({ data }: { data: MyPlanData }) {
           </button>
         </p>
       </div>
+      </div>
+
+      {/* Панель плану mobile (§8б): лише коли блок на екрані, а підсумок – ні; з панеллю сторінки разом не буває
+          (StickyMobileCta схована, поки #plan-zone на екрані). Desktop – сайдбар, панелі немає. */}
+      {clinics.length > 0 && (
+        <div
+          className={`fixed bottom-0 inset-x-0 z-[150] md:hidden bg-white border-t border-[var(--border)] px-5 pt-3 pb-[calc(12px+env(safe-area-inset-bottom,0px))] flex items-center justify-between gap-3 ${
+            showPanel ? '' : 'hidden'
+          }`}
+          style={{ boxShadow: '0 -8px 24px rgba(0,0,0,0.06)' }}
+        >
+          {active && sum ? (
+            <>
+              <div className="min-w-0 flex-1">
+                <p className="text-[13px] leading-tight text-text-secondary truncate">{PLAN_T.totalIn(active.shortName)}</p>
+                <p
+                  aria-live="polite"
+                  className={`inline-block mt-0.5 -mx-1 px-1 rounded-[var(--radius-sm)] text-[20px] font-bold leading-tight text-text-primary transition-colors duration-300 ${flash ? 'bg-bg-subtle' : ''}`}
+                  style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}
+                >
+                  {fmtUah(sum.total)}
+                </p>
+              </div>
+              <button type="button" onClick={book} disabled={sum.items === 0} className={`${buttonClass({ variant: 'booking', size: 'lg' })} shrink-0 px-6 disabled:opacity-50`}>
+                {PLAN_T.panelBook}
+              </button>
+            </>
+          ) : multi ? (
+            <>
+              <p className="min-w-0 flex-1 text-[15px] leading-snug text-ink">{PLAN_T.panelPick}</p>
+              <button type="button" onClick={chooseClinic} className={`${buttonClass({ variant: 'secondary', size: 'md' })} shrink-0`}>
+                {PLAN_T.panelPickBtn}
+              </button>
+            </>
+          ) : null}
+        </div>
+      )}
 
       {booking && (
         <PlanBooking

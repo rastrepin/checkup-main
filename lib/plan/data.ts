@@ -4,7 +4,7 @@ import type { CheckupCity } from '@/lib/cities/checkup-cities';
 import { AGE_GROUPS, ageOverlaps, groupSlug, type AgeSegment, type PlanGender } from './age-groups';
 import { MY_PLAN_CONFIG } from './config';
 
-// Дані блоку «Мій план» – лише з бази, за правилами DATABASE.md 2.1 §6.2 (docs/ux/specs/2026-11-my-plan.md v0.4 §8, §8в).
+// Дані блоку «Мій план» – лише з бази, за правилами DATABASE.md 2.1 §6.2 (docs/ux/specs/2026-11-my-plan.md v0.5 §6, §8, §8в).
 // Анонімний ключ: RLS віддає лише активні обстеження і фактори та переглянуті рядки плану (reviewed_at).
 // content/plans/*.md шаблон не читає. Немає жодного публічного рядка Базового плану – null, блоку немає.
 
@@ -114,7 +114,8 @@ export const fetchMyPlan = cache(async (gender: PlanGender, seg: AgeSegment, cit
         purpose: str(e.purpose_ua),
         rationaleType: (['guideline', 'know_your_norm', 'doctor'] as const).includes(e.rationale_type) ? e.rationale_type : null,
         rationale: str(e.rationale_ua),
-        sourceRef: str(e.source_ref),
+        // Позначка джерела на картці – без початкового коду джерела «[Д12] » (задача НОРМАТИВ 05.11, п. 5).
+        sourceRef: str(str(e.source_ref)?.replace(/^\[Д\d+\]\s*/, '')),
         harm: e.harm_reviewed_at ? str(e.harm_ua) : null,
         includedIn: str(e.included_in_slug),
       };
@@ -139,7 +140,8 @@ export const fetchMyPlan = cache(async (gender: PlanGender, seg: AgeSegment, cit
     // Кандидати «Додати дослідження» до перевірки цін.
     const extraCandidates = Object.values(examMeta)
       .filter((e) => e.offer_as_extra !== false && (e.gender_scope === 'any' || e.gender_scope === gender))
-      .filter((e) => e.min_age == null || e.min_age <= group.minAge)
+      // §6 v0.5: порожній min_age – не серед додаткових (захист від помилки в даних); у Базовому плані і ризик-флоу лишається.
+      .filter((e) => e.min_age != null && e.min_age <= group.minAge)
       .filter((e) => !baseSet.has(e.slug))
       .map((e) => e.slug as string);
 
