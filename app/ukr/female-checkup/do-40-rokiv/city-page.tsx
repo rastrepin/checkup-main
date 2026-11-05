@@ -298,6 +298,7 @@ export default async function FemaleAge3040CityPage({ citySlug }: { citySlug: st
 
   const navItems: InPageNavItem[] = [
     { id: ID.list, label: 'Що перевірити' },
+    { id: 'plan', label: 'Мій план' },
     { id: ID.programs, label: 'Програми' },
     { id: ID.faq, label: 'Питання' },
   ];
@@ -389,19 +390,10 @@ export default async function FemaleAge3040CityPage({ citySlug }: { citySlug: st
           }
         />
 
-        {/* 1a. Внутрішнє меню. Смуга програми – одразу після меню, між розділами, на mobile і desktop (Ігор 21.10). */}
+        {/* 1a. Внутрішнє меню. Смуга програми – після «Мій план» (задача НОРМАТИВ 05.11, п. 1). */}
         <InPageNav items={navItems} />
-        {program && clinic && (
-          <ProgramBridge
-            label={`Програма клініки в ${city.loc}`}
-            title={`${program.name_ua} · ${clinic.name}`}
-            teaser={composition ? [composition.consultationsSummary && `Консультації: ${composition.consultationsSummary}.`, composition.instrumentalSummary].filter(Boolean).join(' ') : undefined}
-            href={`#${ID.programs}`}
-            cta="Переглянути програму ↓"
-          />
-        )}
 
-        {/* ЗОНА РЕКОМЕНДАЦІЙ (макет зон 20.10): рекомендації для всіх, історія. Права колонка порожня. */}
+        {/* ЗОНА РЕКОМЕНДАЦІЙ (макет зон 20.10): рекомендації для всіх. Права колонка порожня. */}
         <div className="max-w-[1200px] mx-auto lg:px-14 lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-x-12">
           <div className="min-w-0">
             {/* 2. Які обстеження рекомендують жінкам у 30–40 років – не залежить від партнера */}
@@ -437,24 +429,16 @@ export default async function FemaleAge3040CityPage({ citySlug }: { citySlug: st
         {/* «Мій план обстеження» – docs/ux/specs/2026-11-my-plan.md v0.4 §0: одразу після «Які обстеження рекомендують»; дані з бази, блоку немає без Базового плану. */}
         <MyPlan gender="female" seg="do-40-rokiv" city={city} />
 
-        <div className="max-w-[1200px] mx-auto lg:px-14 lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-x-12">
-          <div className="min-w-0">
-            {/* 2b. Що залежить від вашої історії – у порядку переліку */}
-            <Block eyebrow="Ваша історія" id={ID.history}>
-              <H2>Що залежить від вашої історії</H2>
-              <p className={P}>Перелік вище розрахований на жінку без скарг і без особливої історії. Він змінюється, якщо:</p>
-              <AccordionMobile title={<>ВІЛ або інший стан, що пригнічує імунітет</>}>
-                <p className={P}>Графік скринінгу інший: ПАП-тест або тест на ВПЛ роблять кожні 5 років<S n={[5]} />, і з віком скринінг не припиняють<S n={[2]} />.</p>
-              </AccordionMobile>
-              <AccordionMobile title={<>Фактори серцево-судинного ризику</>}>
-                <p className={P}>Тиск вимірюють щороку, а не раз на 3–5 років<S n={[3]} />. Які фактори ризику є саме у вас, оцінює лікар.</p>
-              </AccordionMobile>
-              <AccordionMobile title={<>Рак молочної залози в матері, сестри або доньки</>}>
-                <p className={P}>Мамографію починають за 5–10 років до віку, у якому діагноз поставили родичці<S n={[3]} />. З якого віку починати вам, обговоріть з лікарем.</p>
-              </AccordionMobile>
-            </Block>
-          </div>
-        </div>
+        {/* Смуга програми – після «Мій план», перед зоною клініки (задача НОРМАТИВ 05.11, п. 1). */}
+        {program && clinic && (
+          <ProgramBridge
+            label={`Програма клініки в ${city.loc}`}
+            title={`${program.name_ua} · ${clinic.name}`}
+            teaser={composition ? [composition.consultationsSummary && `Консультації: ${composition.consultationsSummary}.`, composition.instrumentalSummary].filter(Boolean).join(' ') : undefined}
+            href={`#${ID.programs}`}
+            cta="Переглянути програму ↓"
+          />
+        )}
 
         {/* ЗОНА ПРОГРАМИ (макет v2, 21.10; рішення Ігоря 1А 2А): локація – один раз на клініку, над її програмами;
             програма – картка: перший шар для рішення, решта – акордеон; ціна і запис – у картці. Сайдбара немає.
@@ -666,6 +650,25 @@ export default async function FemaleAge3040CityPage({ citySlug }: { citySlug: st
               <p className="text-ink leading-relaxed">{DOCTOR_DECIDES_TEXT}</p>
               <p className="text-[15px] text-text-secondary leading-relaxed mt-2">{ANY_CLINIC_TEXT}</p>
             </div>
+          </div>
+        </div>
+
+        <div className="max-w-[1200px] mx-auto lg:px-14 lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-x-12">
+          <div className="min-w-0">
+            {/* 2b. Що залежить від вашої історії – після зони клініки, перед FAQ (задача НОРМАТИВ 05.11, п. 1) – у порядку переліку */}
+            <Block eyebrow="Ваша історія" id={ID.history}>
+              <H2>Що залежить від вашої історії</H2>
+              <p className={P}>Перелік вище розрахований на жінку без скарг і без особливої історії. Він змінюється, якщо:</p>
+              <AccordionMobile title={<>ВІЛ або інший стан, що пригнічує імунітет</>}>
+                <p className={P}>Графік скринінгу інший: ПАП-тест або тест на ВПЛ роблять кожні 5 років<S n={[5]} />, і з віком скринінг не припиняють<S n={[2]} />.</p>
+              </AccordionMobile>
+              <AccordionMobile title={<>Фактори серцево-судинного ризику</>}>
+                <p className={P}>Тиск вимірюють щороку, а не раз на 3–5 років<S n={[3]} />. Які фактори ризику є саме у вас, оцінює лікар.</p>
+              </AccordionMobile>
+              <AccordionMobile title={<>Рак молочної залози в матері, сестри або доньки</>}>
+                <p className={P}>Мамографію починають за 5–10 років до віку, у якому діагноз поставили родичці<S n={[3]} />. З якого віку починати вам, обговоріть з лікарем.</p>
+              </AccordionMobile>
+            </Block>
           </div>
         </div>
 
