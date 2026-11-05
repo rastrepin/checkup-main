@@ -1,7 +1,7 @@
 # DATABASE.md – checkup-main
 
 Проект Supabase: `apuivrfokciooovrpmgj` (одна база для checkup-main, checkup-platform і medok).
-Версія: 2.1 · 04.11.2026 · 5 · НОРМАТИВ (§1 – 4 таблиці кроку 2 A9; §6.2 – нова редакція під «Мій план»; §6.6, §6.7). Попередня: 2.0 · 27.09.2026. Схему знято з live-бази 27.09.2026 (information_schema, pg_policies, pg_constraint, schema_migrations), використання таблиць – grep коду checkup-main (sprint/kharkiv-v0) і checkup-platform (dev).
+Версія: 2.1.1 · 05.11.2026 · 5 · НОРМАТИВ (§6.2 – порожній min_age не потрапляє в «Додати дослідження»). Попередня: 2.1 · 04.11.2026 (§1 – 4 таблиці кроку 2 A9; §6.2 – нова редакція під «Мій план»; §6.6, §6.7). Попередня: 2.0 · 27.09.2026. Схему знято з live-бази 27.09.2026 (information_schema, pg_policies, pg_constraint, schema_migrations), використання таблиць – grep коду checkup-main (sprint/kharkiv-v0) і checkup-platform (dev).
 
 Файл – довідник, не джерело правди. Перед міграцією або запитом, що спирається на структуру, звіряти live-схему через Supabase MCP.
 
@@ -334,7 +334,7 @@ create policy "Public read clinic_service_examinations" on public.clinic_service
 «Додати дослідження» (my-plan §6) – обстеження, у яких одночасно:
 - `is_active` і `offer_as_extra`;
 - `gender_scope` = стать сторінки або `any`;
-- `min_age` порожній або ≤ нижньої межі групи;
+- `min_age` заповнений і ≤ нижньої межі групи; порожній `min_age` – обстеження в «Додати дослідження» не з'являється (захист від помилки в даних, my-plan v0.5 §6); у Базовому плані і ризик-флоу воно лишається;
 - немає в Базовому плані групи;
 - є ціна хоча б в одній клініці міста (правило ціни нижче).
 
@@ -479,6 +479,7 @@ where tablename in ('examinations', 'risk_factors', 'examination_recommendations
 
 ## 7. Історія
 
+- 2.1.1 · 05.11.2026 – §6.2, «Додати дослідження»: обстеження з порожнім `min_age` не показується (my-plan v0.5 §6, рішення Ігоря 05.11).
 - 2.1 · 04.11.2026 – крок 2 A9 у новій редакції під `docs/ux/specs/2026-11-my-plan.md` v0.2: `examinations` з полями картки (min_age, purpose_ua, rationale_type, rationale_ua, source_ref, harm_ua, harm_reviewed_at, included_in_slug, offer_as_extra); нова `risk_factors`; `examination_recommendations` – `platform_program_slug`, `risk_factor_code`, `locked` замість `platform_program_id` і `condition_code`; `clinic_service_examinations.in_price` – правило ціни; правила Базового плану, «Додати дослідження», ризик-флоу, ціни і заявки; крок 6 – наповнює Ігор. Чернетка 2.1 від 30.09 у dev не потрапила, її зміни тут не відтворено.
 - 2.0 · 27.09.2026 – файл перебудовано за live-схемою: карта 26 таблиць з власниками, деталі таблиць основного домену і спільних, контракт A9. Виправлено застарілі твердження 1.0 (`clinic_services.price` nullable з 30.08; `program_services` наповнено; кількість рядків).
 - 1.0 · 09.08.2026 – checkup_programs.program_type і price_date, clinic_services, program_services, 6 оферів (Р29). Фактичні дати міграцій у базі – 15.08.2026.
