@@ -297,14 +297,6 @@ export default async function MaleAge3040CityPage({ citySlug }: { citySlug: stri
         {/* «Мій план обстеження» – docs/ux/specs/2026-11-my-plan.md v0.4 §0: одразу після «Які обстеження рекомендують»; дані з бази, блоку немає без Базового плану. */}
         <MyPlan gender="male" seg="do-40-rokiv" city={city} />
 
-        {/* 3. Що залежить від вашої історії */}
-        <Section bg={BG_GRAY} eyebrow="Ваша історія">
-          <H2 id="istoriia">Що залежить від вашої історії</H2>
-          <p className={P}>Перелік вище розрахований на чоловіка без скарг і без особливої історії. Він змінюється, якщо:</p>
-          <h3 className="text-lg font-semibold text-[#0b1a24] mt-8">Фактори серцево-судинного ризику</h3>
-          <p className={P}>Тиск вимірюють щороку, а не раз на 3–5 років<S n={[2]} />. Які фактори ризику є саме у вас, оцінює лікар.</p>
-        </Section>
-
         {/* 4. Готовий варіант – програма клініки з даних */}
         <Section bg={BG_WHITE} eyebrow="Програма клініки">
           <H2 id="gotovyi-variant">Готовий варіант у {city.loc}</H2>
@@ -521,6 +513,14 @@ export default async function MaleAge3040CityPage({ citySlug }: { citySlug: stri
             </p>
           </Section>
         )}
+
+        {/* 3. Що залежить від вашої історії – після зони клініки, перед FAQ (задача НОРМАТИВ 05.11, п. 1) */}
+        <Section bg={BG_GRAY} eyebrow="Ваша історія">
+          <H2 id="istoriia">Що залежить від вашої історії</H2>
+          <p className={P}>Перелік вище розрахований на чоловіка без скарг і без особливої історії. Він змінюється, якщо:</p>
+          <h3 className="text-lg font-semibold text-[#0b1a24] mt-8">Фактори серцево-судинного ризику</h3>
+          <p className={P}>Тиск вимірюють щороку, а не раз на 3–5 років<S n={[2]} />. Які фактори ризику є саме у вас, оцінює лікар.</p>
+        </Section>
 
         {/* 9. FAQ – нативний <details>, відповіді в DOM */}
         <Section bg={BG_WHITE} eyebrow="Питання">
