@@ -12,7 +12,7 @@ import InPageNav, { type InPageNavItem } from '@/components/shared/InPageNav';
 import Header from '@/components/frame/Header'
 import Hero from '@/components/frame/Hero'
 import HeroChips from '@/components/frame/HeroChips'
-import ProgramBridge from '@/components/frame/ProgramBridge'
+import TwoWays from '@/components/frame/TwoWays'
 import ZoneHeader from '@/components/frame/ZoneHeader'
 import ClampMobile from '@/components/frame/ClampMobile'
 import Accordion from '@/components/frame/Accordion'
@@ -49,6 +49,7 @@ import {
   visitsText,
 } from '@/lib/programs/age-page-shared';
 import MyPlan from '@/components/plan/MyPlan';
+import { fetchMyPlan } from '@/lib/plan/data';
 
 // Вікова сторінка міста – SPRINT-KHARKIV-v0, тип 5a. Шаблон для всіх міст з lib/cities/checkup-cities.ts (конвеєр міграції, 30.10.2026).
 // Контент: content/kharkiv/female-vid-50-rokiv.md дослівно.
@@ -139,7 +140,7 @@ const ID = {
   cholesterol: 'kholesteryn',
   diabetes: 'diabet',
   history: 'istoriia',
-  programs: 'prohramy',
+  programs: 'programs',
   composition: 'sklad-prohramy',
   additions: 'dodaty',
   visits: 'yak-tse-prokhodyt',
@@ -305,10 +306,18 @@ export default async function FemaleAgeVid50CityPage({ citySlug }: { citySlug: s
   const notice = program?.price_date ? priceDateNotice(program.price_date) : undefined;
   const showComposition = Boolean(program && clinic && composition);
 
+  // Якорі hero (age-page-zones v0.6 §2, рядок 2): «Мій план» – лише коли блок є (той самий кешований запит, що в MyPlan).
+  const hasPlan = Boolean(await fetchMyPlan('female', 'vid-50-rokiv', city));
+  const showPrograms = Boolean(program && clinic && composition);
+  const heroAnchors = [
+    ...(hasPlan ? [{ label: 'Мій план', href: '#plan' }] : []),
+    ...(showPrograms ? [{ label: 'Програми клінік', href: `#${ID.programs}` }] : []),
+  ];
+
   const navItems: InPageNavItem[] = [
     { id: ID.list, label: 'Що перевірити' },
     { id: 'plan', label: 'Мій план' },
-    { id: ID.programs, label: 'Програми' },
+    { id: ID.programs, label: 'Програми клінік' },
     { id: ID.faq, label: 'Питання' },
   ];
 
@@ -353,7 +362,8 @@ export default async function FemaleAgeVid50CityPage({ citySlug }: { citySlug: s
     programsUrl: `${PAGE_URL}#${ID.programs}`,
     city: city.name,
     clinic,
-    programs: program ? [program] : [],
+    // v0.6 п. 6: ItemList – лише з видимих карток (картка є, коли є програма, клініка і склад); Offer – лише з видимою ціною.
+    programs: program && clinic && composition ? [program] : [],
   });
   if (programsLd) jsonLd.push(programsLd);
 
@@ -386,6 +396,7 @@ export default async function FemaleAgeVid50CityPage({ citySlug }: { citySlug: s
               title="Рекомендують кожній:"
               items={ANSWER_ITEMS.map((a) => ({ label: a.label, href: `#${a.id}` }))}
               more={{ label: 'Коли проходити розширене обстеження ↓', href: `#${ID.history}` }}
+              anchors={heroAnchors}
             />
           }
           reassurance={
@@ -399,7 +410,7 @@ export default async function FemaleAgeVid50CityPage({ citySlug }: { citySlug: s
           }
         />
 
-        {/* 1a. Внутрішнє меню. Смуга програми – після «Мій план» (задача НОРМАТИВ 05.11, п. 1). */}
+        {/* 1a. Внутрішнє меню: «Що перевірити» → «Мій план» → «Програми клінік» → «Питання» (задача НОРМАТИВ 06.11, п. 1). */}
         <InPageNav items={navItems} />
 
         {/* ЗОНА РЕКОМЕНДАЦІЙ (макет зон 20.10): рекомендації для всіх. Права колонка порожня. */}
@@ -444,28 +455,24 @@ export default async function FemaleAgeVid50CityPage({ citySlug }: { citySlug: s
           </div>
         </div>
 
-        {/* «Мій план обстеження» – docs/ux/specs/2026-11-my-plan.md v0.4 §0: одразу після «Які обстеження рекомендують»; дані з бази, блоку немає без Базового плану. */}
-        <MyPlan gender="female" seg="vid-50-rokiv" city={city} />
+        {/* 3а. «Два способи пройти чекап» (age-page-zones v0.6 §2.3): картки-якорі на #plan і #programs; програм немає – секції немає.
+            {min} – minPrice(offers), та сама функція, що рахує ціну в meta. */}
+        <TwoWays mdName="female-vid-50-rokiv" city={city} minPrice={showPrograms ? minPrice(offers) : null} />
 
-        {/* Смуга програми – після «Мій план», перед зоною клініки (задача НОРМАТИВ 05.11, п. 1). */}
-        {program && clinic && (
-          <ProgramBridge
-            label={`Програма клініки в ${city.loc}`}
-            title={`${program.name_ua} · ${clinic.name}`}
-            teaser={composition ? [composition.consultationsSummary && `Консультації: ${composition.consultationsSummary}.`, composition.instrumentalSummary].filter(Boolean).join(' ') : undefined}
-            href={`#${ID.programs}`}
-            cta="Переглянути програму ↓"
-          />
-        )}
+        {/* «Мій план обстеження» – docs/ux/specs/2026-11-my-plan.md v0.7 §0: після «Два способи», перед програмами клінік; дані з бази, блоку немає без Базового плану. */}
+        <MyPlan gender="female" seg="vid-50-rokiv" city={city} />
 
         {/* ЗОНА ПРОГРАМИ (макет v2, 21.10; рішення Ігоря 1А 2А): локація – один раз на клініку, над її програмами;
             програма – картка: перший шар для рішення, решта – акордеон; ціна і запис – у картці. Сайдбара немає.
             Кілька програм – кілька ProgramCard одна під одною (зараз у даних одна програма клініки на сторінку). */}
+        {/* Зона програм (age-page-zones v0.6 §2, рядок 6): H2 «Програми клінік в {місті}», одна клініка – «Програма {клініка}».
+            #programs-zone – межа зони для закріпленої панелі (§6). */}
+        <div id="programs-zone">
         {program && clinic && (
           <ZoneHeader
             id={ID.programs}
             eyebrow="Програма клініки"
-            title={`Як пройти обстеження в ${city.loc}`}
+            title={`Програма ${clinic.name}`}
             sub="Склад програми, її лікарі й ціна. Поруч – що з рекомендованого кожній у програму не входить."
           />
         )}
@@ -521,7 +528,8 @@ export default async function FemaleAgeVid50CityPage({ citySlug }: { citySlug: s
                 }
                 sections={
                   <>
-                    <Accordion as="h4" summary="Повний склад програми">
+                    {/* «Що входить» – повний склад групами (консультації, аналізи, обстеження), нативний <details>: склад у серверному HTML (age-page-zones v0.6 §4.1). */}
+                    <Accordion as="h4" summary="Що входить">
                     <div className={`space-y-4 text-[15px] ${TEXT} pb-2`}>
                       {composition.consultationsSummary && (
                         <div>
@@ -532,21 +540,21 @@ export default async function FemaleAgeVid50CityPage({ citySlug }: { citySlug: s
                           </p>
                         </div>
                       )}
-                      {instrumentalAll.length > 0 && (
-                        <div>
-                          <p className="font-semibold text-[#0b1a24] mb-1">Обстеження</p>
-                          <ul className="list-disc pl-5 space-y-1">
-                            {instrumentalAll.map((n) => (
-                              <li key={n}>{n}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
                       {labAll.length > 0 && (
                         <div>
                           <p className="font-semibold text-[#0b1a24] mb-1">Аналізи</p>
                           <ul className="list-disc pl-5 space-y-1">
                             {labAll.map((n) => (
+                              <li key={n}>{n}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {instrumentalAll.length > 0 && (
+                        <div>
+                          <p className="font-semibold text-[#0b1a24] mb-1">Обстеження</p>
+                          <ul className="list-disc pl-5 space-y-1">
+                            {instrumentalAll.map((n) => (
                               <li key={n}>{n}</li>
                             ))}
                           </ul>
@@ -668,6 +676,8 @@ export default async function FemaleAgeVid50CityPage({ citySlug }: { citySlug: s
               <p className="text-[15px] text-text-secondary leading-relaxed mt-2">{ANY_CLINIC_TEXT}</p>
             </div>
           </div>
+        </div>
+
         </div>
 
         <div className="max-w-[1200px] mx-auto lg:px-14 lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-x-12">
@@ -801,9 +811,8 @@ export default async function FemaleAgeVid50CityPage({ citySlug }: { citySlug: s
             programSlug={program.slug}
             sourceCta={`${SOURCE_CTA}_sticky`}
             revealAfterId="hero"
-            zoneId={ID.programs}
             hideWhenVisibleId={['program-buy', 'plan-zone']}
-            look="v2"
+            ageZones={{ programsZoneId: 'programs-zone', programsAnchor: ID.programs, planAnchor: 'plan' }}
           />
         </>
       )}
