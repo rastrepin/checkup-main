@@ -34,15 +34,21 @@ export interface StickyMobileCtaProps {
   /** Хаб діагнозу (рішення Ігоря 21.10, 3А): лише кнопка-перехід у зону лікарів (`zoneId`) на всю ширину,
    *  без назви і ціни; у зоні панель схована (у картках лікарів – свої кнопки запису). Кнопка – structural (не запис). */
   browseOnly?: boolean;
+  /** Вікова сторінка (age-page-zones v0.6 §6): одна панель, вміст за зоною. У зоні програм (`programsZoneId`) –
+   *  «Записатися на програму»; деінде – якорі «Мій план» (`planAnchor`, якщо блок є на сторінці) і «Програми клінік»
+   *  (`programsAnchor`), без запису. У блоці «Мій план» панель схована через `hideWhenVisibleId` – там панель плану. */
+  ageZones?: { programsZoneId: string; programsAnchor: string; planAnchor?: string };
 }
 
 function fmt(n: number) {
   return n.toLocaleString('uk-UA');
 }
 
-export default function StickyMobileCta({ programNameShort, price, programSlug, sourceCta, revealAfterId, look = 'default', zoneId, browseLabel = 'Переглянути', hideWhenVisibleId, browseOnly = false }: StickyMobileCtaProps) {
+export default function StickyMobileCta({ programNameShort, price, programSlug, sourceCta, revealAfterId, look = 'default', zoneId, browseLabel = 'Переглянути', hideWhenVisibleId, browseOnly = false, ageZones }: StickyMobileCtaProps) {
   const [visible, setVisible] = useState(false);
   const [inZone, setInZone] = useState(!zoneId);
+  const [inPrograms, setInPrograms] = useState(false);
+  const [hasPlan, setHasPlan] = useState(false);
 
   useEffect(() => {
     const onScroll = () => {
@@ -53,6 +59,11 @@ export default function StickyMobileCta({ programNameShort, price, programSlug, 
         return r ? r.top < window.innerHeight && r.bottom > 0 : false;
       });
       setVisible((el ? el.getBoundingClientRect().bottom < 0 : window.scrollY > 400) && !buyOnScreen);
+      if (ageZones) {
+        const r = document.getElementById(ageZones.programsZoneId)?.getBoundingClientRect();
+        setInPrograms(r ? r.top < window.innerHeight * 0.5 && r.bottom > 0 : false);
+        setHasPlan(Boolean(ageZones.planAnchor && document.getElementById(ageZones.planAnchor)));
+      }
       if (zoneId) {
         const z = document.getElementById(zoneId);
         setInZone(z ? z.getBoundingClientRect().top < window.innerHeight * 0.5 : true);
@@ -64,6 +75,38 @@ export default function StickyMobileCta({ programNameShort, price, programSlug, 
   }, []);
 
   if (!visible) return null;
+
+  if (ageZones) {
+    const shell =
+      'fixed bottom-0 left-0 right-0 z-[150] md:hidden bg-white border-t border-gray-200 px-5 pt-3 pb-[calc(12px+env(safe-area-inset-bottom,0px))] flex items-center gap-3';
+    if (inPrograms) {
+      return (
+        <div className={`${shell} justify-between`} style={{ boxShadow: '0 -8px 24px rgba(0,0,0,0.04)' }}>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs text-gray-500 truncate leading-tight">{programNameShort}</p>
+            {typeof price === 'number' && (
+              <p className="text-[19px] font-bold text-[#005485] leading-tight mt-0.5" style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}>
+                {fmt(price)} грн
+              </p>
+            )}
+          </div>
+          <BookCta programSlug={programSlug ?? ''} sourceCta={sourceCta ?? ''} label="Записатися на програму" className="!w-auto shrink-0 px-5" />
+        </div>
+      );
+    }
+    return (
+      <div className={shell} style={{ boxShadow: '0 -8px 24px rgba(0,0,0,0.04)' }}>
+        {hasPlan && ageZones.planAnchor && (
+          <a href={`#${ageZones.planAnchor}`} className={`${buttonClass({ variant: 'secondary', size: 'lg' })} flex-1 px-3`}>
+            Мій план
+          </a>
+        )}
+        <a href={`#${ageZones.programsAnchor}`} className={`${buttonClass({ variant: 'secondary', size: 'lg' })} flex-1 px-3`}>
+          Програми клінік
+        </a>
+      </div>
+    );
+  }
 
   if (browseOnly) {
     if (inZone || !zoneId) return null;
