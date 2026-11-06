@@ -148,14 +148,6 @@ const ID = {
   faq: 'faq',
 } as const;
 
-/* Картка з відповіддю: чотири обстеження для всіх у 40–50 років (назви – ті самі, що в мості блоку 4). */
-const ANSWER_ITEMS: { label: string; id: string }[] = [
-  { label: 'вимірювання тиску', id: ID.pressure },
-  { label: 'аналіз на холестерин', id: ID.cholesterol },
-  { label: 'аналіз на цукор', id: ID.diabetes },
-  { label: 'ПАП-тест', id: ID.cervix },
-];
-
 /* Доповнення: усі обстеження з переліку, яких немає в програмі (screening-evidence-matrix.md, розділ 3).
  * forAll – рекомендоване у 40–50 років усім; лише такі входять у {missingTests}. Мамографію й аналіз калу
  * у 40–49 років роблять за факторів ризику: forAll = false, а riskName – назва для другого рядка мосту блоку 4
@@ -410,12 +402,8 @@ export default async function FemaleAge4050CityPage({ citySlug }: { citySlug: st
           h1="Чекап для жінок 40–50 років"
           h1Tail={`що перевіряти і де пройти в ${city.loc}`}
           content={
-            <HeroChips
-              title="Рекомендують кожній:"
-              items={ANSWER_ITEMS.map((a) => ({ label: a.label, href: `#${a.id}` }))}
-              more={{ label: 'Коли проходити розширене обстеження ↓', href: `#${ID.history}` }}
-              anchors={heroAnchors}
-            />
+            // Hero (age-page-zones v0.6 §2, рядок 2; рішення Ігоря 06.11): лише якорі «Мій план» і «Програми клінік» – без чипів обстежень і посилання на історію.
+            heroAnchors.length > 0 ? <HeroChips anchors={heroAnchors} /> : undefined
           }
           reassurance={
             <p className="flex items-center gap-2">
