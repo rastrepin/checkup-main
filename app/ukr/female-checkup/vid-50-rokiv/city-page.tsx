@@ -148,16 +148,6 @@ const ID = {
   faq: 'faq',
 } as const;
 
-/* Картка з відповіддю: шість обстежень для всіх після 50 (назви – ті самі, що в мості блоку 4). */
-const ANSWER_ITEMS: { label: string; id: string }[] = [
-  { label: 'мамографія', id: ID.breast },
-  { label: 'аналіз калу на приховану кров', id: ID.colon },
-  { label: 'ПАП-тест', id: ID.cervix },
-  { label: 'вимірювання тиску', id: ID.pressure },
-  { label: 'аналіз на холестерин', id: ID.cholesterol },
-  { label: 'аналіз на цукор', id: ID.diabetes },
-];
-
 /* Доповнення: усі обстеження з переліку, яких немає в програмі (screening-evidence-matrix.md, розділ 3).
  * forAll – рекомендоване після 50 усім; лише такі входять у {missingTests} (міст блоку 4, GEO).
  * Денситометрія після 50 не для всіх (з 65 або за факторів ризику), холестерин – залежно від попереднього
@@ -392,12 +382,8 @@ export default async function FemaleAgeVid50CityPage({ citySlug }: { citySlug: s
           h1="Чекап для жінок після 50 років"
           h1Tail={`що перевіряти і де пройти в ${city.loc}`}
           content={
-            <HeroChips
-              title="Рекомендують кожній:"
-              items={ANSWER_ITEMS.map((a) => ({ label: a.label, href: `#${a.id}` }))}
-              more={{ label: 'Коли проходити розширене обстеження ↓', href: `#${ID.history}` }}
-              anchors={heroAnchors}
-            />
+            // Hero (age-page-zones v0.6 §2, рядок 2; рішення Ігоря 06.11): лише якорі «Мій план» і «Програми клінік» – без чипів обстежень і посилання на історію.
+            heroAnchors.length > 0 ? <HeroChips anchors={heroAnchors} /> : undefined
           }
           reassurance={
             <p className="flex items-center gap-2">
