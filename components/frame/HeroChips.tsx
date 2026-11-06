@@ -5,6 +5,8 @@
 // застереження hero йде за посиланням на 12/16: «що далі» і «вирішуйте з лікарем» – одна група.
 // anchors – кнопки-якорі «Мій план», «Програми клінік» (age-page-zones v0.6 §2, рядок 2): той самий вигляд чипа,
 // окремим рядком під посиланням; без кнопки запису.
+// Лише anchors, без title/items (рішення Ігоря 06.11: hero вікових сторінок без чипів обстежень) – ряд якорів стає
+// першою групою після H1 (data-hero="group", 40/56).
 
 import type { ReactNode } from "react";
 
@@ -17,19 +19,21 @@ export default function HeroChips({
   more,
   anchors,
 }: {
-  title: ReactNode;
-  items: { label: string; href: string }[];
+  title?: ReactNode;
+  items?: { label: string; href: string }[];
   more?: { label: ReactNode; href: string };
   anchors?: { label: string; href: string }[];
 }) {
+  const hasItems = Boolean(items && items.length > 0);
   return (
     <>
+      {hasItems && (
       <div data-hero="group">
         <p className="text-[15px] font-semibold text-[var(--hero-muted)]">
           {title}
         </p>
         <ul className="mt-3 lg:mt-4 flex flex-wrap gap-2 lg:gap-2.5" role="list">
-          {items.map((it) => (
+          {(items ?? []).map((it) => (
             <li key={it.href}>
               <a href={it.href} className={CHIP}>
                 {it.label}
@@ -38,6 +42,7 @@ export default function HeroChips({
           ))}
         </ul>
       </div>
+      )}
       {more && (
         <div data-hero="next">
           <a
@@ -49,7 +54,7 @@ export default function HeroChips({
         </div>
       )}
       {anchors && anchors.length > 0 && (
-        <div data-hero="next">
+        <div data-hero={hasItems || more ? 'next' : 'group'}>
           <ul className="flex flex-wrap gap-2 lg:gap-2.5" role="list">
             {anchors.map((it) => (
               <li key={it.href}>

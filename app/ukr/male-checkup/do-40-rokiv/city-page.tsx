@@ -282,9 +282,7 @@ export default async function MaleAge3040CityPage({ citySlug }: { citySlug: stri
                 Чекап для чоловіків 30–40 років – що перевіряти і де пройти в {city.loc}
               </h1>
               <p className="text-lg text-gray-700 leading-relaxed mt-2">Сторінка для чоловіків 30–40 років без скарг. Спочатку перелік за клінічними настановами, потім готова програма клініки в {city.loc}.</p>
-              {/* Аудит Ужгорода S1 №2: медичне застереження під лідом, ui-kit §5.3. */}
-              <p className="text-sm text-gray-600 leading-relaxed mt-4">{HERO_DISCLAIMER}</p>
-              {/* Кнопки-якорі hero (age-page-zones v0.6 §2, рядок 2), без кнопки запису. */}
+              {/* Кнопки-якорі hero (age-page-zones v0.6 §2, рядок 2), без кнопки запису; порядок: лід → якорі → застереження (рішення Ігоря 06.11). */}
               {(hasPlan || showPrograms) && (
                 <ul className="mt-6 flex flex-wrap gap-2" role="list">
                   {hasPlan && (
@@ -299,6 +297,8 @@ export default async function MaleAge3040CityPage({ citySlug }: { citySlug: stri
                   )}
                 </ul>
               )}
+              {/* Аудит Ужгорода S1 №2: медичне застереження під лідом, ui-kit §5.3. */}
+              <p className="text-sm text-gray-600 leading-relaxed mt-4">{HERO_DISCLAIMER}</p>
             </div>
           </div>
         </section>
