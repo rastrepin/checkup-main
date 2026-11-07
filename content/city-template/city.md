@@ -194,7 +194,6 @@ H2: Інші послуги в {city_loc}
 - [Колоноскопія в {city_loc}](kolonoskopiya)
 - [Планування вагітності в {city_loc}](planuvannya-vahitnosti)
 - [Дитячий чекап {in_city}](child-checkup)
-- [Подарунковий сертифікат на чекап {in_city}](podarunok)
 
 ## team
 
