@@ -1,0 +1,12 @@
+{
+  "name": "checkup-qa",
+  "private": true,
+  "type": "module",
+  "description": "Автоперевірка сторінок check-up.in.ua після злиття: тестова заявка і биті посилання. Окремо від сайту, щоб Playwright не потрапляв у збірку Vercel.",
+  "scripts": {
+    "check": "node prod-check.mjs"
+  },
+  "dependencies": {
+    "playwright": "1.63.0"
+  }
+}
