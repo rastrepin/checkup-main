@@ -5,6 +5,8 @@
 // Нове місто – новий запис у HEADER_NAV; розмітка components/shared/SiteHeader.tsx не змінюється.
 // Рішення Координатора 01.10.2026: «Для корпоративних клієнтів» веде на одеську сторінку, як на Tilda;
 // Telegram-бот і Viber у шапку не переносяться.
+// Рішення Ігоря 07.11.2026: «Сертифікат» прибрано звідусіль; «Дітям» – прибрано в хвилі 1 (додамо пізніше);
+// «Спеціалізовані» (планування вагітності, колоноскопія) – друга хвиля.
 
 /** Слаг міста. Меню є лише для міст з HEADER_NAV; для інших шапка – варіант без міста. */
 export type HeaderCity = string;
@@ -52,14 +54,6 @@ export const HEADER_NAV: Record<string, HeaderNav> = {
     items: [
       { label: 'Чоловікам', href: '/ukr/male-checkup/kharkiv', section: 'male' },
       { label: 'Жінкам', href: '/ukr/female-checkup/kharkiv', section: 'female' },
-      { label: 'Дітям', href: '/ukr/child-checkup/kharkiv' },
-      {
-        label: 'Спеціалізовані',
-        children: [
-          { label: 'Планування вагітності', href: '/ukr/materynstvo/planuvannya-vahitnosti/kharkiv' },
-          { label: 'Колоноскопія', href: '/ukr/kolonoskopiya/kharkiv' },
-        ],
-      },
       { label: 'Лікарі', href: '/ukr/doctors/kharkiv' },
       ABOUT,
     ],
@@ -69,14 +63,6 @@ export const HEADER_NAV: Record<string, HeaderNav> = {
     items: [
       { label: 'Чоловікам', href: '/ukr/male-checkup/dnipro', section: 'male' },
       { label: 'Жінкам', href: '/ukr/female-checkup/dnipro', section: 'female' },
-      { label: 'Дітям', href: '/ukr/child-checkup/dnipro' },
-      {
-        label: 'Спеціалізовані',
-        children: [
-          { label: 'Планування вагітності', href: '/ukr/materynstvo/planuvannya-vahitnosti/dnipro' },
-          { label: 'Колоноскопія', href: '/ukr/kolonoskopiya/dnipro' },
-        ],
-      },
       { label: 'Лікарі', href: '/ukr/doctors/dnipro' },
       {
         label: 'Про сервіс',
@@ -93,13 +79,6 @@ export const HEADER_NAV: Record<string, HeaderNav> = {
     items: [
       { label: 'Чоловікам', href: '/ukr/male-checkup/odesa', section: 'male' },
       { label: 'Жінкам', href: '/ukr/female-checkup/odesa', section: 'female' },
-      {
-        label: 'Спеціалізовані',
-        children: [
-          { label: 'Планування вагітності', href: '/ukr/akusherstvo/planirovanie-beremennosti/odesa' },
-          { label: 'Колоноскопія', href: '/ukr/kolonoskopiya/odesa' },
-        ],
-      },
       { label: 'Лікарі', href: '/ukr/doctors/odesa' },
       {
         label: 'Про сервіс',
@@ -116,7 +95,6 @@ export const HEADER_NAV: Record<string, HeaderNav> = {
     items: [
       { label: 'Чоловікам', href: '/ukr/male-checkup/uzhgorod', section: 'male' },
       { label: 'Жінкам', href: '/ukr/female-checkup/uzhgorod', section: 'female' },
-      { label: 'Дітям', href: '/ukr/child-checkup/uzhgorod' },
       { label: 'Лікарі', href: '/ukr/doctors/uzhgorod' },
       { label: 'Про сервіс', children: [ABOUT_TEAM, ABOUT_CLINICS] },
     ],
