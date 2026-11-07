@@ -12,6 +12,11 @@ import InfoFrame from '@/components/shared/InfoFrame';
 import CrossAgeNav from '@/components/shared/CrossAgeNav';
 import { getCheckupCity, type CheckupCity } from '@/lib/cities/checkup-cities';
 import BookingFlow, { BookCta } from '@/components/city/BookingFlow';
+import Header from '@/components/frame/Header';
+import { HERO_DISCLAIMER, programsItemListLd } from '@/lib/programs/age-page-shared';
+import MyPlan from '@/components/plan/MyPlan';
+import TwoWays from '@/components/frame/TwoWays';
+import { fetchMyPlan } from '@/lib/plan/data';
 
 // Вікова сторінка міста – чернетка SPRINT-KHARKIV-v0, каркас 5.2 (12 блоків).
 // Контент: content/kharkiv/male-vid-50-rokiv.md (v0) дослівно; файл згенеровано з того самого джерела, що й MD.
@@ -198,10 +203,12 @@ export default async function MaleAgeVid50CityPage({ citySlug }: { citySlug: str
   const matched = TARGETS.map((t) => ({ ...t, found: tests.filter((i) => has(i.name, t.keywords)).map((i) => i.name) }));
   const inProgram = matched.filter((t) => t.found.length > 0);
   const missing = matched.filter((t) => t.found.length === 0 && t.missing);
-  const matchedNames = new Set(inProgram.flatMap((t) => t.found));
-  const beyond = tests.filter((i) => !matchedNames.has(i.name));
-  const beyondInstrumental = beyond.filter((i) => i.serviceType === 'instrumental').map((i) => i.name);
-  const beyondLab = beyond.filter((i) => i.serviceType === 'lab').map((i) => i.name);
+  // «Що входить» (age-page-zones v0.6 §4.1): повний склад групами – консультації, аналізи, обстеження.
+  const groups = [
+    { title: 'Консультації', names: items.filter((i) => i.serviceType === 'consultation').map((i) => i.name) },
+    { title: 'Аналізи', names: items.filter((i) => i.serviceType === 'lab').map((i) => i.name) },
+    { title: 'Обстеження', names: items.filter((i) => i.serviceType === 'instrumental').map((i) => i.name) },
+  ].filter((g) => g.names.length > 0);
 
   // Блок 5: доповнення, яких немає в складі; доступність – за clinic_services.
   const additions = ADDITIONS.filter((a) => !tests.some((i) => has(i.name, a.keywords)));
@@ -210,6 +217,11 @@ export default async function MaleAgeVid50CityPage({ citySlug }: { citySlug: str
   const showAdditions = Boolean(program) && additions.length > 0;
 
   const notice = program?.price_date ? priceDateNotice(program.price_date) : undefined;
+
+  // Картка програми видима, коли є програма, клініка і склад; від цього – TwoWays, якір «Програми клінік», ItemList.
+  const showPrograms = Boolean(program && clinic && composition);
+  // Якір hero «Мій план» – лише коли блок є (той самий кешований запит, що в MyPlan).
+  const hasPlan = Boolean(await fetchMyPlan('male', 'vid-50-rokiv', city));
 
   const jsonLd: object[] = [
     {
@@ -235,21 +247,22 @@ export default async function MaleAgeVid50CityPage({ citySlug }: { citySlug: str
       mainEntity: FAQ.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })),
     },
   ];
-  if (program && clinic) {
-    jsonLd.push({
-      '@context': 'https://schema.org',
-      '@type': 'Offer',
-      name: program.name_ua,
-      price: program.price_discount,
-      priceCurrency: 'UAH',
-      ...(program.price_date ? { validFrom: program.price_date } : {}),
-      url: PAGE_URL,
-      seller: { '@type': 'MedicalClinic', name: clinic.name },
-    });
-  }
+  // Аудит Ужгорода S1 №3: Offer на рівні сторінки заборонено. Як на жіночих вікових – ItemList програм,
+  // ціна з датою лише всередині елемента програми (SEO-STANDARD р.5, тип 5a).
+  const programsLd = programsItemListLd({
+    listName: `Доступні програми в ${city.loc}`,
+    programsUrl: `${PAGE_URL}#programs`,
+    city: city.name,
+    clinic,
+    // v0.6 п. 6: ItemList – лише з видимих карток; Offer – лише з видимою ціною.
+    programs: showPrograms && program ? [program] : [],
+  });
+  if (programsLd) jsonLd.push(programsLd);
 
   return (
     <>
+      {/* Аудит Ужгорода S1 №1: шапка міста, активний пункт «Чоловікам». */}
+      <Header city={city.slug} section="male" />
       <main className="text-[#0b1a24] pb-24 md:pb-0">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
@@ -274,6 +287,23 @@ export default async function MaleAgeVid50CityPage({ citySlug }: { citySlug: str
                 Чекап для чоловіків після 50 років – що перевіряти і де пройти в {city.loc}
               </h1>
               <p className="text-lg text-gray-700 leading-relaxed mt-2">Сторінка для чоловіків після 50 років без скарг. Спочатку перелік за клінічними настановами, потім готова програма клініки в {city.loc} і що до неї додати.</p>
+              {/* Кнопки-якорі hero (age-page-zones v0.6 §2, рядок 2), без кнопки запису; порядок: лід → якорі → застереження (рішення Ігоря 06.11). */}
+              {(hasPlan || showPrograms) && (
+                <ul className="mt-6 flex flex-wrap gap-2" role="list">
+                  {hasPlan && (
+                    <li>
+                      <a href="#plan" className="inline-flex items-center min-h-10 px-4 rounded-full border border-[#005485] text-[#005485] font-semibold text-sm hover:bg-[#f0f7fb]">Мій план</a>
+                    </li>
+                  )}
+                  {showPrograms && (
+                    <li>
+                      <a href="#programs" className="inline-flex items-center min-h-10 px-4 rounded-full border border-[#005485] text-[#005485] font-semibold text-sm hover:bg-[#f0f7fb]">Програми клінік</a>
+                    </li>
+                  )}
+                </ul>
+              )}
+              {/* Аудит Ужгорода S1 №2: медичне застереження під лідом, ui-kit §5.3. */}
+              <p className="text-sm text-gray-600 leading-relaxed mt-4">{HERO_DISCLAIMER}</p>
             </div>
           </div>
         </section>
@@ -296,17 +326,18 @@ export default async function MaleAgeVid50CityPage({ citySlug }: { citySlug: str
           <p className={P}>До 70 років чоловікам із надлишковою вагою або ожирінням, тобто з індексом маси тіла 25 і більше, скринінг переддіабету і діабету 2 типу роблять раз на 3 роки<S n={[4]} />.</p>
         </Section>
 
-        {/* 3. Що залежить від вашої історії */}
-        <Section bg={BG_GRAY} eyebrow="Ваша історія">
-          <H2 id="istoriia">Що залежить від вашої історії</H2>
-          <p className={P}>Перелік вище розрахований на чоловіка без скарг і без особливої історії. Він змінюється, якщо:</p>
-          <h3 className="text-lg font-semibold text-[#0b1a24] mt-8">Фактори ризику колоректального раку</h3>
-          <p className={P}>Скринінг починають з 40 років і роблять щороку, а не раз на 2 роки<S n={[1]} />. Які фактори ризику є саме у вас, оцінює лікар.</p>
-        </Section>
+        {/* 3а. «Два способи пройти чекап» (age-page-zones v0.6 §2.3): картки-якорі на #plan і #programs; програм немає – секції немає.
+            {min} – minPrice(offers), та сама функція, що рахує ціну в meta. */}
+        <TwoWays mdName="male-vid-50-rokiv" city={city} minPrice={showPrograms ? minPrice(offers) : null} />
 
-        {/* 4. Готовий варіант – програма клініки з даних */}
+        {/* «Мій план обстеження» – docs/ux/specs/2026-11-my-plan.md v0.7 §0: після «Два способи», перед програмами клінік; дані з бази, блоку немає без Базового плану. */}
+        <MyPlan gender="male" seg="vid-50-rokiv" city={city} />
+
+        {/* Зона програм (age-page-zones v0.6 §2, рядок 6): блоки 4–8; #programs-zone – межа зони для закріпленої панелі (§6). */}
+        <div id="programs-zone">
+        {/* 4. Програма клініки з даних: H2 «Програма {клініка}» (одна клініка), без клініки – «Програми клінік в {місті}» */}
         <Section bg={BG_WHITE} eyebrow="Програма клініки">
-          <H2 id="gotovyi-variant">Готовий варіант у {city.loc}</H2>
+          <H2 id="programs">{clinic ? `Програма ${clinic.name}` : `Програми клінік в ${city.loc}`}</H2>
           {program && clinic && composition ? (
             <>
               <div className="mt-6 border border-[#e8edf3] rounded-[14px] p-6 bg-white">
@@ -326,7 +357,7 @@ export default async function MaleAgeVid50CityPage({ citySlug }: { citySlug: str
                   />
                 </div>
                 )}
-                <div className="mt-6 flex flex-col sm:flex-row gap-3">
+                <div id="program-buy" className="mt-6 flex flex-col sm:flex-row gap-3">
                   <BookCta programSlug={program.slug} sourceCta={`${SOURCE_CTA}_card`} label="Записатися" className="sm:!w-auto sm:px-8" />
                   {clinic.website && (
                     <a
@@ -357,30 +388,21 @@ export default async function MaleAgeVid50CityPage({ citySlug }: { citySlug: str
                 </p>
               )}
 
-              {(beyondInstrumental.length > 0 || beyondLab.length > 0) && (
+              {/* «Що входить» – нативний <details>: склад у серверному HTML (age-page-zones v0.6 §4.1). */}
+              {groups.length > 0 && (
                 <div className="mt-6">
-                  <AccordionSection summary="Що ще входить у програму">
+                  <AccordionSection summary="Що входить">
                     <div className="space-y-4 text-[14px] text-gray-700 leading-relaxed">
-                      {beyondInstrumental.length > 0 && (
-                        <div>
-                          <p className="text-xs font-semibold text-gray-500 mb-1">Обстеження</p>
+                      {groups.map((g) => (
+                        <div key={g.title}>
+                          <p className="text-xs font-semibold text-gray-500 mb-1">{g.title}</p>
                           <ul className="list-disc pl-5 space-y-1">
-                            {beyondInstrumental.map((n) => (
+                            {g.names.map((n) => (
                               <li key={n}>{n}</li>
                             ))}
                           </ul>
                         </div>
-                      )}
-                      {beyondLab.length > 0 && (
-                        <div>
-                          <p className="text-xs font-semibold text-gray-500 mb-1">Аналізи</p>
-                          <ul className="list-disc pl-5 space-y-1">
-                            {beyondLab.map((n) => (
-                              <li key={n}>{n}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
+                      ))}
                     </div>
                   </AccordionSection>
                 </div>
@@ -521,6 +543,16 @@ export default async function MaleAgeVid50CityPage({ citySlug }: { citySlug: str
           </Section>
         )}
 
+        </div>
+
+        {/* 3. Що залежить від вашої історії – після зони клініки, перед FAQ (задача НОРМАТИВ 05.11, п. 1) */}
+        <Section bg={BG_GRAY} eyebrow="Ваша історія">
+          <H2 id="istoriia">Що залежить від вашої історії</H2>
+          <p className={P}>Перелік вище розрахований на чоловіка без скарг і без особливої історії. Він змінюється, якщо:</p>
+          <h3 className="text-lg font-semibold text-[#0b1a24] mt-8">Фактори ризику колоректального раку</h3>
+          <p className={P}>Скринінг починають з 40 років і роблять щороку, а не раз на 2 роки<S n={[1]} />. Які фактори ризику є саме у вас, оцінює лікар.</p>
+        </Section>
+
         {/* 9. FAQ – нативний <details>, відповіді в DOM */}
         <Section bg={BG_WHITE} eyebrow="Питання">
           <H2 id="faq">Часті запитання</H2>
@@ -602,7 +634,14 @@ export default async function MaleAgeVid50CityPage({ citySlug }: { citySlug: str
             city={city.slug}
             programsComposition={{ [program.slug]: composition.counts }}
           />
-          <StickyMobileCta programNameShort={program.name_ua} programSlug={program.slug} sourceCta={`${SOURCE_CTA}_sticky`} />
+          <StickyMobileCta
+            programNameShort={program.name_ua}
+            price={program.price_discount}
+            programSlug={program.slug}
+            sourceCta={`${SOURCE_CTA}_sticky`}
+            hideWhenVisibleId={['program-buy', 'plan-zone']}
+            ageZones={{ programsZoneId: 'programs-zone', programsAnchor: 'programs', planAnchor: 'plan' }}
+          />
         </>
       )}
     </>

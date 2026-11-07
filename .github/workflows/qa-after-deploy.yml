@@ -1,0 +1,104 @@
+# Автоперевірка після деплою (scripts/qa/prod-check.mjs).
+# Vercel повідомляє GitHub про кожен готовий деплой (deployment_status). Після деплою в production
+# перевіряються погоджені сторінки на https://check-up.in.ua: тестова заявка (лише в тестовому режимі,
+# клініці не йде) і посилання без 404. Прев'ю закрите Vercel; його перевірка запускається, лише коли
+# в секретах репозиторію є VERCEL_AUTOMATION_BYPASS_SECRET. Звіт – у підсумку запуску (Summary) і в артефакті.
+name: Перевірка після деплою
+
+on:
+  deployment_status:
+  workflow_dispatch:
+    inputs:
+      base:
+        description: Адреса сайту
+        default: https://check-up.in.ua
+      routes:
+        description: Сторінки через кому (порожньо – погоджені з approved-routes.json)
+        default: ''
+      submit:
+        description: Відправляти тестові заявки
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: qa-${{ github.event.deployment.environment || 'manual' }}
+  cancel-in-progress: false
+
+jobs:
+  check:
+    if: github.event_name == 'workflow_dispatch' || github.event.deployment_status.state == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.deployment.sha || github.sha }}
+
+      - name: Що перевіряємо
+        id: target
+        env:
+          EVENT: ${{ github.event_name }}
+          ENVIRONMENT: ${{ github.event.deployment.environment }}
+          DEPLOY_URL: ${{ github.event.deployment_status.environment_url || github.event.deployment_status.target_url }}
+          IN_BASE: ${{ inputs.base }}
+          IN_ROUTES: ${{ inputs.routes }}
+          IN_SUBMIT: ${{ inputs.submit }}
+        run: |
+          set -eu
+          ARGS=""
+          if [ "$EVENT" = "workflow_dispatch" ]; then
+            BASE="$IN_BASE"
+            [ -n "$IN_ROUTES" ] && ARGS="$ARGS --routes $IN_ROUTES"
+            [ "$IN_SUBMIT" = "true" ] || ARGS="$ARGS --no-submit"
+          elif [ "$ENVIRONMENT" = "Production" ] || [ "$ENVIRONMENT" = "production" ]; then
+            BASE="https://check-up.in.ua"
+          else
+            if [ -z "$VERCEL_AUTOMATION_BYPASS_SECRET" ]; then
+              echo "Прев'ю закрите Vercel, а секрету VERCEL_AUTOMATION_BYPASS_SECRET немає – перевірку прев'ю пропущено." >> "$GITHUB_STEP_SUMMARY"
+              echo "skip=1" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            BASE="$DEPLOY_URL"
+            ARGS="$ARGS --all-city-pages --drafts"
+          fi
+          echo "base=$BASE" >> "$GITHUB_OUTPUT"
+          echo "args=$ARGS" >> "$GITHUB_OUTPUT"
+          echo "skip=0" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@v4
+        if: steps.target.outputs.skip == '0'
+        with:
+          node-version: 22
+
+      - name: Встановити Playwright
+        if: steps.target.outputs.skip == '0'
+        working-directory: scripts/qa
+        run: |
+          npm install --no-audit --no-fund
+          npx playwright install --with-deps chromium
+
+      - name: Перевірка
+        if: steps.target.outputs.skip == '0'
+        working-directory: scripts/qa
+        run: |
+          set +e
+          node prod-check.mjs --base "${{ steps.target.outputs.base }}" ${{ steps.target.outputs.args }}
+          code=$?
+          cat qa-report.md >> "$GITHUB_STEP_SUMMARY"
+          exit $code
+
+      - name: Звіт
+        if: always() && steps.target.outputs.skip == '0'
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-report
+          path: |
+            scripts/qa/qa-report.md
+            scripts/qa/qa-report.json
+            scripts/qa/qa-shots/
+          if-no-files-found: ignore

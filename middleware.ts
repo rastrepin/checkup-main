@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { isApprovedRoute, isSystemRoute } from '@/lib/seo/approved-routes';
+import { activeWave1Redirects } from '@/lib/seo/redirects-wave1';
 
 // === Проксі на Tilda: allow-list погоджених сторінок (Р42) ===
 // Правило: усі URL, яких немає в lib/seo/approved-routes.json, віддає Tilda
@@ -59,10 +60,16 @@ function normalizeCityName(raw: string): string | null {
   return CITY_ALIASES[lower] ?? null;
 }
 
+// /sitemap-store.xml віддає Next.js (фільтр app/sitemap-store.xml) лише коли діє хоч один 301 хвилі 1
+// (lib/seo/redirects-wave1.json, ціль погоджена). Доти – Tilda через проксі, як і раніше.
+const STORE_SITEMAP = '/sitemap-store.xml';
+const serveStoreSitemap = activeWave1Redirects().length > 0;
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const nextOwned = isSystemRoute(pathname) || isApprovedRoute(pathname) || (serveStoreSitemap && pathname === STORE_SITEMAP);
 
-  if (!isSystemRoute(pathname) && !isApprovedRoute(pathname)) {
+  if (!nextOwned) {
     if (!draftsAllowed(request)) {
       const proxied = tildaRewrite(request);
       if (proxied) {

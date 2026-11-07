@@ -12,7 +12,7 @@ import InPageNav, { type InPageNavItem } from '@/components/shared/InPageNav';
 import Header from '@/components/frame/Header'
 import Hero from '@/components/frame/Hero'
 import HeroChips from '@/components/frame/HeroChips'
-import ProgramBridge from '@/components/frame/ProgramBridge'
+import TwoWays from '@/components/frame/TwoWays'
 import ZoneHeader from '@/components/frame/ZoneHeader'
 import ClampMobile from '@/components/frame/ClampMobile'
 import Accordion from '@/components/frame/Accordion'
@@ -30,9 +30,11 @@ import {
   askDoctorOrAdd,
   ANY_CLINIC_TEXT,
   DISCLOSURE_TEXT,
+  DISCLOSURE_TEXT_NO_REVIEWER,
   DISCLOSURE_TITLE,
   DOCTOR_DECIDES_TEXT,
   EDITORIAL_TEXT_V2,
+  EDITORIAL_TEXT_V2_NO_REVIEWER,
   FIRST_VISIT_TEXT,
   SECOND_VISIT_TEXT_V2,
   additionsIntro,
@@ -47,6 +49,8 @@ import {
   programAgeShort,
   visitsText,
 } from '@/lib/programs/age-page-shared';
+import MyPlan from '@/components/plan/MyPlan';
+import { fetchMyPlan } from '@/lib/plan/data';
 
 // Вікова сторінка міста – SPRINT-KHARKIV-v0, тип 5a. Шаблон для всіх міст з lib/cities/checkup-cities.ts (конвеєр міграції, 30.10.2026).
 // Контент: content/kharkiv/female-40-50-rokiv.md дослівно.
@@ -136,21 +140,13 @@ const ID = {
   breast: 'molochni-zalozy',
   colon: 'kolorektalnyi-rak',
   history: 'istoriia',
-  programs: 'prohramy',
+  programs: 'programs',
   composition: 'sklad-prohramy',
   additions: 'dodaty',
   visits: 'yak-tse-prokhodyt',
   contacts: 'kontakty',
   faq: 'faq',
 } as const;
-
-/* Картка з відповіддю: чотири обстеження для всіх у 40–50 років (назви – ті самі, що в мості блоку 4). */
-const ANSWER_ITEMS: { label: string; id: string }[] = [
-  { label: 'вимірювання тиску', id: ID.pressure },
-  { label: 'аналіз на холестерин', id: ID.cholesterol },
-  { label: 'аналіз на цукор', id: ID.diabetes },
-  { label: 'ПАП-тест', id: ID.cervix },
-];
 
 /* Доповнення: усі обстеження з переліку, яких немає в програмі (screening-evidence-matrix.md, розділ 3).
  * forAll – рекомендоване у 40–50 років усім; лише такі входять у {missingTests}. Мамографію й аналіз калу
@@ -320,9 +316,18 @@ export default async function FemaleAge4050CityPage({ citySlug }: { citySlug: st
   const notice = program?.price_date ? priceDateNotice(program.price_date) : undefined;
   const showComposition = Boolean(program && clinic && composition);
 
+  // Якорі hero (age-page-zones v0.6 §2, рядок 2): «Мій план» – лише коли блок є (той самий кешований запит, що в MyPlan).
+  const hasPlan = Boolean(await fetchMyPlan('female', '40-50-rokiv', city));
+  const showPrograms = Boolean(program && clinic && composition);
+  const heroAnchors = [
+    ...(hasPlan ? [{ label: 'Мій план', href: '#plan' }] : []),
+    ...(showPrograms ? [{ label: 'Програми клінік', href: `#${ID.programs}` }] : []),
+  ];
+
   const navItems: InPageNavItem[] = [
     { id: ID.list, label: 'Що перевірити' },
-    { id: ID.programs, label: 'Програми' },
+    { id: 'plan', label: 'Мій план' },
+    { id: ID.programs, label: 'Програми клінік' },
     { id: ID.faq, label: 'Питання' },
   ];
 
@@ -333,12 +338,17 @@ export default async function FemaleAge4050CityPage({ citySlug }: { citySlug: st
       name: `Чекап для жінок 40–50 років – що перевіряти і де пройти в ${city.loc}`,
       url: PAGE_URL,
       dateModified: UPDATED_ISO,
-      reviewedBy: {
-        '@type': 'Person',
-        name: city.reviewer.name,
-        jobTitle: city.reviewer.jobTitle,
-        worksFor: { '@type': 'MedicalClinic', name: city.reviewer.org },
-      },
+      // Рецензента міста може не бути (city.reviewer = null) – тоді reviewedBy не виводиться.
+      ...(city.reviewer
+        ? {
+            reviewedBy: {
+              '@type': 'Person',
+              name: city.reviewer.name,
+              jobTitle: city.reviewer.jobTitle,
+              worksFor: { '@type': 'MedicalClinic', name: city.reviewer.org },
+            },
+          }
+        : {}),
     },
     {
       '@context': 'https://schema.org',
@@ -362,7 +372,8 @@ export default async function FemaleAge4050CityPage({ citySlug }: { citySlug: st
     programsUrl: `${PAGE_URL}#${ID.programs}`,
     city: city.name,
     clinic,
-    programs: program ? [program] : [],
+    // v0.6 п. 6: ItemList – лише з видимих карток (картка є, коли є програма, клініка і склад); Offer – лише з видимою ціною.
+    programs: program && clinic && composition ? [program] : [],
   });
   if (programsLd) jsonLd.push(programsLd);
 
@@ -391,11 +402,8 @@ export default async function FemaleAge4050CityPage({ citySlug }: { citySlug: st
           h1="Чекап для жінок 40–50 років"
           h1Tail={`що перевіряти і де пройти в ${city.loc}`}
           content={
-            <HeroChips
-              title="Рекомендують кожній:"
-              items={ANSWER_ITEMS.map((a) => ({ label: a.label, href: `#${a.id}` }))}
-              more={{ label: 'Коли проходити розширене обстеження ↓', href: `#${ID.history}` }}
-            />
+            // Hero (age-page-zones v0.6 §2, рядок 2; рішення Ігоря 06.11): лише якорі «Мій план» і «Програми клінік» – без чипів обстежень і посилання на історію.
+            heroAnchors.length > 0 ? <HeroChips anchors={heroAnchors} /> : undefined
           }
           reassurance={
             <p className="flex items-center gap-2">
@@ -408,19 +416,10 @@ export default async function FemaleAge4050CityPage({ citySlug }: { citySlug: st
           }
         />
 
-        {/* 1a. Внутрішнє меню. Смуга програми – одразу після меню, між розділами, на mobile і desktop (Ігор 21.10). */}
+        {/* 1a. Внутрішнє меню: «Що перевірити» → «Мій план» → «Програми клінік» → «Питання» (задача НОРМАТИВ 06.11, п. 1). */}
         <InPageNav items={navItems} />
-        {program && clinic && (
-          <ProgramBridge
-            label={`Програма клініки в ${city.loc}`}
-            title={`${program.name_ua} · ${clinic.name}`}
-            teaser={composition ? [composition.consultationsSummary && `Консультації: ${composition.consultationsSummary}.`, composition.instrumentalSummary].filter(Boolean).join(' ') : undefined}
-            href={`#${ID.programs}`}
-            cta="Переглянути програму ↓"
-          />
-        )}
 
-        {/* ЗОНА РЕКОМЕНДАЦІЙ (макет зон 20.10): рекомендації для всіх, історія. Права колонка порожня. */}
+        {/* ЗОНА РЕКОМЕНДАЦІЙ (макет зон 20.10): рекомендації для всіх. Права колонка порожня. */}
         <div className="max-w-[1200px] mx-auto lg:px-14 lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-x-12">
           <div className="min-w-0">
             {/* 2. Які обстеження рекомендують жінкам у 40–50 років – не залежить від партнера */}
@@ -453,58 +452,27 @@ export default async function FemaleAge4050CityPage({ citySlug }: { citySlug: st
               <p className={P}>Планову перевірку на колоректальний рак для всіх починають з 50 років: аналіз калу на приховану кров або фекальний імунохімічний тест (ФІТ) раз на 2 роки<S n={[4]} />. У 40–49 років лікар щороку розпитує про фактори ризику, а аналіз призначає, якщо вони є або з&apos;явилися симптоми<S n={[4]} />.</p>
               </ClampMobile>
             </Block>
-            {/* 2b. Що залежить від вашої історії – у порядку переліку */}
-            <Block eyebrow="Ваша історія" id={ID.history}>
-              <H2>Що залежить від вашої історії</H2>
-              <p className={P}>Перелік вище розрахований на жінку без скарг і без особливої історії. Він змінюється, якщо:</p>
-              <AccordionMobile title={<>ВІЛ або інший стан, що пригнічує імунітет</>}>
-                <p className={P}>Графік скринінгу інший: ПАП-тест або тест на ВПЛ роблять кожні 5 років<S n={[4]} />, і з віком скринінг не припиняють<S n={[3]} />.</p>
-              </AccordionMobile>
-              <AccordionMobile title={<>Фактори ризику раку молочної залози</>}>
-                <p className={P}>Мамографію роблять кожні 2 роки вже з 40, якщо є хоча б один із цих факторів<S n={[4]} />:</p>
-                <ul className={`mt-3 list-disc pl-5 space-y-1 ${TEXT}`}>
-                  <li>рак молочної залози в близьких родичів;</li>
-                  <li>безпліддя або перші пологи у 30 років чи пізніше;</li>
-                  <li>тривалий прийом замісної гормональної терапії в менопаузі;</li>
-                  <li>ожиріння після менопаузи;</li>
-                  <li>куріння, зловживання алкоголем або тривалий стрес.</li>
-                </ul>
-                <p className={P}>Якщо рак був у матері, сестри або доньки, обстеження починають за 5–10 років до віку, у якому діагноз поставили родичці<S n={[1]} />.</p>
-              </AccordionMobile>
-              <AccordionMobile title={<>Підтверджена мутація BRCA1 або BRCA2</>}>
-                <p className={P}>Якщо у вас підтверджено мутацію в генах BRCA1 або BRCA2 (спадкова зміна, що підвищує ризик раку молочної залози), основним стандартом обстеження в Україні є щорічна МРТ молочних залоз із контрастною речовиною разом із мамографією<S n={[6]} />. Індивідуальну програму спостереження і профілактики ви узгоджуєте з онкологом-мамологом і лікарем-генетиком.</p>
-              </AccordionMobile>
-              <AccordionMobile title={<>Фактори ризику колоректального раку</>}>
-                <p className={P}>Якщо є фактори ризику колоректального раку, у 40–49 років аналіз калу на приховану кров або ФІТ призначає лікар, а з 50 років його роблять щороку<S n={[4]} />. До факторів ризику належать<S n={[4]} />:</p>
-                <ul className={`mt-3 list-disc pl-5 space-y-1 ${TEXT}`}>
-                  <li>колоректальний рак або поліпи кишечника в близьких родичів;</li>
-                  <li>поліпи кишечника, знайдені у вас раніше;</li>
-                  <li>запальні захворювання кишечника: хвороба Крона або виразковий коліт;</li>
-                  <li>спадкові синдроми, зокрема сімейний аденоматозний поліпоз.</li>
-                </ul>
-                <p className={P}>Чи є у вас інші фактори ризику, ви оцінюєте разом із лікарем.</p>
-              </AccordionMobile>
-              <AccordionMobile title={<>Менопауза і фактори ризику перелому</>}>
-                <p className={P}>Якщо менопауза вже настала, денситометрію, тобто вимірювання щільності кісток на рентгенівському апараті з низькою дозою опромінення (метод DXA), рекомендують і до 65 років за таких факторів ризику перелому<S n={[5]} />:</p>
-                <ul className={`mt-3 list-disc pl-5 space-y-1 ${TEXT}`}>
-                  <li>низька маса тіла;</li>
-                  <li>перелом стегна в батька чи матері;</li>
-                  <li>куріння;</li>
-                  <li>надмірне вживання алкоголю.</li>
-                </ul>
-              </AccordionMobile>
-            </Block>
           </div>
         </div>
+
+        {/* 3а. «Два способи пройти чекап» (age-page-zones v0.6 §2.3): картки-якорі на #plan і #programs; програм немає – секції немає.
+            {min} – minPrice(offers), та сама функція, що рахує ціну в meta. */}
+        <TwoWays mdName="female-40-50-rokiv" city={city} minPrice={showPrograms ? minPrice(offers) : null} />
+
+        {/* «Мій план обстеження» – docs/ux/specs/2026-11-my-plan.md v0.7 §0: після «Два способи», перед програмами клінік; дані з бази, блоку немає без Базового плану. */}
+        <MyPlan gender="female" seg="40-50-rokiv" city={city} />
 
         {/* ЗОНА ПРОГРАМИ (макет v2, 21.10; рішення Ігоря 1А 2А): локація – один раз на клініку, над її програмами;
             програма – картка: перший шар для рішення, решта – акордеон; ціна і запис – у картці. Сайдбара немає.
             Кілька програм – кілька ProgramCard одна під одною (зараз у даних одна програма клініки на сторінку). */}
+        {/* Зона програм (age-page-zones v0.6 §2, рядок 6): H2 «Програми клінік в {місті}», одна клініка – «Програма {клініка}».
+            #programs-zone – межа зони для закріпленої панелі (§6). */}
+        <div id="programs-zone">
         {program && clinic && (
           <ZoneHeader
             id={ID.programs}
             eyebrow="Програма клініки"
-            title={`Як пройти обстеження в ${city.loc}`}
+            title={`Програма ${clinic.name}`}
             sub="Склад програми, її лікарі й ціна. Поруч – що з рекомендованого кожній у програму не входить."
           />
         )}
@@ -560,7 +528,8 @@ export default async function FemaleAge4050CityPage({ citySlug }: { citySlug: st
                 }
                 sections={
                   <>
-                    <Accordion as="h4" summary="Повний склад програми">
+                    {/* «Що входить» – повний склад групами (консультації, аналізи, обстеження), нативний <details>: склад у серверному HTML (age-page-zones v0.6 §4.1). */}
+                    <Accordion as="h4" summary="Що входить">
                     <div className={`space-y-4 text-[15px] ${TEXT} pb-2`}>
                       {composition.consultationsSummary && (
                         <div>
@@ -571,21 +540,21 @@ export default async function FemaleAge4050CityPage({ citySlug }: { citySlug: st
                           </p>
                         </div>
                       )}
-                      {instrumentalAll.length > 0 && (
-                        <div>
-                          <p className="font-semibold text-[#0b1a24] mb-1">Обстеження</p>
-                          <ul className="list-disc pl-5 space-y-1">
-                            {instrumentalAll.map((n) => (
-                              <li key={n}>{n}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
                       {labAll.length > 0 && (
                         <div>
                           <p className="font-semibold text-[#0b1a24] mb-1">Аналізи</p>
                           <ul className="list-disc pl-5 space-y-1">
                             {labAll.map((n) => (
+                              <li key={n}>{n}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {instrumentalAll.length > 0 && (
+                        <div>
+                          <p className="font-semibold text-[#0b1a24] mb-1">Обстеження</p>
+                          <ul className="list-disc pl-5 space-y-1">
+                            {instrumentalAll.map((n) => (
                               <li key={n}>{n}</li>
                             ))}
                           </ul>
@@ -710,6 +679,54 @@ export default async function FemaleAge4050CityPage({ citySlug }: { citySlug: st
           </div>
         </div>
 
+        </div>
+
+        <div className="max-w-[1200px] mx-auto lg:px-14 lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-x-12">
+          <div className="min-w-0">
+            {/* 2b. Що залежить від вашої історії – після зони клініки, перед FAQ (задача НОРМАТИВ 05.11, п. 1) – у порядку переліку */}
+            <Block eyebrow="Ваша історія" id={ID.history}>
+              <H2>Що залежить від вашої історії</H2>
+              <p className={P}>Перелік вище розрахований на жінку без скарг і без особливої історії. Він змінюється, якщо:</p>
+              <AccordionMobile title={<>ВІЛ або інший стан, що пригнічує імунітет</>}>
+                <p className={P}>Графік скринінгу інший: ПАП-тест або тест на ВПЛ роблять кожні 5 років<S n={[4]} />, і з віком скринінг не припиняють<S n={[3]} />.</p>
+              </AccordionMobile>
+              <AccordionMobile title={<>Фактори ризику раку молочної залози</>}>
+                <p className={P}>Мамографію роблять кожні 2 роки вже з 40, якщо є хоча б один із цих факторів<S n={[4]} />:</p>
+                <ul className={`mt-3 list-disc pl-5 space-y-1 ${TEXT}`}>
+                  <li>рак молочної залози в близьких родичів;</li>
+                  <li>безпліддя або перші пологи у 30 років чи пізніше;</li>
+                  <li>тривалий прийом замісної гормональної терапії в менопаузі;</li>
+                  <li>ожиріння після менопаузи;</li>
+                  <li>куріння, зловживання алкоголем або тривалий стрес.</li>
+                </ul>
+                <p className={P}>Якщо рак був у матері, сестри або доньки, обстеження починають за 5–10 років до віку, у якому діагноз поставили родичці<S n={[1]} />.</p>
+              </AccordionMobile>
+              <AccordionMobile title={<>Підтверджена мутація BRCA1 або BRCA2</>}>
+                <p className={P}>Якщо у вас підтверджено мутацію в генах BRCA1 або BRCA2 (спадкова зміна, що підвищує ризик раку молочної залози), основним стандартом обстеження в Україні є щорічна МРТ молочних залоз із контрастною речовиною разом із мамографією<S n={[6]} />. Індивідуальну програму спостереження і профілактики ви узгоджуєте з онкологом-мамологом і лікарем-генетиком.</p>
+              </AccordionMobile>
+              <AccordionMobile title={<>Фактори ризику колоректального раку</>}>
+                <p className={P}>Якщо є фактори ризику колоректального раку, у 40–49 років аналіз калу на приховану кров або ФІТ призначає лікар, а з 50 років його роблять щороку<S n={[4]} />. До факторів ризику належать<S n={[4]} />:</p>
+                <ul className={`mt-3 list-disc pl-5 space-y-1 ${TEXT}`}>
+                  <li>колоректальний рак або поліпи кишечника в близьких родичів;</li>
+                  <li>поліпи кишечника, знайдені у вас раніше;</li>
+                  <li>запальні захворювання кишечника: хвороба Крона або виразковий коліт;</li>
+                  <li>спадкові синдроми, зокрема сімейний аденоматозний поліпоз.</li>
+                </ul>
+                <p className={P}>Чи є у вас інші фактори ризику, ви оцінюєте разом із лікарем.</p>
+              </AccordionMobile>
+              <AccordionMobile title={<>Менопауза і фактори ризику перелому</>}>
+                <p className={P}>Якщо менопауза вже настала, денситометрію, тобто вимірювання щільності кісток на рентгенівському апараті з низькою дозою опромінення (метод DXA), рекомендують і до 65 років за таких факторів ризику перелому<S n={[5]} />:</p>
+                <ul className={`mt-3 list-disc pl-5 space-y-1 ${TEXT}`}>
+                  <li>низька маса тіла;</li>
+                  <li>перелом стегна в батька чи матері;</li>
+                  <li>куріння;</li>
+                  <li>надмірне вживання алкоголю.</li>
+                </ul>
+              </AccordionMobile>
+            </Block>
+          </div>
+        </div>
+
         <div className="max-w-[1200px] mx-auto lg:px-14 lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-x-12">
           <div className="min-w-0">
             {/* 8. FAQ – нативний <details>, відповіді в DOM */}
@@ -762,13 +779,15 @@ export default async function FemaleAge4050CityPage({ citySlug }: { citySlug: st
             {/* 10. Автор, рецензент, розкриття, джерела */}
             <div className="px-5 sm:px-6 lg:px-0 pt-8 pb-12">
               <div className="max-w-3xl text-[#374151] leading-relaxed space-y-3">
-                <p className="text-[#0b1a24]">{EDITORIAL_TEXT_V2}</p>
-                <p className="text-[15px]">
-                  <span className="font-semibold text-[#0b1a24]">Медичний рецензент:</span> {city.reviewer.name}, {city.reviewer.jobTitle},{' '}
-                  {city.reviewer.org}.
-                </p>
+                <p className="text-[#0b1a24]">{city.reviewer ? EDITORIAL_TEXT_V2 : EDITORIAL_TEXT_V2_NO_REVIEWER}</p>
+                {city.reviewer && (
+                  <p className="text-[15px]">
+                    <span className="font-semibold text-[#0b1a24]">Медичний рецензент:</span> {city.reviewer.name}, {city.reviewer.jobTitle},{' '}
+                    {city.reviewer.org}.
+                  </p>
+                )}
                 <GroupLabel className="pt-2">{DISCLOSURE_TITLE}</GroupLabel>
-                <p className="text-sm text-gray-500">{DISCLOSURE_TEXT}</p>
+                <p className="text-sm text-gray-500">{city.reviewer ? DISCLOSURE_TEXT : DISCLOSURE_TEXT_NO_REVIEWER}</p>
                 <p className="font-bold text-[#0b1a24] pt-2">Джерела</p>
                 <ol className="space-y-1.5 list-none text-sm">
                   {SOURCES.map((s, i) => (
@@ -801,9 +820,8 @@ export default async function FemaleAge4050CityPage({ citySlug }: { citySlug: st
             programSlug={program.slug}
             sourceCta={`${SOURCE_CTA}_sticky`}
             revealAfterId="hero"
-            zoneId={ID.programs}
-            hideWhenVisibleId="program-buy"
-            look="v2"
+            hideWhenVisibleId={['program-buy', 'plan-zone']}
+            ageZones={{ programsZoneId: 'programs-zone', programsAnchor: ID.programs, planAnchor: 'plan' }}
           />
         </>
       )}
