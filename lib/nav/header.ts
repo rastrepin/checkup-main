@@ -106,7 +106,6 @@ export const HEADER_NAV: Record<string, HeaderNav> = {
     items: [
       { label: 'Чоловікам', href: '/ukr/male-checkup/rivne', section: 'male' },
       { label: 'Жінкам', href: '/ukr/female-checkup/rivne', section: 'female' },
-      { label: 'Дітям', href: '/ukr/child-checkup/rivne' },
       { label: 'Лікарі', href: '/ukr/doctors/rivne' },
       {
         label: 'Про сервіс',
@@ -126,16 +125,7 @@ export const HEADER_NAV: Record<string, HeaderNav> = {
     items: [
       { label: 'Чоловікам', href: '/ukr/male-checkup/poltava', section: 'male' },
       { label: 'Жінкам', href: '/ukr/female-checkup/poltava', section: 'female' },
-      { label: 'Дітям', href: '/ukr/child-checkup/poltava' },
-      {
-        label: 'Спеціалізовані',
-        children: [
-          { label: 'Планування вагітності', href: '/ukr/akusherstvo/planirovanie-beremennosti/poltava' },
-          { label: 'Колоноскопія', href: '/ukr/kolonoskopiya/poltava' },
-        ],
-      },
       { label: 'Лікарі', href: '/ukr/doctors/poltava' },
-      { label: 'Сертифікат', href: '/ukr/podarunok/poltava' },
       ABOUT,
     ],
   },
@@ -151,7 +141,6 @@ export const HEADER_NAV: Record<string, HeaderNav> = {
           ABOUT_TEAM,
           { label: 'Для корпоративних клієнтів', href: '/ukr/corporate/health-checkup' },
           ABOUT_CLINICS,
-          { label: 'Подарунковий сертифікат', href: '/ukr/gift-certificate' },
         ],
       },
     ],
