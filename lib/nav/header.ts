@@ -86,19 +86,10 @@ export const HEADER_NAV: Record<string, HeaderNav> = {
       { label: 'Чоловікам', href: '/ukr/male-checkup/rivne', section: 'male' },
       { label: 'Жінкам', href: '/ukr/female-checkup/rivne', section: 'female' },
       { label: 'Лікарі', href: '/ukr/doctors/rivne' },
-      {
-        label: 'Про сервіс',
-        children: [
-          ABOUT_TEAM,
-          { label: 'Для корпоративних клієнтів', href: '/ukr/corporate/health-checkup/kiev' },
-          ABOUT_CLINICS,
-        ],
-      },
+      ABOUT,
     ],
   },
-  // Полтава – зі сторінки Tilda /ukr/poltava (02.11.2026). «Для корпоративних клієнтів» на Tilda веде на
-  // /ukr/corporate/health-checkup/poltava (404) – тут загальний пункт ABOUT (одеська сторінка, як у Харкові).
-  // «Чек-ап в Турції» не перенесено, як у Дніпрі й Одесі.
+  // Полтава – зі сторінки Tilda /ukr/poltava (02.11.2026). «Чек-ап в Турції» не перенесено, як у Дніпрі й Одесі.
   poltava: {
     logoHref: '/ukr/poltava',
     items: [
@@ -114,14 +105,7 @@ export const HEADER_NAV: Record<string, HeaderNav> = {
     items: [
       { label: 'Чоловікам', href: '/ukr/male-checkup/cherkasy', section: 'male' },
       { label: 'Жінкам', href: '/ukr/female-checkup/cherkasy', section: 'female' },
-      {
-        label: 'Про сервіс',
-        children: [
-          ABOUT_TEAM,
-          { label: 'Для корпоративних клієнтів', href: '/ukr/corporate/health-checkup' },
-          ABOUT_CLINICS,
-        ],
-      },
+      ABOUT,
     ],
   },
 };
