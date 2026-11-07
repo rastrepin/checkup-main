@@ -337,7 +337,8 @@ export function programsItemListLd(opts: {
   programsUrl: string;
   city: string;
   clinic: { name: string; website: string | null } | null;
-  programs: { name_ua: string; price_discount: number | null; price_date: string | null }[];
+  /** clinic у програмі – її клініка, коли на сторінці кілька клінік; без нього – clinic списку. */
+  programs: { name_ua: string; price_discount: number | null; price_date: string | null; clinic?: { name: string; website: string | null } }[];
 }): object | null {
   const { listName, programsUrl, city, clinic, programs } = opts;
   if (!clinic || programs.length === 0) return null;
@@ -354,7 +355,7 @@ export function programsItemListLd(opts: {
         name: p.name_ua,
         url: programsUrl,
         areaServed: { '@type': 'City', name: city },
-        provider: { '@type': 'MedicalClinic', name: clinic.name, ...(clinic.website ? { url: clinic.website } : {}) },
+        provider: { '@type': 'MedicalClinic', name: (p.clinic ?? clinic).name, ...((p.clinic ?? clinic).website ? { url: (p.clinic ?? clinic).website } : {}) },
         ...(typeof p.price_discount === 'number' && p.price_discount > 0
           ? {
               offers: {

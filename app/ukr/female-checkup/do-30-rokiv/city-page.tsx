@@ -2,12 +2,13 @@ import type { Metadata } from 'next';
 import { cache } from 'react';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { fetchClinicOffers, type ClinicOffer, type OfferBranch } from '@/lib/programs/clinic-offer';
+import { Fragment } from 'react';
+import { fetchClinicOffers, type ClinicOffer, type OfferBranch, type OfferClinic } from '@/lib/programs/clinic-offer';
 import { priceDateNotice } from '@/lib/programs/type5a';
 import StickyMobileCta from '@/components/program-page/StickyMobileCta';
 import AdditionalServices from '@/components/program-page/AdditionalServices';
 import CrossAgeNav from '@/components/shared/CrossAgeNav';
-import { getCheckupCity, type CheckupCity } from '@/lib/cities/checkup-cities';
+import { ageClinicSlugsFor, getCheckupCity, type CheckupCity } from '@/lib/cities/checkup-cities';
 import InPageNav, { type InPageNavItem } from '@/components/shared/InPageNav';
 import Header from '@/components/frame/Header'
 import Hero from '@/components/frame/Hero'
@@ -78,6 +79,14 @@ const LINK = 'text-[#005485] underline hover:no-underline';
 
 const getOffers = cache((clinicSlug: string) => fetchClinicOffers([PLATFORM_PROGRAM], clinicSlug));
 
+/** Дані клінік вікової сторінки в порядку показу (city.ageClinicSlugs): лише клініки з програмами;
+ *  програм немає ні в кого – дані першої клініки, як для однієї клініки. */
+async function clinicsOffers(city: CheckupCity) {
+  const all = await Promise.all(ageClinicSlugsFor(city).map((slug) => getOffers(slug)));
+  const shown = all.filter((d) => d.clinic && d.offers.length > 0);
+  return shown.length > 0 ? shown : [all[0]];
+}
+
 /** Місто сторінки (lib/cities/checkup-cities.ts) і похідні від нього адреса, мітка CTA і title. */
 function pageCity(citySlug: string) {
   const city = getCheckupCity(citySlug);
@@ -100,7 +109,7 @@ function minPrice(offers: ClinicOffer[]): number | null {
 
 export async function cityPageMetadata(citySlug: string): Promise<Metadata> {
   const { city, PAGE_URL, TITLE } = pageCity(citySlug);
-  const { offers } = await getOffers(city.clinicSlug);
+  const offers = (await clinicsOffers(city)).flatMap((d) => d.offers);
   const x = minPrice(offers);
   const description = x
     ? `${DESCRIPTION_BASE} ${offers.length === 1 ? `Програма в ${city.loc} – ${fmt(x)} грн.` : `Програми в ${city.loc} від ${fmt(x)} грн.`}`
@@ -250,38 +259,55 @@ function GroupLabel({ children, className = '' }: { children: string; className?
 
 export default async function FemaleAgeDo30CityPage({ citySlug }: { citySlug: string }) {
   const { city, PAGE_PATH, PAGE_URL, SOURCE_CTA } = pageCity(citySlug);
-  const { clinic, branches, clinicServiceNames, offers } = await getOffers(city.clinicSlug);
+  const clinicsData = await clinicsOffers(city);
+  const { clinic, branches, clinicServiceNames, offers } = clinicsData[0];
   const offer = offers[0] ?? null;
-  const program = offer?.program ?? null;
-  const composition = offer?.composition ?? null;
-  const items = composition?.items ?? [];
+  // Похідні однієї програми клініки: перша клініка – як і раніше; інші клініки (city.ageClinicSlugs) – картки в зоні програм.
+  const derive = (clinic: OfferClinic | null, clinicServiceNames: string[], offer: ClinicOffer | null) => {
+    const program = offer?.program ?? null;
+    const composition = offer?.composition ?? null;
+    const items = composition?.items ?? [];
 
-  const tests = items.filter((i) => i.serviceType !== 'consultation');
-  const inProgram = inProgramList(items);
-  const instrumentalAll = tests.filter((i) => i.serviceType === 'instrumental').map((i) => i.name);
-  const labAll = tests.filter((i) => i.serviceType === 'lab').map((i) => i.name);
+    const tests = items.filter((i) => i.serviceType !== 'consultation');
+    const inProgram = inProgramList(items);
+    const instrumentalAll = tests.filter((i) => i.serviceType === 'instrumental').map((i) => i.name);
+    const labAll = tests.filter((i) => i.serviceType === 'lab').map((i) => i.name);
 
-  // Блок 5: доповнення, яких немає в складі; доступність – за clinic_services.
-  const additions = ADDITIONS.filter((a) => !tests.some((i) => has(i.name, a.keywords)));
-  const additionsAvailable = additions.filter((a) => clinicServiceNames.some((n) => has(n, a.keywords)));
-  const additionsUnavailable = additions.filter((a) => !additionsAvailable.includes(a));
-  const showAdditions = Boolean(program) && additions.length > 0;
+    // Блок 5: доповнення, яких немає в складі; доступність – за clinic_services.
+    const additions = ADDITIONS.filter((a) => !tests.some((i) => has(i.name, a.keywords)));
+    const additionsAvailable = additions.filter((a) => clinicServiceNames.some((n) => has(n, a.keywords)));
+    const additionsUnavailable = additions.filter((a) => !additionsAvailable.includes(a));
+    const showAdditions = Boolean(program) && additions.length > 0;
 
-  // {missingTests}: з того самого зіставлення, що й блок «Чого немає в програмі»; лише forAll (спільний модуль).
-  // Це другий рядок мосту блоку 4.
-  const missingText = program ? missingTestsSentence(additions, (a) => additionsAvailable.includes(a)) : null;
-  const FAQ = buildFaq(program?.name_ua ?? null);
-  const preparation = preparationItems(items);
-  const visitCount = composition?.visitCount ?? 0;
-  const showVisits = Boolean(program && composition && visitCount > 0);
-  // Рядок картки 1b: «Два візити · склад програми». Рядок про вік програми не виводиться: у назві програми віку немає
-  // (те саме правило, що в programAgeShort; рішення Ігоря 26.09.2026).
-  const cardMeta = [visitCount > 0 ? visitsText(visitCount) : null]
-    .filter((t): t is string => Boolean(t))
-    .map((t, i) => (i === 0 ? t.charAt(0).toUpperCase() + t.slice(1) : t));
+    // {missingTests}: з того самого зіставлення, що й блок «Чого немає в програмі»; лише forAll (спільний модуль).
+    // Це другий рядок мосту блоку 4.
+    const missingText = program ? missingTestsSentence(additions, (a) => additionsAvailable.includes(a)) : null;
+    const FAQ = buildFaq(program?.name_ua ?? null);
+    const preparation = preparationItems(items);
+    const visitCount = composition?.visitCount ?? 0;
+    const showVisits = Boolean(program && composition && visitCount > 0);
+    // Рядок картки 1b: «Два візити · склад програми». Рядок про вік програми не виводиться: у назві програми віку немає
+    // (те саме правило, що в programAgeShort; рішення Ігоря 26.09.2026).
+    const cardMeta = [visitCount > 0 ? visitsText(visitCount) : null]
+      .filter((t): t is string => Boolean(t))
+      .map((t, i) => (i === 0 ? t.charAt(0).toUpperCase() + t.slice(1) : t));
 
-  const notice = program?.price_date ? priceDateNotice(program.price_date) : undefined;
-  const showComposition = Boolean(program && clinic && composition);
+    const notice = program?.price_date ? priceDateNotice(program.price_date) : undefined;
+    const showComposition = Boolean(program && clinic && composition);
+    return { program, composition, items, tests, inProgram, instrumentalAll, labAll, additions, additionsAvailable, additionsUnavailable, showAdditions, missingText, FAQ, preparation, visitCount, showVisits, cardMeta, notice, showComposition };
+  };
+  const { program, composition, items, tests, additions, missingText, FAQ } = derive(clinic, clinicServiceNames, offer);
+  // Картки зони програм: перша клініка – її перша програма (як було); інші клініки – усі їхні програми.
+  const cards = clinicsData.flatMap((d, di) =>
+    (di === 0 ? [d.offers[0] ?? null] : d.offers).map((o, oi) => ({
+      ...derive(d.clinic, d.clinicServiceNames, o),
+      clinic: d.clinic,
+      branches: d.branches,
+      firstOfClinic: oi === 0,
+      key: `${d.clinic?.slug ?? 'clinic'}-${o?.program.slug ?? 'none'}`,
+    })),
+  );
+  const multiClinic = clinicsData.length > 1;
 
   // Якорі hero (age-page-zones v0.6 §2, рядок 2): «Мій план» – лише коли блок є (той самий кешований запит, що в MyPlan).
   const hasPlan = Boolean(await fetchMyPlan('female', 'do-30-rokiv', city));
@@ -340,7 +366,10 @@ export default async function FemaleAgeDo30CityPage({ citySlug }: { citySlug: st
     city: city.name,
     clinic,
     // v0.6 п. 6: ItemList – лише з видимих карток (картка є, коли є програма, клініка і склад); Offer – лише з видимою ціною.
-    programs: program && clinic && composition ? [program] : [],
+    programs: [
+      ...(program && clinic && composition ? [program] : []),
+      ...cards.slice(1).flatMap((c) => (c.program && c.clinic && c.composition ? [{ ...c.program, clinic: c.clinic }] : [])),
+    ],
   });
   if (programsLd) jsonLd.push(programsLd);
 
@@ -416,7 +445,7 @@ export default async function FemaleAgeDo30CityPage({ citySlug }: { citySlug: st
 
         {/* 3а. «Два способи пройти чекап» (age-page-zones v0.6 §2.3): картки-якорі на #plan і #programs; програм немає – секції немає.
             {min} – minPrice(offers), та сама функція, що рахує ціну в meta. */}
-        <TwoWays mdName="female-do-30-rokiv" city={city} minPrice={showPrograms ? minPrice(offers) : null} />
+        <TwoWays mdName="female-do-30-rokiv" city={city} minPrice={showPrograms ? minPrice(clinicsData.flatMap((d) => d.offers)) : null} />
 
         {/* «Мій план обстеження» – docs/ux/specs/2026-11-my-plan.md v0.7 §0: після «Два способи», перед програмами клінік; дані з бази, блоку немає без Базового плану. */}
         <MyPlan gender="female" seg="do-30-rokiv" city={city} />
@@ -430,14 +459,18 @@ export default async function FemaleAgeDo30CityPage({ citySlug }: { citySlug: st
         {program && clinic && (
           <ZoneHeader
             id={ID.programs}
-            eyebrow="Програма клініки"
-            title={`Програма ${clinic.name}`}
+            eyebrow={multiClinic ? 'Програми клінік' : 'Програма клініки'}
+            title={multiClinic ? `Програми клінік в ${city.loc}` : `Програма ${clinic.name}`}
             sub="Склад програми, її лікарі й ціна. Поруч – що з рекомендованого кожній у програму не входить."
           />
         )}
         <div className="bg-[var(--zone-program-bg)]">
           <div className="max-w-[1200px] mx-auto px-5 sm:px-6 lg:px-14 pt-8 lg:pt-12 pb-[var(--space-section)] flex flex-col gap-4 lg:gap-5">
-            {clinic && (
+            {cards.map((card, ci) => {
+              const { clinic, branches, program, composition, items, inProgram, instrumentalAll, labAll, additions, additionsAvailable, additionsUnavailable, showAdditions, missingText, preparation, visitCount, showVisits, cardMeta, notice } = card;
+              return (
+              <Fragment key={card.key}>
+            {clinic && card.firstOfClinic && (
               <ProgramLocation
                 kicker="Контакти"
                 name={clinic.name}
@@ -457,7 +490,7 @@ export default async function FemaleAgeDo30CityPage({ citySlug }: { citySlug: st
             )}
             {program && clinic && composition ? (
               <ProgramCard
-                id={ID.composition}
+                id={ci === 0 ? ID.composition : `${ID.composition}-${ci}`}
                 title={program.name_ua}
                 meta={[
                   ...cardMeta,
@@ -465,7 +498,7 @@ export default async function FemaleAgeDo30CityPage({ citySlug }: { citySlug: st
                   ...(composition.counts.diagnostics > 0 ? [countText(composition.counts.diagnostics, ['обстеження', 'обстеження', 'обстежень'])] : []),
                   ...(composition.counts.analyses > 0 ? [countText(composition.counts.analyses, ['аналіз', 'аналізи', 'аналізів'])] : []),
                 ]}
-                buyId="program-buy"
+                buyId={ci === 0 ? 'program-buy' : `program-buy-${ci}`}
                 buy={
                   <>
                     <div>
@@ -522,7 +555,7 @@ export default async function FemaleAgeDo30CityPage({ citySlug }: { citySlug: st
                     </div>
                     </Accordion>
                     {showAdditions && program && (
-                      <Accordion as="h4" id={ID.additions} summary="Чого немає в програмі">
+                      <Accordion as="h4" id={ci === 0 ? ID.additions : `${ID.additions}-${ci}`} summary="Чого немає в програмі">
                 <p className={P}>{additionsIntro(program.name_ua)}</p>
                 <div className="mt-5">
                   <AdditionalServices
@@ -543,7 +576,7 @@ export default async function FemaleAgeDo30CityPage({ citySlug }: { citySlug: st
                       </Accordion>
                     )}
                     {showVisits && composition && (
-                      <Accordion as="h4" id={ID.visits} summary="Як це проходить">
+                      <Accordion as="h4" id={ci === 0 ? ID.visits : `${ID.visits}-${ci}`} summary="Як це проходить">
                 <p className={P}>Програма проходить за {visitsText(visitCount)}.</p>
                 <div className="mt-4 flex flex-col gap-4">
                   <div className="flex gap-3">
@@ -631,6 +664,9 @@ export default async function FemaleAgeDo30CityPage({ citySlug }: { citySlug: st
             ) : (
               <p className={TEXT}>Дані про програму клініки зараз недоступні. Перелік обстежень із цієї сторінки можна пройти в будь-якій клініці.</p>
             )}
+              </Fragment>
+              );
+            })}
             <div className="max-w-3xl mt-4 bg-[var(--teal-soft)] rounded-[var(--radius-lg)] p-4" role="note">
               <p className="text-ink leading-relaxed">{DOCTOR_DECIDES_TEXT}</p>
               <p className="text-[15px] text-text-secondary leading-relaxed mt-2">{ANY_CLINIC_TEXT}</p>
@@ -707,6 +743,16 @@ export default async function FemaleAgeDo30CityPage({ citySlug }: { citySlug: st
                     programName: program?.name_ua,
                     missingText,
                   })}
+                  {cards
+                    .filter((g, gi) => gi > 0 && g.firstOfClinic && g.clinic && g.branches.length > 0)
+                    .map((g) => g.clinic && ` ${geoText({
+                    cityIn: `у ${city.loc}`,
+                    subject: 'Чекап для жінок до 30 років',
+                    clinicName: g.clinic.name,
+                    branches: g.branches,
+                    programName: g.program?.name_ua,
+                    missingText: g.missingText,
+                  })}`)}
                 </p>
               </div>
             )}
@@ -759,6 +805,20 @@ export default async function FemaleAgeDo30CityPage({ citySlug }: { citySlug: st
             ageZones={{ programsZoneId: 'programs-zone', programsAnchor: ID.programs, planAnchor: 'plan' }}
           />
         </>
+      )}
+      {/* Інші клініки сторінки: модал запису на клініку, відкривається лише для її програм (BookingFlow). */}
+      {clinicsData.slice(1).map((d) =>
+        d.clinic && d.offers.length > 0 ? (
+          <BookingFlow
+            key={d.clinic.slug}
+            programs={d.offers.map((o) => o.program)}
+            branches={d.branches}
+            clinicId={d.clinic.id}
+            clinicSlug={d.clinic.slug}
+            city={city.slug}
+            programsComposition={Object.fromEntries(d.offers.map((o) => [o.program.slug, o.composition.counts]))}
+          />
+        ) : null,
       )}
     </>
   );

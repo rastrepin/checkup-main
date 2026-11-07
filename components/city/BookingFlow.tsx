@@ -124,6 +124,8 @@ export default function BookingFlow({ programs, branches, clinicId, clinicSlug, 
         sourceCta: string;
         selectedAdditionalServices?: string[];
       };
+      // Кілька клінік на сторінці – по модалу на клініку: модал відкривається лише для своїх програм.
+      if (detail.programSlug && programs.length > 0 && !programs.some((p) => p.slug === detail.programSlug)) return;
       setProgramSlug(detail.programSlug);
       setSourceCta(detail.sourceCta);
       setSelectedAdditionalServices(detail.selectedAdditionalServices ?? []);
@@ -134,7 +136,7 @@ export default function BookingFlow({ programs, branches, clinicId, clinicSlug, 
     };
     window.addEventListener('open-booking-flow', handler);
     return () => window.removeEventListener('open-booking-flow', handler);
-  }, []);
+  }, [programs]);
 
   useEffect(() => {
     if (!open) return;
