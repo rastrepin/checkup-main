@@ -61,7 +61,6 @@ export const HEADER_NAV: Record<string, HeaderNav> = {
         ],
       },
       { label: 'Лікарі', href: '/ukr/doctors/kharkiv' },
-      { label: 'Сертифікат', href: '/ukr/podarunok/kharkiv' },
       ABOUT,
     ],
   },
@@ -78,7 +77,6 @@ export const HEADER_NAV: Record<string, HeaderNav> = {
           { label: 'Колоноскопія', href: '/ukr/kolonoskopiya/dnipro' },
         ],
       },
-      { label: 'Сертифікат', href: '/ukr/podarunok/dnipro' },
       { label: 'Лікарі', href: '/ukr/doctors/dnipro' },
       {
         label: 'Про сервіс',
@@ -103,7 +101,6 @@ export const HEADER_NAV: Record<string, HeaderNav> = {
         ],
       },
       { label: 'Лікарі', href: '/ukr/doctors/odesa' },
-      { label: 'Сертифікат', href: '/ukr/podarunok/odesa' },
       {
         label: 'Про сервіс',
         children: [
@@ -120,7 +117,6 @@ export const HEADER_NAV: Record<string, HeaderNav> = {
       { label: 'Чоловікам', href: '/ukr/male-checkup/uzhgorod', section: 'male' },
       { label: 'Жінкам', href: '/ukr/female-checkup/uzhgorod', section: 'female' },
       { label: 'Дітям', href: '/ukr/child-checkup/uzhgorod' },
-      { label: 'Сертифікат', href: '/ukr/podarunok/uzhgorod' },
       { label: 'Лікарі', href: '/ukr/doctors/uzhgorod' },
       { label: 'Про сервіс', children: [ABOUT_TEAM, ABOUT_CLINICS] },
     ],

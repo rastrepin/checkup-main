@@ -33,7 +33,7 @@ export interface CityClinic {
 /** Тематичні сторінки міста, що лишаються на Tilda, – блок «Інші послуги в {city_loc}» хабу міста
  *  (CITY-HUB-TEXTS §7, SEO-MIGRATION §6). Ключ – послуга (анкор у content/city-template/city.md), значення – адреса.
  *  Послуги, якої в місті немає, у записі немає. */
-export type OtherServiceKey = 'kolonoskopiya' | 'planuvannya-vahitnosti' | 'child-checkup' | 'podarunok';
+export type OtherServiceKey = 'kolonoskopiya' | 'planuvannya-vahitnosti' | 'child-checkup';
 
 export interface CheckupCity {
   /** Слаг у URL: /ukr/female-checkup/do-30-rokiv/{slug}. */
@@ -76,7 +76,6 @@ export const CHECKUP_CITIES: Record<string, CheckupCity> = {
       kolonoskopiya: '/ukr/kolonoskopiya/kharkiv',
       'planuvannya-vahitnosti': '/ukr/materynstvo/planuvannya-vahitnosti/kharkiv',
       'child-checkup': '/ukr/child-checkup/kharkiv',
-      podarunok: '/ukr/podarunok/kharkiv',
     },
     reviewer: {
       name: 'Удовиченко Олена Олександрівна',
@@ -102,7 +101,6 @@ export const CHECKUP_CITIES: Record<string, CheckupCity> = {
       kolonoskopiya: '/ukr/kolonoskopiya/dnipro',
       'planuvannya-vahitnosti': '/ukr/materynstvo/planuvannya-vahitnosti/dnipro',
       'child-checkup': '/ukr/child-checkup/dnipro',
-      podarunok: '/ukr/podarunok/dnipro',
     },
     reviewer: null,
     contentDir: 'city-template',
@@ -119,7 +117,6 @@ export const CHECKUP_CITIES: Record<string, CheckupCity> = {
     otherServices: {
       kolonoskopiya: '/ukr/kolonoskopiya/odesa',
       'planuvannya-vahitnosti': '/ukr/akusherstvo/planirovanie-beremennosti/odesa',
-      podarunok: '/ukr/podarunok/odesa',
     },
     reviewer: null,
     contentDir: 'city-template',
@@ -141,7 +138,6 @@ export const CHECKUP_CITIES: Record<string, CheckupCity> = {
     // Колоноскопії і планування вагітності в Ужгороді немає (CITY-HUB-TEXTS §7).
     otherServices: {
       'child-checkup': '/ukr/child-checkup/uzhgorod',
-      podarunok: '/ukr/podarunok/uzhgorod',
     },
     reviewer: null,
     contentDir: 'city-template',
