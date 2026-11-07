@@ -19,7 +19,7 @@
 // Прев'ю Vercel закрите: змінна VERCEL_AUTOMATION_BYPASS_SECRET відкриває його для перевірки.
 // Звіт: qa-report.md і qa-report.json у поточній папці; код виходу 1, якщо є помилки.
 
-import { chromium } from 'playwright';
+import { chromium, request as pwRequest } from 'playwright';
 import { readFileSync, readdirSync, existsSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -262,8 +262,23 @@ async function checkLinks(p, request, r) {
           .catch((e) => ({ status: 0, error: e.message.split('\n')[0] })),
       );
     }
-    const res = await linkCache.get(url);
+    let res = await linkCache.get(url);
     const internal = new URL(url).host === base.host || new URL(url).host.endsWith('check-up.in.ua');
+    // У режимі чернеток проксі на Tilda вимкнено: сторінка, якої немає в Next.js, дає 404,
+    // хоча відвідувач її бачить (Tilda). Перевіряємо ще раз без cookie чернеток.
+    if (DRAFTS && internal && res.status === 404 && new URL(url).host === base.host) {
+      const key = `plain:${url}`;
+      if (!linkCache.has(key)) {
+        linkCache.set(
+          key,
+          plainRequest
+            .get(url, { timeout: 20000, maxRedirects: 10, failOnStatusCode: false })
+            .then((x) => ({ status: x.status(), final: x.url(), viaTilda: true }))
+            .catch((e) => ({ status: 0, error: e.message.split('\n')[0] })),
+        );
+      }
+      res = await linkCache.get(key);
+    }
     if (res.status === 404 || res.status >= 500 || (internal && res.status >= 400)) {
       bad++;
       (internal ? r.errors : r.warnings).push(`Посилання ${res.status || 'не відкрилось'}: ${url}${internal ? '' : ' (зовнішнє)'}`);
@@ -279,6 +294,10 @@ const routes = listRoutes();
 const browser = await chromium.launch();
 const context = await browser.newContext({ locale: 'uk-UA', viewport: { width: 1280, height: 900 } });
 const request = context.request;
+// Запити без cookie чернеток (для перевірки сторінок, які віддає Tilda).
+const plainRequest = await pwRequest.newContext({
+  extraHTTPHeaders: BYPASS ? { 'x-vercel-protection-bypass': BYPASS } : {},
+});
 
 // Доступ до прев'ю і чернеток: перший запит ставить cookie.
 const firstQuery = new URLSearchParams();
@@ -325,6 +344,7 @@ for (const path of routes) {
     await p.close();
   }
 }
+await plainRequest.dispose();
 await browser.close();
 
 // ---------- звіт ----------
