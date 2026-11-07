@@ -23,8 +23,9 @@ on:
 permissions:
   contents: read
 
+# Окрема черга для кожного коміту: інакше прев'ю різних гілок скасовували перевірки одне одного.
 concurrency:
-  group: qa-${{ github.event.deployment.environment || 'manual' }}
+  group: qa-${{ github.event.deployment.environment || 'manual' }}-${{ github.event.deployment.sha || github.run_id }}
   cancel-in-progress: false
 
 jobs:
