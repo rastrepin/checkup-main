@@ -10,6 +10,23 @@ export const runtime = 'nodejs';
 // звідси (notifyTelegram), щоб її не загубити.
 const PLATFORM_ORIGIN = (process.env.LEADS_PLATFORM_ORIGIN ?? 'https://onclinic.check-up.in.ua').replace(/\/+$/, '');
 
+// Тестовий режим автоперевірки (scripts/qa): заявка з зарезервованим номером +380 00 000 00 00
+// пишеться в leads зі status = 'test', клініці НЕ передається, іде лише в контрольний чат з позначкою тесту.
+// Такого номера в Україні не існує, тож реальний пацієнт його не введе. Відповідь на тестову заявку
+// містить те, що сервер зберіг (програма, ціна, послуги з назвами і цінами з бази), – перевірка звіряє це
+// з тим, що бачив користувач. GET /api/leads повідомляє перевірці, що тестовий режим є: без нього
+// перевірка заявок не відправляє.
+const QA_TEST_PHONE_DIGITS = '380000000000';
+const QA_TEST_MODE_VERSION = 1;
+
+interface ResolvedService {
+  id: string;
+  name: string | null;
+  price: number | null;
+  clinic_id: string | null;
+  exams: string[];
+}
+
 interface LeadPayload {
   name: string;
   phone: string;
@@ -43,7 +60,7 @@ interface LeadPayload {
 }
 
 /** Telegram-нотифікація: викликається через after() – виконується після відповіді користувачу, функція дочікується відправлення */
-function notifyTelegram(lead: LeadPayload, warning?: string): Promise<void> {
+function notifyTelegram(lead: LeadPayload, warning?: string, extra: string[] = []): Promise<void> {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_CHAT_ID;
   if (!token || !chatId) {
@@ -63,6 +80,7 @@ function notifyTelegram(lead: LeadPayload, warning?: string): Promise<void> {
     lead.branch_address ? `Філія: ${lead.branch_address}` : null,
     lead.selected_date_label ? `Бажаний день: ${lead.selected_date_label}` : null,
     lead.comment ? lead.comment : null,
+    ...extra,
     `Сторінка: ${lead.source_page}`,
     lead.source_cta ? `CTA: ${lead.source_cta}` : null,
   ].filter(Boolean);
@@ -79,6 +97,40 @@ function notifyTelegram(lead: LeadPayload, warning?: string): Promise<void> {
       const msg = err instanceof Error ? err.message : String(err);
       console.error('[leads] telegram', msg.split(token).join('***'));
     });
+}
+
+/** Послуги клініки за id із заявки: назва, ціна, клініка і обстеження, до яких послуга входить (лише для тестових заявок). */
+async function resolveServices(ids: string[]): Promise<ResolvedService[]> {
+  if (ids.length === 0) return [];
+  try {
+    const sb = db() as any;
+    const [{ data: svc }, { data: links }] = await Promise.all([
+      sb.from('clinic_services').select('id, name_ua, price, clinic_id').in('id', ids),
+      sb.from('clinic_service_examinations').select('clinic_service_id, examination_slug, in_price').in('clinic_service_id', ids),
+    ]);
+    const slugs = [...new Set(((links ?? []) as any[]).filter((l) => l.in_price === true).map((l) => l.examination_slug as string))];
+    const { data: exams } = slugs.length > 0 ? await sb.from('examinations').select('slug, name_ua').in('slug', slugs) : { data: [] };
+    const examName: Record<string, string> = Object.fromEntries(((exams ?? []) as any[]).map((e) => [e.slug, String(e.name_ua ?? e.slug).trim()]));
+    const byId: Record<string, any> = Object.fromEntries(((svc ?? []) as any[]).map((r) => [r.id, r]));
+    return ids.map((id) => ({
+      id,
+      name: byId[id]?.name_ua ?? null,
+      price: byId[id]?.price == null ? null : Number(byId[id].price),
+      clinic_id: byId[id]?.clinic_id ?? null,
+      exams: ((links ?? []) as any[])
+        .filter((l) => l.clinic_service_id === id && l.in_price === true)
+        .map((l) => examName[l.examination_slug] ?? l.examination_slug),
+    }));
+  } catch {
+    return ids.map((id) => ({ id, name: null, price: null, clinic_id: null, exams: [] }));
+  }
+}
+
+/** Тестова заявка: лише контрольний чат, з переліком послуг і сумою з бази. Клініці не надсилається. */
+function notifyTest(lead: LeadPayload, services: ResolvedService[]): Promise<void> {
+  const lines = services.map((s) => `• ${s.name ?? s.id} – ${s.price ?? '?'} грн`);
+  if (services.length > 0) lines.push(`Сума послуг з бази: ${services.reduce((a, s) => a + (s.price ?? 0), 0)} грн`);
+  return notifyTelegram(lead, '🧪 Тест автоперевірки: клініці не надсилалось', lines);
 }
 
 /** Передає заявку платформі для доставки клініці; при збої — запасна копія в контрольний чат. */
@@ -101,6 +153,11 @@ async function deliverToClinic(leadId: string, lead: LeadPayload): Promise<void>
     console.error('[leads] platform delivery', err instanceof Error ? err.message : String(err));
   }
   await notifyTelegram(lead, '⚠️ Клініці не доставлено автоматично - передайте вручну');
+}
+
+/** Перевірка (scripts/qa) питає, чи є тестовий режим, перш ніж відправити тестову заявку. */
+export async function GET() {
+  return NextResponse.json({ qa_test_mode: QA_TEST_MODE_VERSION, env: process.env.VERCEL_ENV ?? 'local' });
 }
 
 export async function POST(req: NextRequest) {
@@ -135,6 +192,7 @@ export async function POST(req: NextRequest) {
 
   // id генеруємо тут: anon-ключ має право лише на INSERT, повернути id з бази не може.
   const leadId = crypto.randomUUID();
+  const isTest = phoneDigits === QA_TEST_PHONE_DIGITS;
 
   try {
     const { error } = await (db() as any).from('leads').insert({
@@ -163,11 +221,38 @@ export async function POST(req: NextRequest) {
       added_service_ids: addedServiceIds,
       consent_given: true,
       consent_given_at: new Date().toISOString(),
-      status: 'new',
+      status: isTest ? 'test' : 'new',
     });
     if (error) throw error;
   } catch {
     return NextResponse.json({ error: 'db error' }, { status: 500 });
+  }
+
+  if (isTest) {
+    const services = await resolveServices(addedServiceIds);
+    after(() => notifyTest(body, services));
+    return NextResponse.json({
+      ok: true,
+      test: true,
+      lead_id: leadId,
+      saved: {
+        name,
+        phone: `+${phoneDigits}`,
+        preferred_contact: body.preferred_contact ?? 'call',
+        city: body.city,
+        clinic_id: body.clinic_id ?? null,
+        clinic_slug: body.clinic_slug ?? null,
+        program_name: body.program_name ?? null,
+        price: body.price ?? null,
+        branch_address: body.branch_address ?? null,
+        comment: body.comment ?? null,
+        source_page: body.source_page,
+        source_cta: body.source_cta ?? null,
+        variant,
+        added_service_ids: addedServiceIds,
+      },
+      services,
+    });
   }
 
   after(() => deliverToClinic(leadId, body));
