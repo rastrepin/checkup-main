@@ -133,6 +133,48 @@ export const CHECKUP_CITIES: Record<string, CheckupCity> = {
     contentDir: 'city-template',
     ruSlug: null,
   },
+  // Рівне (02.11.2026): РОКЛ ім. Юрія Семенюка (clinics.slug rokl, 2 філії). «100% життя» (100zhyttya-rivne)
+  // записано в базу 02.11.2026, але в хвилі 1 місто показує одну клініку (рішення Ігоря 07.11.2026).
+  rivne: {
+    slug: 'rivne',
+    name: 'Рівне',
+    loc: 'Рівному',
+    inCity: 'у Рівному',
+    clinicSlug: 'rokl',
+    clinics: [{ slug: 'rokl', tildaPath: '/ukr/rokl', shortName: 'РОКЛ' }],
+    otherServices: {},
+    reviewer: null,
+    contentDir: 'city-template',
+    // /rovno на Tilda – 404 (02.11.2026).
+    ruSlug: null,
+  },
+  // Полтава (02.11.2026): ОН Клінік Полтава (clinics.slug onclinic-poltava). ЦМСД (cmsd-poltava) і «100% життя»
+  // (100zhyttya-poltava) записано в базу 02.11.2026, але в хвилі 1 місто показує одну клініку (рішення Ігоря 07.11.2026).
+  poltava: {
+    slug: 'poltava',
+    name: 'Полтава',
+    loc: 'Полтаві',
+    inCity: 'у Полтаві',
+    clinicSlug: 'onclinic-poltava',
+    clinics: [{ slug: 'onclinic-poltava', tildaPath: '/ukr/onclinic-poltava', shortName: 'ОН Клінік' }],
+    otherServices: {},
+    reviewer: null,
+    contentDir: 'city-template',
+    ruSlug: 'poltava',
+  },
+  // Черкаси (02.11.2026): ОН Клінік Черкаси (clinics.slug onclinic-cherkasy).
+  cherkasy: {
+    slug: 'cherkasy',
+    name: 'Черкаси',
+    loc: 'Черкасах',
+    inCity: 'у Черкасах',
+    clinicSlug: 'onclinic-cherkasy',
+    clinics: [{ slug: 'onclinic-cherkasy', tildaPath: '/ukr/onclinic-cherkasy', shortName: 'ОН Клінік' }],
+    otherServices: {},
+    reviewer: null,
+    contentDir: 'city-template',
+    ruSlug: 'cherkassy',
+  },
 };
 
 export function getCheckupCity(slug: string): CheckupCity | null {

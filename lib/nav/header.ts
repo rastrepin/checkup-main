@@ -99,6 +99,52 @@ export const HEADER_NAV: Record<string, HeaderNav> = {
       { label: 'Про сервіс', children: [ABOUT_TEAM, ABOUT_CLINICS] },
     ],
   },
+  // Рівне – зі сторінки Tilda /ukr/rivne (02.11.2026). «Чек-ап в Турції» з «Про сервіс» не перенесено,
+  // як у Дніпрі й Одесі (рішення Ігоря 01.11.2026).
+  rivne: {
+    logoHref: '/ukr/rivne',
+    items: [
+      { label: 'Чоловікам', href: '/ukr/male-checkup/rivne', section: 'male' },
+      { label: 'Жінкам', href: '/ukr/female-checkup/rivne', section: 'female' },
+      { label: 'Лікарі', href: '/ukr/doctors/rivne' },
+      {
+        label: 'Про сервіс',
+        children: [
+          ABOUT_TEAM,
+          { label: 'Для корпоративних клієнтів', href: '/ukr/corporate/health-checkup/kiev' },
+          ABOUT_CLINICS,
+        ],
+      },
+    ],
+  },
+  // Полтава – зі сторінки Tilda /ukr/poltava (02.11.2026). «Для корпоративних клієнтів» на Tilda веде на
+  // /ukr/corporate/health-checkup/poltava (404) – тут загальний пункт ABOUT (одеська сторінка, як у Харкові).
+  // «Чек-ап в Турції» не перенесено, як у Дніпрі й Одесі.
+  poltava: {
+    logoHref: '/ukr/poltava',
+    items: [
+      { label: 'Чоловікам', href: '/ukr/male-checkup/poltava', section: 'male' },
+      { label: 'Жінкам', href: '/ukr/female-checkup/poltava', section: 'female' },
+      { label: 'Лікарі', href: '/ukr/doctors/poltava' },
+      ABOUT,
+    ],
+  },
+  // Черкаси – зі сторінки Tilda /ukr/cherkasy (02.11.2026).
+  cherkasy: {
+    logoHref: '/ukr/cherkasy',
+    items: [
+      { label: 'Чоловікам', href: '/ukr/male-checkup/cherkasy', section: 'male' },
+      { label: 'Жінкам', href: '/ukr/female-checkup/cherkasy', section: 'female' },
+      {
+        label: 'Про сервіс',
+        children: [
+          ABOUT_TEAM,
+          { label: 'Для корпоративних клієнтів', href: '/ukr/corporate/health-checkup' },
+          ABOUT_CLINICS,
+        ],
+      },
+    ],
+  },
 };
 
 /** Варіант без міста (сторінки /ukr/screening/...): лише «Про сервіс», логотип веде на /ukr. */
