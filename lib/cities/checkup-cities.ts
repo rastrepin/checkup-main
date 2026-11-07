@@ -49,6 +49,8 @@ export interface CheckupCity {
   inCity: string;
   /** clinics.slug клініки, програми якої показують вікові сторінки (одна клініка на вікову сторінку). */
   clinicSlug: string;
+  /** Клініки вікових сторінок у порядку показу, коли їх кілька (перша – clinicSlug). Немає – лише clinicSlug. */
+  ageClinicSlugs?: string[];
   /** Клініки-партнери міста для хабу і сторінок статі в порядку показу. Одна – варіант А, кілька – варіант Б
    *  (CITY-HUB-TEXTS: Ужгород – Б). */
   clinics: CityClinic[];
@@ -119,8 +121,9 @@ export const CHECKUP_CITIES: Record<string, CheckupCity> = {
     name: 'Ужгород',
     loc: 'Ужгороді',
     inCity: 'в Ужгороді',
-    // provisional – owner to confirm: клініка вікових сторінок Ужгорода (одна на вікову сторінку).
     clinicSlug: 'onclinic-uzhgorod',
+    // Вікові сторінки Ужгорода показують програми обох клінік (рішення Ігоря 07.11.2026).
+    ageClinicSlugs: ['onclinic-uzhgorod', 'credoclinic'],
     clinics: [
       { slug: 'onclinic-uzhgorod', tildaPath: '/ukr/onclinic-uzhgorod', shortName: 'ОН Клінік' },
       { slug: 'credoclinic', tildaPath: '/ukr/credoclinic', shortName: 'Кредоклінік' },
@@ -134,4 +137,9 @@ export const CHECKUP_CITIES: Record<string, CheckupCity> = {
 
 export function getCheckupCity(slug: string): CheckupCity | null {
   return CHECKUP_CITIES[slug] ?? null;
+}
+
+/** Клініки вікових сторінок міста в порядку показу: ageClinicSlugs або одна clinicSlug. */
+export function ageClinicSlugsFor(city: CheckupCity): string[] {
+  return city.ageClinicSlugs && city.ageClinicSlugs.length > 0 ? city.ageClinicSlugs : [city.clinicSlug];
 }
