@@ -1,6 +1,7 @@
 'use client';
 
-// «Мій план обстеження» – клієнтська частина (docs/ux/specs/2026-11-my-plan.md v0.5).
+// «Мій план обстеження» – клієнтська частина (docs/ux/specs/2026-11-my-plan.md v0.7).
+// v0.7 §1: рядок «У плані N обстежень · консультація входить» над карткою плану; тінь --shadow-card – лише в картки плану.
 // Mobile (§1): план → «Додано вами» → «Я в групі ризику →» → підсумок (вибір клініки, сума, дії) →
 // «Додати дослідження» → ризик-флоу. Desktop від 1024 (§1.1): сітка minmax(0,1fr) 360px, ліворуч план, картки
 // і ризик-флоу, праворуч підсумок – плаваючий сайдбар (sticky top 24 у межах блоку).
@@ -213,6 +214,7 @@ export default function MyPlanClient({ data, header }: { data: MyPlanData; heade
   };
 
   const addedSlugs = Object.keys(state.added).filter((s) => exams[s]);
+  const planCount = base.filter((r) => !state.dropped.includes(r.slug)).length + addedSlugs.length;
   const riskSlugs = [...new Set(risk.filter((f) => state.factors.includes(f.code)).flatMap((f) => f.slugs))].filter((s) => exams[s]);
   const textBtn =
     'shrink-0 inline-flex items-center min-h-11 px-1 text-[14px] font-semibold text-link underline decoration-1 underline-offset-[3px] hover:decoration-2 rounded-[var(--radius-sm)]';
@@ -226,8 +228,12 @@ export default function MyPlanClient({ data, header }: { data: MyPlanData; heade
         <div className="lg:col-start-1 lg:row-start-1">{header}</div>
 
       <div ref={planRef} className="max-w-[720px] lg:max-w-none lg:col-start-1 lg:row-start-2 scroll-mt-20">
-        {/* 3. Базовий план + 4. «Додано вами» + 5. «Я в групі ризику →» – картка плану */}
-        <div className="mt-[var(--space-block)] bg-white border border-[var(--border)] rounded-[var(--radius-lg)] px-[var(--space-card)]">
+        {/* 2а. Рядок-підсумок над карткою (v0.7 §1): число без суми, оновлюється разом зі списком. */}
+        <p aria-live="polite" className="mt-[var(--space-block)] text-[15px] font-semibold text-ink">
+          {PLAN_T.planCount(planCount)}
+        </p>
+        {/* 3. Базовий план + 4. «Додано вами» + 5. «Я в групі ризику →» – картка плану. Тінь – лише в неї (v0.7 §1). */}
+        <div className="mt-3 bg-white border border-[var(--border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-card)] px-[var(--space-card)]">
           <ul aria-label={PLAN_T.title}>
             {base.map((r) => {
               const e = exams[r.slug];

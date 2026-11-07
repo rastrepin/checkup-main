@@ -5,6 +5,7 @@
 // ключа немає, він порожній або лишився плейсхолдер без значення – ліду немає.
 // id="plan-zone" – від H2 до кінця ризик-флоу: поки він на екрані, панель сторінки схована; панель плану – у MyPlanClient (§8б).
 // H2 і лід передаються в MyPlanClient: на desktop вони стоять у лівій колонці сітки блоку (§1.1).
+// Фон секції – --bg-muted на всю ширину, межа з секцією перед нею – --section-border (my-plan v0.7 §1, рішення Ігоря 06.11).
 
 import Eyebrow from '@/components/frame/Eyebrow';
 import type { CheckupCity } from '@/lib/cities/checkup-cities';
@@ -31,7 +32,7 @@ export default async function MyPlan({ gender, seg, city }: { gender: PlanGender
   if (!data) return null;
   const lead = planLead(gender, seg, city);
   return (
-    <section id="plan" aria-labelledby="plan-h2" className="border-t border-section-border bg-white scroll-mt-16">
+    <section id="plan" aria-labelledby="plan-h2" className="border-t border-section-border bg-bg-muted scroll-mt-16">
       <div className="max-w-[1200px] lg:max-w-[1176px] mx-auto px-5 sm:px-6 lg:px-7 py-[var(--space-section)]">
         <Eyebrow className="mb-[var(--space-eyebrow)]">{PLAN_T.eyebrow}</Eyebrow>
         <div id="plan-zone">
