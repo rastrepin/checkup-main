@@ -106,7 +106,8 @@ async function fillAndSubmit(p, dialog) {
   const res = await req.response();
   const sent = req.postDataJSON();
   const body = res ? await res.json().catch(() => null) : null;
-  const done = await dialog.getByText('ЗАЯВКУ НАДІСЛАНО').waitFor({ timeout: 10000 }).then(() => true, () => false);
+  // Екран успіху шукаємо на всій сторінці: локатор вікна з фільтром «Крок» після відправки вже не збігається.
+  const done = await p.getByText('ЗАЯВКУ НАДІСЛАНО').first().waitFor({ timeout: 10000 }).then(() => true, () => false);
   return { sent, status: res?.status() ?? 0, body, done };
 }
 
@@ -241,7 +242,7 @@ async function checkProgram(p, r, canSubmit) {
   if (norm(body.saved?.program_name) !== norm(title)) r.errors.push(`Програма клініки: у заявці «${body.saved?.program_name}», на картці «${title}»`);
   if (Number(body.saved?.price) !== shownPrice) r.errors.push(`Програма клініки: ціна в заявці ${body.saved?.price} грн, на картці ${shownPrice} грн`);
   if (norm(body.saved?.program_name) === norm(title) && Number(body.saved?.price) === shownPrice) r.ok.push('Програма клініки: назва і ціна в заявці збігаються з карткою');
-  await dialog.getByRole('button', { name: /Закрити/ }).last().click().catch(() => {});
+  await p.locator('[role="dialog"]').getByRole('button', { name: /Закрити/ }).last().click().catch(() => {});
 }
 
 // ---------- посилання ----------
