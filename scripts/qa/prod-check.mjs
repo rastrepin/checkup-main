@@ -224,9 +224,23 @@ async function checkProgram(p, r, canSubmit) {
     r.warnings.push('Програма клініки: картки з кнопкою запису немає');
     return;
   }
+  // Дві розмітки картки: жіночі сторінки – ProgramCard (<article>, назва в h3, ціна в блоці запису);
+  // чоловічі – блок <div> (назва p.text-xl, ціна p.text-2xl поруч із блоком запису).
   const card = buy.first().locator('xpath=ancestor::article[1]');
-  const title = (await card.locator('h3').first().textContent())?.trim() ?? '';
-  const priceText = await buy.first().locator('p').first().textContent();
+  let title;
+  let priceText;
+  if (await card.count()) {
+    title = (await card.locator('h3').first().textContent())?.trim() ?? '';
+    priceText = await buy.first().locator('p').first().textContent();
+  } else {
+    const box = buy.first().locator('xpath=..');
+    title = (await box.locator('p.text-xl').first().textContent({ timeout: 5000 }).catch(() => ''))?.trim() ?? '';
+    priceText = await box.locator('p.text-2xl').first().textContent({ timeout: 5000 }).catch(() => '');
+  }
+  if (!title || !digits(priceText)) {
+    r.errors.push('Програма клініки: на картці не знайшов назву або ціну програми');
+    return;
+  }
   const shownPrice = digits(priceText);
   r.ok.push(`Програма клініки: «${title}», ${shownPrice} грн`);
   if (!canSubmit) return;
