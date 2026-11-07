@@ -26,6 +26,11 @@ function priced(c: PlanClinic | null, slug: string) {
   return p && typeof p === 'object' ? p : null;
 }
 
+/** Обрана клініка не виконує дослідження: у неї немає жодної послуги для нього ('none'). Без цін ('noprice') – не те саме. */
+function notPerformed(c: PlanClinic | null, slug: string) {
+  return c?.prices[slug] === 'none';
+}
+
 export default function MyPlanClient({ data, header }: { data: MyPlanData; header?: ReactNode }) {
   const [state, setState] = useState<PlanUserState>(EMPTY_STATE);
   const [riskOpen, setRiskOpen] = useState(false);
@@ -70,7 +75,7 @@ export default function MyPlanClient({ data, header }: { data: MyPlanData; heade
   // Сума: Базовий план без прибраних і без «У консультації» + додані; послуги без повторів; дата – найстаріша.
   const sum = useMemo(() => {
     const slugs = [
-      ...base.filter((r) => !state.dropped.includes(r.slug) && !exams[r.slug]?.includedIn).map((r) => r.slug),
+      ...base.filter((r) => !state.dropped.includes(r.slug) && !exams[r.slug]?.includedIn && !(!r.locked && notPerformed(active, r.slug))).map((r) => r.slug),
       ...Object.keys(state.added).filter((s) => !exams[s]?.includedIn),
     ];
     if (!active) return null;
@@ -214,7 +219,10 @@ export default function MyPlanClient({ data, header }: { data: MyPlanData; heade
   };
 
   const addedSlugs = Object.keys(state.added).filter((s) => exams[s]);
-  const planCount = base.filter((r) => !state.dropped.includes(r.slug)).length + addedSlugs.length;
+  // Рядок Базового плану, якого обрана клініка не виконує (рішення Ігоря 07.11.2026): без галочки, неактивний, з поясненням;
+  // не входить ні в лічильник, ні в суму, ні в заявку. Поки клініку не обрано (кілька клінік) – рядок звичайний.
+  const unavailable = (r: (typeof base)[number]) => !r.locked && !exams[r.slug]?.includedIn && notPerformed(active, r.slug);
+  const planCount = base.filter((r) => !state.dropped.includes(r.slug) && !unavailable(r)).length + addedSlugs.length;
   const riskSlugs = [...new Set(risk.filter((f) => state.factors.includes(f.code)).flatMap((f) => f.slugs))].filter((s) => exams[s]);
   const textBtn =
     'shrink-0 inline-flex items-center min-h-11 px-1 text-[14px] font-semibold text-link underline decoration-1 underline-offset-[3px] hover:decoration-2 rounded-[var(--radius-sm)]';
@@ -238,6 +246,19 @@ export default function MyPlanClient({ data, header }: { data: MyPlanData; heade
             {base.map((r) => {
               const e = exams[r.slug];
               const out = state.dropped.includes(r.slug);
+              const na = unavailable(r);
+              if (na) {
+                return (
+                  <li key={r.slug} data-unavailable="" aria-disabled="true" className="flex items-start gap-3 py-3.5 border-b border-section-border">
+                    <Mark on={false} disabled />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[16px] font-semibold leading-snug text-text-secondary">{e.name}</p>
+                      {r.condition && <p className="mt-0.5 text-[13px] text-text-secondary">{r.condition}</p>}
+                      <p className="mt-0.5 text-[13px] text-text-secondary">{PLAN_T.notPerformed}</p>
+                    </div>
+                  </li>
+                );
+              }
               return (
                 <li key={r.slug} className="flex items-start gap-3 py-3.5 border-b border-section-border">
                   <Mark on={!out} />
@@ -503,13 +524,13 @@ export default function MyPlanClient({ data, header }: { data: MyPlanData; heade
   );
 }
 
-/** Позначка рядка: у плані – заливка --brand-primary з галочкою; прибрано – порожній квадрат. */
-function Mark({ on }: { on: boolean }) {
+/** Позначка рядка: у плані – заливка --brand-primary з галочкою; прибрано – порожній квадрат; клініка не виконує – неактивний сірий квадрат. */
+function Mark({ on, disabled = false }: { on: boolean; disabled?: boolean }) {
   return (
     <span
       aria-hidden="true"
       className={`mt-0.5 w-[22px] h-[22px] shrink-0 rounded-[var(--radius-sm)] flex items-center justify-center ${
-        on ? 'bg-brand-primary' : 'bg-white border-2 border-border-strong'
+        on ? 'bg-brand-primary' : disabled ? 'bg-bg-subtle border-2 border-[var(--border)]' : 'bg-white border-2 border-border-strong'
       }`}
     >
       {on && (

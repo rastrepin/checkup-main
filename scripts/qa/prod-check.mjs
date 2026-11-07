@@ -162,7 +162,8 @@ async function checkPlan(p, r, canSubmit) {
         name: nameEl.textContent?.trim() ?? '',
         dropped: nameEl.className.includes('line-through'),
         inConsultation: text.includes('У консультації'),
-        notInClinic: text.includes('Немає в клініці'),
+        // Рядок Базового плану, якого клініка не виконує (data-unavailable), – не в сумі й не в заявці.
+        notInClinic: text.includes('Немає в клініці') || li.hasAttribute('data-unavailable'),
       });
     });
     const paras = [...zoneEl.querySelectorAll('p')];
