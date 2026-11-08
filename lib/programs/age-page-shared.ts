@@ -1,5 +1,3 @@
-import type { ReactNode } from 'react';
-
 // Спільні блоки вікових сторінок міста (задача Cowork «Оновлення текстів сторінки 40–50», 24.09.2026,
 // блоки з позначкою [СПІЛЬНИЙ]). Тексти і правила виводу – тут, один раз для всіх вікових сторінок;
 // сторінки верстають блоки самі (рішення спринту: без нових спільних компонентів).
@@ -15,67 +13,6 @@ export function joinWithAnd(items: string[]): string {
 export function lcFirst(s: string): string {
   if (s.length > 1 && s[1] === s[1].toUpperCase() && s[1] !== s[1].toLowerCase()) return s;
   return s.charAt(0).toLowerCase() + s.slice(1);
-}
-
-/**
- * Позиція блоку «Доповнення» – обстеження з переліку сторінки, якого може не бути в програмі.
- * Список задає сторінка, бо рекомендації залежать від віку.
- */
-export interface AgeAddition {
-  id: string;
-  name: string;
-  /** Ключові слова для зіставлення зі складом програми і з clinic_services. */
-  keywords: string[];
-  /** Текст картки, якщо клініка обстеження проводить (група «Можна додати до запису»). */
-  explanation: ReactNode;
-  /** Текст картки, якщо клініка не проводить (група «…не проводиться»). */
-  why: ReactNode;
-  /** Ознака «рекомендоване для віку сторінки всім». Лише такі позиції входять у {missingTests};
-   *  обстеження, які в цьому віці роблять за факторів ризику, – false. */
-  forAll: boolean;
-  /** Назва в реченні {missingTests}; обов'язкова, якщо forAll = true. */
-  missingName?: string;
-  /** Назва в знахідному відмінку для речення «… можна також додати до запису», якщо відрізняється від missingName
-   *  («мамографія» → «мамографію»). */
-  missingNameAcc?: string;
-}
-
-/** Велика перша літера (початок речення). */
-export function ucFirst(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1);
-}
-
-/**
- * Кінцівка речення про відсутні обстеження (задача 26.09.2026, п. 1): «додайте до запису» – лише для обстежень,
- * які клініка проводить. Ознака та сама, що розподіляє картки блоку 5 на групи (clinic_services).
- * - усі проводить: «{ask} або додайте до запису.»;
- * - частину: «{ask}. {назви тих, що проводить} можна також додати до запису.»;
- * - жодного: «{ask}.»
- * ask – «Запитайте про них лікаря на консультації» (множина) або форма однини; names – у знахідному відмінку.
- */
-export function askDoctorOrAdd(ask: string, items: { nameAcc: string; available: boolean }[]): string {
-  const avail = items.filter((i) => i.available).map((i) => i.nameAcc);
-  if (avail.length === items.length) return `${ask} або додайте до запису.`;
-  if (avail.length === 0) return `${ask}.`;
-  return `${ask}. ${ucFirst(joinWithAnd(avail))} можна також додати до запису.`;
-}
-
-/** Речення {missingTests} (Hero, картка програми, GEO) з доповнень, яких немає в програмі; null – не виводиться.
- *  Конструкція Б – задача v2 (24.09.2026), розділ 16.1, діє на всіх сторінках. */
-export function missingTestsSentence(
-  missingAdditions: AgeAddition[],
-  /** Ознака «клініка проводить» (група «Можна додати до запису» блоку 5). Усі сторінки передають її;
-   *  без неї кожне обстеження вважається доступним. */
-  isAvailable: (a: AgeAddition) => boolean = () => true,
-): string | null {
-  const items = missingAdditions.filter((a) => a.forAll && a.missingName);
-  if (items.length === 0) return null;
-  const tail = items.map((a) => ({ nameAcc: a.missingNameAcc ?? (a.missingName as string), available: isAvailable(a) }));
-  const names = items.map((a) => a.missingName as string);
-  if (names.length === 1) {
-    return `До програми не входить ${names[0]}. ${askDoctorOrAdd('Запитайте про це обстеження лікаря на консультації', tail)}`;
-  }
-  return `До програми не входять ${joinWithAnd(names)}. ${askDoctorOrAdd('Запитайте про них лікаря на консультації', tail)}`;
 }
 
 /** Нижня вікова межа з назви програми («… після 40» → 40); null – у назві віку немає. */
@@ -115,11 +52,6 @@ export function visitsText(n: number): string {
 /** H2 блоку програми клініки. */
 export function programHeading(programName: string | null | undefined, clinicName: string | null | undefined, cityIn = 'в Харкові'): string {
   return programName && clinicName ? `Програма «${programName}» в ${clinicName}` : `Програма клініки ${cityIn}`;
-}
-
-/** Вступ блоку «Доповнення». */
-export function additionsIntro(programName: string): string {
-  return `Цих обстежень із переліку в програмі «${programName}» немає.`;
 }
 
 export const WHERE_TO_GO = 'Можна пройти в іншому закладі і принести результат на другий візит.';
@@ -184,40 +116,6 @@ export function faqMissingInProgramV2(programName: string | null | undefined): {
     q: faqMissingInProgram(programName).q,
     a: 'Запитайте про нього лікаря на консультації: він вирішить, чи потрібне воно вам, і призначить його. Результат лікар врахує на другому візиті.',
   };
-}
-
-/** Задача v2, блок 5: абзац під картками групи «…не проводять» (кілька обстежень; задача 26.09.2026, п. 2). */
-export const ADDITIONS_ASK_DOCTOR =
-  'Запитайте про ці обстеження лікаря на консультації: він вирішить, чи потрібні вони вам, і призначить їх. Результат лікар врахує на другому візиті.';
-
-/** Те саме, коли в групі одне обстеження. */
-export const ADDITIONS_ASK_DOCTOR_ONE =
-  'Запитайте про це обстеження лікаря на консультації: він вирішить, чи потрібне воно вам, і призначить його. Результат лікар врахує на другому візиті.';
-
-/** Абзац під групою «…не проводять»: однина або множина за кількістю карток. */
-export function additionsAskDoctor(count: number): string {
-  return count === 1 ? ADDITIONS_ASK_DOCTOR_ONE : ADDITIONS_ASK_DOCTOR;
-}
-
-/** Латка тексту 2 (A4): причина групи «Запитати у лікаря» – перше речення абзацу під групою. */
-export function additionsUnavailableReason(count: number, riskBased: boolean): string {
-  if (riskBased) {
-    return count === 1
-      ? 'Це обстеження в цьому віці роблять за факторів ризику.'
-      : 'Ці обстеження в цьому віці роблять за факторів ризику.';
-  }
-  return count === 1
-    ? 'Клініка цього обстеження не проводить, тож до запису його не додати.'
-    : 'Клініка цих обстежень не проводить, тож до запису їх не додати.';
-}
-
-/** Латка тексту 2 (A1): абзац під групою «Можна додати до запису». */
-export const ADDITIONS_ADD_VIA_MANAGER = "Щоб додати обстеження до запису, скажіть про це менеджеру, коли він зв'яжеться з вами після заявки: він назве вартість.";
-
-/** Задача v2, блок 5: заголовок групи недоступних у клініці обстежень. */
-export function additionsUnavailableTitle(clinicName: string | null | undefined): string {
-  void clinicName; // Сигнатуру збережено (латка етапу 1, п. 1.4): заголовок групи однаковий для будь-якої клініки.
-  return 'Запитати у лікаря';
 }
 
 /** Задача v2, блок 6: дисклеймер і рядок про будь-яку клініку. */
@@ -337,7 +235,8 @@ export function programsItemListLd(opts: {
   programsUrl: string;
   city: string;
   clinic: { name: string; website: string | null } | null;
-  programs: { name_ua: string; price_discount: number | null; price_date: string | null }[];
+  /** clinic у програмі – її клініка, коли на сторінці кілька клінік; без нього – clinic списку. */
+  programs: { name_ua: string; price_discount: number | null; price_date: string | null; clinic?: { name: string; website: string | null } }[];
 }): object | null {
   const { listName, programsUrl, city, clinic, programs } = opts;
   if (!clinic || programs.length === 0) return null;
@@ -354,7 +253,7 @@ export function programsItemListLd(opts: {
         name: p.name_ua,
         url: programsUrl,
         areaServed: { '@type': 'City', name: city },
-        provider: { '@type': 'MedicalClinic', name: clinic.name, ...(clinic.website ? { url: clinic.website } : {}) },
+        provider: { '@type': 'MedicalClinic', name: (p.clinic ?? clinic).name, ...((p.clinic ?? clinic).website ? { url: (p.clinic ?? clinic).website } : {}) },
         ...(typeof p.price_discount === 'number' && p.price_discount > 0
           ? {
               offers: {

@@ -3,10 +3,10 @@
 // /ukr/dnipro, /ukr/odesa, /ukr/uzhgorod – зі знімків Tilda 01.11.2026 (checkup-platform, docs/kb/snapshots/2026-11-01).
 // Склад і порядок пунктів у кожного міста свій, як на Tilda.
 // Нове місто – новий запис у HEADER_NAV; розмітка components/shared/SiteHeader.tsx не змінюється.
-// Рішення Координатора 01.10.2026: «Для корпоративних клієнтів» веде на одеську сторінку, як на Tilda;
-// Telegram-бот і Viber у шапку не переносяться.
+// Telegram-бот і Viber у шапку не переносяться (рішення Координатора 01.10.2026).
 // Рішення Ігоря 07.11.2026: «Сертифікат» прибрано звідусіль; «Дітям» – прибрано в хвилі 1 (додамо пізніше);
 // «Спеціалізовані» (планування вагітності, колоноскопія) – друга хвиля.
+// Рішення Ігоря 07.11.2026: «Для корпоративних клієнтів» прибрано звідусіль – «Це не наш напрямок».
 
 /** Слаг міста. Меню є лише для міст з HEADER_NAV; для інших шапка – варіант без міста. */
 export type HeaderCity = string;
@@ -38,14 +38,7 @@ export interface HeaderNav {
 const ABOUT_TEAM: HeaderLink = { label: 'Про команду', href: '/ukr/about' };
 const ABOUT_CLINICS: HeaderLink = { label: 'Співпраця з клініками', href: '/ukr/proposal-for-clinics' };
 
-const ABOUT: HeaderItem = {
-  label: 'Про сервіс',
-  children: [
-    ABOUT_TEAM,
-    { label: 'Для корпоративних клієнтів', href: '/ukr/corporate/health-checkup/odesa' },
-    ABOUT_CLINICS,
-  ],
-};
+const ABOUT: HeaderItem = { label: 'Про сервіс', children: [ABOUT_TEAM, ABOUT_CLINICS] };
 
 /** Міський варіант: повне меню, логотип веде на хаб міста. */
 export const HEADER_NAV: Record<string, HeaderNav> = {
@@ -64,14 +57,7 @@ export const HEADER_NAV: Record<string, HeaderNav> = {
       { label: 'Чоловікам', href: '/ukr/male-checkup/dnipro', section: 'male' },
       { label: 'Жінкам', href: '/ukr/female-checkup/dnipro', section: 'female' },
       { label: 'Лікарі', href: '/ukr/doctors/dnipro' },
-      {
-        label: 'Про сервіс',
-        children: [
-          ABOUT_TEAM,
-          { label: 'Для корпоративних клієнтів', href: '/ukr/corporate/health-checkup/dnipro' },
-          ABOUT_CLINICS,
-        ],
-      },
+      ABOUT,
     ],
   },
   odesa: {
@@ -80,14 +66,7 @@ export const HEADER_NAV: Record<string, HeaderNav> = {
       { label: 'Чоловікам', href: '/ukr/male-checkup/odesa', section: 'male' },
       { label: 'Жінкам', href: '/ukr/female-checkup/odesa', section: 'female' },
       { label: 'Лікарі', href: '/ukr/doctors/odesa' },
-      {
-        label: 'Про сервіс',
-        children: [
-          ABOUT_TEAM,
-          { label: 'Для корпоративних клієнтів', href: '/ukr/corporate/health-checkup/odesa' },
-          ABOUT_CLINICS,
-        ],
-      },
+      ABOUT,
     ],
   },
   uzhgorod: {
@@ -96,7 +75,37 @@ export const HEADER_NAV: Record<string, HeaderNav> = {
       { label: 'Чоловікам', href: '/ukr/male-checkup/uzhgorod', section: 'male' },
       { label: 'Жінкам', href: '/ukr/female-checkup/uzhgorod', section: 'female' },
       { label: 'Лікарі', href: '/ukr/doctors/uzhgorod' },
-      { label: 'Про сервіс', children: [ABOUT_TEAM, ABOUT_CLINICS] },
+      ABOUT,
+    ],
+  },
+  // Рівне – зі сторінки Tilda /ukr/rivne (02.11.2026). «Чек-ап в Турції» з «Про сервіс» не перенесено,
+  // як у Дніпрі й Одесі (рішення Ігоря 01.11.2026).
+  rivne: {
+    logoHref: '/ukr/rivne',
+    items: [
+      { label: 'Чоловікам', href: '/ukr/male-checkup/rivne', section: 'male' },
+      { label: 'Жінкам', href: '/ukr/female-checkup/rivne', section: 'female' },
+      { label: 'Лікарі', href: '/ukr/doctors/rivne' },
+      ABOUT,
+    ],
+  },
+  // Полтава – зі сторінки Tilda /ukr/poltava (02.11.2026). «Чек-ап в Турції» не перенесено, як у Дніпрі й Одесі.
+  poltava: {
+    logoHref: '/ukr/poltava',
+    items: [
+      { label: 'Чоловікам', href: '/ukr/male-checkup/poltava', section: 'male' },
+      { label: 'Жінкам', href: '/ukr/female-checkup/poltava', section: 'female' },
+      { label: 'Лікарі', href: '/ukr/doctors/poltava' },
+      ABOUT,
+    ],
+  },
+  // Черкаси – зі сторінки Tilda /ukr/cherkasy (02.11.2026).
+  cherkasy: {
+    logoHref: '/ukr/cherkasy',
+    items: [
+      { label: 'Чоловікам', href: '/ukr/male-checkup/cherkasy', section: 'male' },
+      { label: 'Жінкам', href: '/ukr/female-checkup/cherkasy', section: 'female' },
+      ABOUT,
     ],
   },
 };

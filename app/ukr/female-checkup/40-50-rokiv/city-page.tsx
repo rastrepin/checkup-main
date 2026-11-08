@@ -2,12 +2,12 @@ import type { Metadata } from 'next';
 import { cache } from 'react';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { fetchClinicOffers, type ClinicOffer, type OfferBranch } from '@/lib/programs/clinic-offer';
+import { Fragment } from 'react';
+import { fetchClinicOffers, type ClinicOffer, type OfferBranch, type OfferClinic } from '@/lib/programs/clinic-offer';
 import { priceDateNotice } from '@/lib/programs/type5a';
 import StickyMobileCta from '@/components/program-page/StickyMobileCta';
-import AdditionalServices from '@/components/program-page/AdditionalServices';
 import CrossAgeNav from '@/components/shared/CrossAgeNav';
-import { getCheckupCity, type CheckupCity } from '@/lib/cities/checkup-cities';
+import { ageClinicSlugsFor, getCheckupCity, type CheckupCity } from '@/lib/cities/checkup-cities';
 import InPageNav, { type InPageNavItem } from '@/components/shared/InPageNav';
 import Header from '@/components/frame/Header'
 import Hero from '@/components/frame/Hero'
@@ -22,12 +22,7 @@ import ProgramCard, { countText } from '@/components/frame/ProgramCard'
 import { buttonClass } from '@/components/frame/Button';
 import BookingFlow, { BookCta } from '@/components/city/BookingFlow';
 import {
-  type AgeAddition,
-  additionsAskDoctor,
   pageDatesText,
-  additionsUnavailableReason,
-  ADDITIONS_ADD_VIA_MANAGER,
-  askDoctorOrAdd,
   ANY_CLINIC_TEXT,
   DISCLOSURE_TEXT,
   DISCLOSURE_TEXT_NO_REVIEWER,
@@ -37,15 +32,11 @@ import {
   EDITORIAL_TEXT_V2_NO_REVIEWER,
   FIRST_VISIT_TEXT,
   SECOND_VISIT_TEXT_V2,
-  additionsIntro,
-  additionsUnavailableTitle,
   faqOtherClinic,
   geoText,
   hoursDash,
-  missingTestsSentence,
   preparationItems,
   programsItemListLd,
-  ucFirst,
   programAgeShort,
   visitsText,
 } from '@/lib/programs/age-page-shared';
@@ -81,6 +72,14 @@ const LINK = 'text-[#005485] underline hover:no-underline';
 
 const getOffers = cache((clinicSlug: string) => fetchClinicOffers([PLATFORM_PROGRAM], clinicSlug));
 
+/** Дані клінік вікової сторінки в порядку показу (city.ageClinicSlugs): лише клініки з програмами;
+ *  програм немає ні в кого – дані першої клініки, як для однієї клініки. */
+async function clinicsOffers(city: CheckupCity) {
+  const all = await Promise.all(ageClinicSlugsFor(city).map((slug) => getOffers(slug)));
+  const shown = all.filter((d) => d.clinic && d.offers.length > 0);
+  return shown.length > 0 ? shown : [all[0]];
+}
+
 /** Місто сторінки (lib/cities/checkup-cities.ts) і похідні від нього адреса, мітка CTA і title. */
 function pageCity(citySlug: string) {
   const city = getCheckupCity(citySlug);
@@ -103,7 +102,7 @@ function minPrice(offers: ClinicOffer[]): number | null {
 
 export async function cityPageMetadata(citySlug: string): Promise<Metadata> {
   const { city, PAGE_URL, TITLE } = pageCity(citySlug);
-  const { offers } = await getOffers(city.clinicSlug);
+  const offers = (await clinicsOffers(city)).flatMap((d) => d.offers);
   const x = minPrice(offers);
   const description = x
     ? `${DESCRIPTION_BASE} ${offers.length === 1 ? `Програма в ${city.loc} – ${fmt(x)} грн.` : `Програми в ${city.loc} від ${fmt(x)} грн.`}`
@@ -142,38 +141,10 @@ const ID = {
   history: 'istoriia',
   programs: 'programs',
   composition: 'sklad-prohramy',
-  additions: 'dodaty',
   visits: 'yak-tse-prokhodyt',
   contacts: 'kontakty',
   faq: 'faq',
 } as const;
-
-/* Доповнення: усі обстеження з переліку, яких немає в програмі (screening-evidence-matrix.md, розділ 3).
- * forAll – рекомендоване у 40–50 років усім; лише такі входять у {missingTests}. Мамографію й аналіз калу
- * у 40–49 років роблять за факторів ризику: forAll = false, а riskName – назва для другого рядка мосту блоку 4
- * («… у цьому віці роблять за факторів ризику, у програму вони не входять»). Холестерин у цей рядок не потрапляє. */
-type Addition = AgeAddition & { riskName?: string };
-const ADDITIONS: Addition[] = [
-  { id: "pap", name: "ПАП-тест", keywords: ["пап-тест", "цервікальн", "впл"], explanation: "Мазок на клітини шийки матки роблять раз на 3 роки. Його можна пройти окремо в гінеколога.", why: "Мазок на клітини шийки матки роблять раз на 3 роки. Його можна пройти окремо в гінеколога.", forAll: true, missingName: "ПАП-тест" },
-  { id: "lipid", name: "Холестерин (ліпідограма)", keywords: ["ліпідограм"], explanation: "Якщо ви не перевіряли холестерин після 20 років або з останнього аналізу минуло понад 4–6 років, його можна здати окремо.", why: "Якщо ви не перевіряли холестерин після 20 років або з останнього аналізу минуло понад 4–6 років, його можна здати окремо.", forAll: false },
-  { id: "mammo", name: "Мамографія", keywords: ["мамограф"], explanation: "Якщо є фактори ризику раку молочної залози: у 40–49 років кожні 2 роки.", why: <>У 40–49 років її роблять кожні 2 роки, якщо є фактори ризику<S n={[4]} />. УЗД молочних залоз не замінює мамографію: для скринінгу раку молочної залози використовують мамографію<S n={[4]} />. Лікар може призначити УЗД додатково, якщо тканина молочних залоз щільна або потрібно уточнити зміни, знайдені на мамограмі<S n={[6]} />.</>, forAll: false, riskName: "мамографію" },
-  { id: "fit", name: "Аналіз калу на приховану кров", keywords: ["прихован", "імунохімічн"], explanation: <>У 40–49 років його призначає лікар, якщо є фактори ризику колоректального раку або симптоми<S n={[4]} />.</>, why: <>У 40–49 років його призначає лікар, якщо є фактори ризику колоректального раку або симптоми<S n={[4]} />.</>, forAll: false, riskName: "аналіз калу на приховану кров" },
-];
-
-/** Другий рядок мосту блоку 4, коли {missingTests} порожній, але в програмі немає обстежень, які в цьому віці
- *  роблять за факторів ризику. Назви – у знахідному відмінку (riskName). «Додайте до запису» – лише для тих,
- *  які клініка проводить (askDoctorOrAdd, задача 26.09.2026, п. 1). */
-function riskBasedSentence(items: { name: string; available: boolean }[]): string | null {
-  if (items.length === 0) return null;
-  const names = items.map((i) => i.name);
-  const joined = names.length === 1 ? names[0] : `${names.slice(0, -1).join(', ')} й ${names[names.length - 1]}`;
-  const head = ucFirst(joined);
-  const tail = items.map((i) => ({ nameAcc: i.name, available: i.available }));
-  if (items.length === 1) {
-    return `${head} у цьому віці роблять за факторів ризику, до програми це обстеження не входить. ${askDoctorOrAdd('Запитайте про нього лікаря на консультації', tail)}`;
-  }
-  return `${head} у цьому віці роблять за факторів ризику, у програму вони не входять. ${askDoctorOrAdd('Запитайте про них лікаря на консультації', tail)}`;
-}
 
 /** FAQ: видимий текст і FAQPage Schema будуються з одного масиву. */
 function buildFaq(programName: string | null): { q: string; a: string }[] {
@@ -204,23 +175,6 @@ function scheduleText(b: OfferBranch): string | null {
   if (!b.schedule) return null;
   const parts = SCHEDULE_LABELS.filter(([k]) => b.schedule?.[k]).map(([k, label]) => `${label} ${hoursDash(String(b.schedule?.[k]))}`);
   return parts.length ? parts.join(', ') : null;
-}
-
-const has = (name: string, keywords: string[]) => keywords.some((k) => name.toLowerCase().includes(k));
-
-/** Міст блоку 4: що з переліку є в програмі, у порядку картки з відповіддю; тиск – якщо в складі є прийом терапевта. */
-function inProgramList(items: { name: string; serviceType: string }[]): string[] {
-  const tests = items.filter((i) => i.serviceType !== 'consultation');
-  const found = (keywords: string[]) => tests.some((i) => has(i.name, keywords));
-  const out: string[] = [];
-  if (items.some((i) => i.serviceType === 'consultation' && has(i.name, ['терапевт']))) out.push('вимірювання тиску на консультації терапевта');
-  const chol = found(['ліпідограм']);
-  const gluc = found(['глюкоз']);
-  if (chol && gluc) out.push('аналізи на холестерин і цукор у крові');
-  else if (chol) out.push('аналіз на холестерин');
-  else if (gluc) out.push('аналіз на цукор у крові');
-  if (found(['пап-тест', 'цервікальн', 'впл'])) out.push('ПАП-тест');
-  return out;
 }
 
 function S({ n }: { n: number[] }) {
@@ -279,42 +233,43 @@ function GroupLabel({ children, className = '' }: { children: string; className?
 
 export default async function FemaleAge4050CityPage({ citySlug }: { citySlug: string }) {
   const { city, PAGE_PATH, PAGE_URL, SOURCE_CTA } = pageCity(citySlug);
-  const { clinic, branches, clinicServiceNames, offers } = await getOffers(city.clinicSlug);
+  const clinicsData = await clinicsOffers(city);
+  const { clinic, branches, offers } = clinicsData[0];
   const offer = offers[0] ?? null;
-  const program = offer?.program ?? null;
-  const composition = offer?.composition ?? null;
-  const items = composition?.items ?? [];
+  // Похідні однієї програми клініки: перша клініка – як і раніше; інші клініки (city.ageClinicSlugs) – картки в зоні програм.
+  const derive = (clinic: OfferClinic | null, offer: ClinicOffer | null) => {
+    const program = offer?.program ?? null;
+    const composition = offer?.composition ?? null;
+    const items = composition?.items ?? [];
 
-  const tests = items.filter((i) => i.serviceType !== 'consultation');
-  const inProgram = inProgramList(items);
-  const instrumentalAll = tests.filter((i) => i.serviceType === 'instrumental').map((i) => i.name);
-  const labAll = tests.filter((i) => i.serviceType === 'lab').map((i) => i.name);
+    const tests = items.filter((i) => i.serviceType !== 'consultation');
+    const instrumentalAll = tests.filter((i) => i.serviceType === 'instrumental').map((i) => i.name);
+    const labAll = tests.filter((i) => i.serviceType === 'lab').map((i) => i.name);
+    const ageShort = programAgeShort(program?.name_ua, PAGE_MIN_AGE);
+    const FAQ = buildFaq(program?.name_ua ?? null);
+    const preparation = preparationItems(items);
+    const visitCount = composition?.visitCount ?? 0;
+    const showVisits = Boolean(program && composition && visitCount > 0);
+    const cardMeta = [ageShort, visitCount > 0 ? visitsText(visitCount) : null]
+      .filter((t): t is string => Boolean(t))
+      .map((t, i) => (i === 0 ? t.charAt(0).toUpperCase() + t.slice(1) : t));
 
-  // Блок 5: доповнення, яких немає в складі; доступність – за clinic_services.
-  const additions = ADDITIONS.filter((a) => !tests.some((i) => has(i.name, a.keywords)));
-  const additionsAvailable = additions.filter((a) => !a.riskName && clinicServiceNames.some((n) => has(n, a.keywords)));
-  const additionsUnavailable = additions.filter((a) => !additionsAvailable.includes(a));
-  const showAdditions = Boolean(program) && additions.length > 0;
-
-  // {missingTests}: з того самого зіставлення, що й блок «Чого немає в програмі»; лише forAll (спільний модуль).
-  const missingText = program ? missingTestsSentence(additions, (a) => additionsAvailable.includes(a)) : null;
-  // Другий рядок мосту: {missingTests} порожній, але немає обстежень, які в цьому віці роблять за факторів ризику.
-  const riskText =
-    program && !missingText
-      ? riskBasedSentence(additions.filter((a) => a.riskName).map((a) => ({ name: a.riskName as string, available: additionsAvailable.includes(a) })))
-      : null;
-  const bridgeSecond = missingText ?? riskText;
-  const ageShort = programAgeShort(program?.name_ua, PAGE_MIN_AGE);
-  const FAQ = buildFaq(program?.name_ua ?? null);
-  const preparation = preparationItems(items);
-  const visitCount = composition?.visitCount ?? 0;
-  const showVisits = Boolean(program && composition && visitCount > 0);
-  const cardMeta = [ageShort, visitCount > 0 ? visitsText(visitCount) : null]
-    .filter((t): t is string => Boolean(t))
-    .map((t, i) => (i === 0 ? t.charAt(0).toUpperCase() + t.slice(1) : t));
-
-  const notice = program?.price_date ? priceDateNotice(program.price_date) : undefined;
-  const showComposition = Boolean(program && clinic && composition);
+    const notice = program?.price_date ? priceDateNotice(program.price_date) : undefined;
+    const showComposition = Boolean(program && clinic && composition);
+    return { program, composition, items, tests, instrumentalAll, labAll, ageShort, FAQ, preparation, visitCount, showVisits, cardMeta, notice, showComposition };
+  };
+  const { program, composition, items, tests, FAQ } = derive(clinic, offer);
+  // Картки зони програм: перша клініка – її перша програма (як було); інші клініки – усі їхні програми.
+  const cards = clinicsData.flatMap((d, di) =>
+    (di === 0 ? [d.offers[0] ?? null] : d.offers).map((o, oi) => ({
+      ...derive(d.clinic, o),
+      clinic: d.clinic,
+      branches: d.branches,
+      firstOfClinic: oi === 0,
+      key: `${d.clinic?.slug ?? 'clinic'}-${o?.program.slug ?? 'none'}`,
+    })),
+  );
+  const multiClinic = clinicsData.length > 1;
 
   // Якорі hero (age-page-zones v0.6 §2, рядок 2): «Мій план» – лише коли блок є (той самий кешований запит, що в MyPlan).
   const hasPlan = Boolean(await fetchMyPlan('female', '40-50-rokiv', city));
@@ -373,7 +328,10 @@ export default async function FemaleAge4050CityPage({ citySlug }: { citySlug: st
     city: city.name,
     clinic,
     // v0.6 п. 6: ItemList – лише з видимих карток (картка є, коли є програма, клініка і склад); Offer – лише з видимою ціною.
-    programs: program && clinic && composition ? [program] : [],
+    programs: [
+      ...(program && clinic && composition ? [program] : []),
+      ...cards.slice(1).flatMap((c) => (c.program && c.clinic && c.composition ? [{ ...c.program, clinic: c.clinic }] : [])),
+    ],
   });
   if (programsLd) jsonLd.push(programsLd);
 
@@ -457,7 +415,7 @@ export default async function FemaleAge4050CityPage({ citySlug }: { citySlug: st
 
         {/* 3а. «Два способи пройти чекап» (age-page-zones v0.6 §2.3): картки-якорі на #plan і #programs; програм немає – секції немає.
             {min} – minPrice(offers), та сама функція, що рахує ціну в meta. */}
-        <TwoWays mdName="female-40-50-rokiv" city={city} minPrice={showPrograms ? minPrice(offers) : null} />
+        <TwoWays mdName="female-40-50-rokiv" city={city} minPrice={showPrograms ? minPrice(clinicsData.flatMap((d) => d.offers)) : null} />
 
         {/* «Мій план обстеження» – docs/ux/specs/2026-11-my-plan.md v0.7 §0: після «Два способи», перед програмами клінік; дані з бази, блоку немає без Базового плану. */}
         <MyPlan gender="female" seg="40-50-rokiv" city={city} />
@@ -471,14 +429,18 @@ export default async function FemaleAge4050CityPage({ citySlug }: { citySlug: st
         {program && clinic && (
           <ZoneHeader
             id={ID.programs}
-            eyebrow="Програма клініки"
-            title={`Програма ${clinic.name}`}
-            sub="Склад програми, її лікарі й ціна. Поруч – що з рекомендованого кожній у програму не входить."
+            eyebrow={multiClinic ? 'Програми клінік' : 'Програма клініки'}
+            title={multiClinic ? `Програми клінік в ${city.loc}` : `Програма ${clinic.name}`}
+            sub="Склад програми, її лікарі й ціна."
           />
         )}
         <div className="bg-[var(--zone-program-bg)]">
           <div className="max-w-[1200px] mx-auto px-5 sm:px-6 lg:px-14 pt-8 lg:pt-12 pb-[var(--space-section)] flex flex-col gap-4 lg:gap-5">
-            {clinic && (
+            {cards.map((card, ci) => {
+              const { clinic, branches, program, composition, items, instrumentalAll, labAll, preparation, visitCount, showVisits, cardMeta, notice } = card;
+              return (
+              <Fragment key={card.key}>
+            {clinic && card.firstOfClinic && (
               <ProgramLocation
                 kicker="Контакти"
                 name={clinic.name}
@@ -498,7 +460,7 @@ export default async function FemaleAge4050CityPage({ citySlug }: { citySlug: st
             )}
             {program && clinic && composition ? (
               <ProgramCard
-                id={ID.composition}
+                id={ci === 0 ? ID.composition : `${ID.composition}-${ci}`}
                 title={program.name_ua}
                 meta={[
                   ...cardMeta,
@@ -506,7 +468,7 @@ export default async function FemaleAge4050CityPage({ citySlug }: { citySlug: st
                   ...(composition.counts.diagnostics > 0 ? [countText(composition.counts.diagnostics, ['обстеження', 'обстеження', 'обстежень'])] : []),
                   ...(composition.counts.analyses > 0 ? [countText(composition.counts.analyses, ['аналіз', 'аналізи', 'аналізів'])] : []),
                 ]}
-                buyId="program-buy"
+                buyId={ci === 0 ? 'program-buy' : `program-buy-${ci}`}
                 buy={
                   <>
                     <div>
@@ -562,29 +524,8 @@ export default async function FemaleAge4050CityPage({ citySlug }: { citySlug: st
                       )}
                     </div>
                     </Accordion>
-                    {showAdditions && program && (
-                      <Accordion as="h4" id={ID.additions} summary="Чого немає в програмі">
-                <p className={P}>{additionsIntro(program.name_ua)}</p>
-                <div className="mt-5">
-                  <AdditionalServices
-                    available={additionsAvailable.map((a) => ({ id: a.id, name: a.name, explanation: a.explanation }))}
-                    unavailable={additionsUnavailable.map((a) => ({ name: a.name, why: a.why, whereToGo: '' }))}
-                    programSlug={program.slug}
-                    sourceCta={`${SOURCE_CTA}_additions`}
-                    clinicName={clinic?.name}
-                    showPrices={false}
-                    mode="info"
-                    unavailableTitle={additionsUnavailableTitle(clinic?.name)}
-                    availableNote={ADDITIONS_ADD_VIA_MANAGER}
-                  />
-                </div>
-                {additionsUnavailable.length > 0 && (
-                  <p className={P}>{additionsUnavailableReason(additionsUnavailable.length, additionsUnavailable.some((a) => a.riskName))} {additionsAskDoctor(additionsUnavailable.length)}</p>
-                )}
-                      </Accordion>
-                    )}
                     {showVisits && composition && (
-                      <Accordion as="h4" id={ID.visits} summary="Як це проходить">
+                      <Accordion as="h4" id={ci === 0 ? ID.visits : `${ID.visits}-${ci}`} summary="Як це проходить">
                 <p className={P}>Програма проходить за {visitsText(visitCount)}.</p>
                 <div className="mt-4 flex flex-col gap-4">
                   <div className="flex gap-3">
@@ -624,31 +565,6 @@ export default async function FemaleAge4050CityPage({ citySlug }: { citySlug: st
                   </>
                 }
               >
-                <div className="mt-5">
-                {(inProgram.length > 0 || bridgeSecond) && (
-                  <div className="bg-[var(--zone-program-bg)] rounded-[var(--radius-lg)] p-4 flex flex-col gap-3">
-                    {inProgram.length > 0 && (
-                      <div className="flex gap-2.5 items-start">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#04b5ba" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="shrink-0 mt-0.5">
-                          <path d="M5 12l5 5 9-10" />
-                        </svg>
-                        <p className={TEXT}>
-                          <span className="font-semibold text-[#0b1a24]">З переліку в програмі є:</span> {inProgram.join(', ')}.
-                        </p>
-                      </div>
-                    )}
-                    {bridgeSecond && (
-                      <div className="flex gap-2.5 items-start">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#005485" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true" className="shrink-0 mt-0.5">
-                          <path d="M12 5v14M5 12h14" />
-                        </svg>
-                        <p className={TEXT}>{bridgeSecond}</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                </div>
                 {composition.consultationsSummary && (
                   <>
                     <GroupLabel className="mt-5 mb-1">Консультації</GroupLabel>
@@ -672,6 +588,9 @@ export default async function FemaleAge4050CityPage({ citySlug }: { citySlug: st
             ) : (
               <p className={TEXT}>Дані про програму клініки зараз недоступні. Перелік обстежень із цієї сторінки можна пройти в будь-якій клініці.</p>
             )}
+              </Fragment>
+              );
+            })}
             <div className="max-w-3xl mt-4 bg-[var(--teal-soft)] rounded-[var(--radius-lg)] p-4" role="note">
               <p className="text-ink leading-relaxed">{DOCTOR_DECIDES_TEXT}</p>
               <p className="text-[15px] text-text-secondary leading-relaxed mt-2">{ANY_CLINIC_TEXT}</p>
@@ -770,8 +689,16 @@ export default async function FemaleAge4050CityPage({ citySlug }: { citySlug: st
                     clinicName: clinic.name,
                     branches,
                     programName: program?.name_ua,
-                    missingText,
                   })}
+                  {cards
+                    .filter((g, gi) => gi > 0 && g.firstOfClinic && g.clinic && g.branches.length > 0)
+                    .map((g) => g.clinic && ` ${geoText({
+                    cityIn: `у ${city.loc}`,
+                    subject: 'Чекап для жінок 40–50 років',
+                    clinicName: g.clinic.name,
+                    branches: g.branches,
+                    programName: g.program?.name_ua,
+                  })}`)}
                 </p>
               </div>
             )}
@@ -824,6 +751,20 @@ export default async function FemaleAge4050CityPage({ citySlug }: { citySlug: st
             ageZones={{ programsZoneId: 'programs-zone', programsAnchor: ID.programs, planAnchor: 'plan' }}
           />
         </>
+      )}
+      {/* Інші клініки сторінки: модал запису на клініку, відкривається лише для її програм (BookingFlow). */}
+      {clinicsData.slice(1).map((d) =>
+        d.clinic && d.offers.length > 0 ? (
+          <BookingFlow
+            key={d.clinic.slug}
+            programs={d.offers.map((o) => o.program)}
+            branches={d.branches}
+            clinicId={d.clinic.id}
+            clinicSlug={d.clinic.slug}
+            city={city.slug}
+            programsComposition={Object.fromEntries(d.offers.map((o) => [o.program.slug, o.composition.counts]))}
+          />
+        ) : null,
       )}
     </>
   );

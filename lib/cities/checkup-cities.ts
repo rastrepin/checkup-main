@@ -49,6 +49,8 @@ export interface CheckupCity {
   inCity: string;
   /** clinics.slug клініки, програми якої показують вікові сторінки (одна клініка на вікову сторінку). */
   clinicSlug: string;
+  /** Клініки вікових сторінок у порядку показу, коли їх кілька (перша – clinicSlug). Немає – лише clinicSlug. */
+  ageClinicSlugs?: string[];
   /** Клініки-партнери міста для хабу і сторінок статі в порядку показу. Одна – варіант А, кілька – варіант Б
    *  (CITY-HUB-TEXTS: Ужгород – Б). */
   clinics: CityClinic[];
@@ -119,8 +121,9 @@ export const CHECKUP_CITIES: Record<string, CheckupCity> = {
     name: 'Ужгород',
     loc: 'Ужгороді',
     inCity: 'в Ужгороді',
-    // provisional – owner to confirm: клініка вікових сторінок Ужгорода (одна на вікову сторінку).
     clinicSlug: 'onclinic-uzhgorod',
+    // Вікові сторінки Ужгорода показують програми обох клінік (рішення Ігоря 07.11.2026).
+    ageClinicSlugs: ['onclinic-uzhgorod', 'credoclinic'],
     clinics: [
       { slug: 'onclinic-uzhgorod', tildaPath: '/ukr/onclinic-uzhgorod', shortName: 'ОН Клінік' },
       { slug: 'credoclinic', tildaPath: '/ukr/credoclinic', shortName: 'Кредоклінік' },
@@ -130,8 +133,55 @@ export const CHECKUP_CITIES: Record<string, CheckupCity> = {
     contentDir: 'city-template',
     ruSlug: null,
   },
+  // Рівне (02.11.2026): РОКЛ ім. Юрія Семенюка (clinics.slug rokl, 2 філії). «100% життя» (100zhyttya-rivne)
+  // записано в базу 02.11.2026, але в хвилі 1 місто показує одну клініку (рішення Ігоря 07.11.2026).
+  rivne: {
+    slug: 'rivne',
+    name: 'Рівне',
+    loc: 'Рівному',
+    inCity: 'у Рівному',
+    clinicSlug: 'rokl',
+    clinics: [{ slug: 'rokl', tildaPath: '/ukr/rokl', shortName: 'РОКЛ' }],
+    otherServices: {},
+    reviewer: null,
+    contentDir: 'city-template',
+    // /rovno на Tilda – 404 (02.11.2026).
+    ruSlug: null,
+  },
+  // Полтава (02.11.2026): ОН Клінік Полтава (clinics.slug onclinic-poltava). ЦМСД (cmsd-poltava) і «100% життя»
+  // (100zhyttya-poltava) записано в базу 02.11.2026, але в хвилі 1 місто показує одну клініку (рішення Ігоря 07.11.2026).
+  poltava: {
+    slug: 'poltava',
+    name: 'Полтава',
+    loc: 'Полтаві',
+    inCity: 'у Полтаві',
+    clinicSlug: 'onclinic-poltava',
+    clinics: [{ slug: 'onclinic-poltava', tildaPath: '/ukr/onclinic-poltava', shortName: 'ОН Клінік' }],
+    otherServices: {},
+    reviewer: null,
+    contentDir: 'city-template',
+    ruSlug: 'poltava',
+  },
+  // Черкаси (02.11.2026): ОН Клінік Черкаси (clinics.slug onclinic-cherkasy).
+  cherkasy: {
+    slug: 'cherkasy',
+    name: 'Черкаси',
+    loc: 'Черкасах',
+    inCity: 'у Черкасах',
+    clinicSlug: 'onclinic-cherkasy',
+    clinics: [{ slug: 'onclinic-cherkasy', tildaPath: '/ukr/onclinic-cherkasy', shortName: 'ОН Клінік' }],
+    otherServices: {},
+    reviewer: null,
+    contentDir: 'city-template',
+    ruSlug: 'cherkassy',
+  },
 };
 
 export function getCheckupCity(slug: string): CheckupCity | null {
   return CHECKUP_CITIES[slug] ?? null;
+}
+
+/** Клініки вікових сторінок міста в порядку показу: ageClinicSlugs або одна clinicSlug. */
+export function ageClinicSlugsFor(city: CheckupCity): string[] {
+  return city.ageClinicSlugs && city.ageClinicSlugs.length > 0 ? city.ageClinicSlugs : [city.clinicSlug];
 }
