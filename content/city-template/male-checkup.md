@@ -143,7 +143,7 @@ Check-Up Центр у Google: {google_rating} · відгуків: {google_revi
 
 ## geo_a
 
-Чекап організму в {city_loc} можна пройти в {clinic}: {branch_list}. Сторінка клініки: [{clinic_url}]({clinic_url}).
+Чекап організму в {city_loc} можна пройти в {clinic}: {branch_list}.
 
 ## geo_b_intro
 
@@ -151,4 +151,4 @@ Check-Up Центр у Google: {google_rating} · відгуків: {google_revi
 
 ## geo_b_line
 
-{clinic} – {branch_list}, сторінка клініки: [{clinic_url}]({clinic_url}).
+{clinic} – {branch_list}.
