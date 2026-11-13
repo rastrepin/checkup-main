@@ -353,14 +353,6 @@ export default async function MaleAgeDo30CityPage({ citySlug }: { citySlug: stri
                 )}
                 <div id={ci === 0 ? 'program-buy' : `program-buy-${ci}`} className="mt-6 flex flex-col sm:flex-row gap-3">
                   <BookCta programSlug={program.slug} sourceCta={`${SOURCE_CTA}_card`} label="Записатися" className="sm:!w-auto sm:px-8" />
-                  {clinic.website && (
-                    <a
-                      href={clinic.website}
-                      className="inline-flex items-center justify-center min-h-12 px-6 rounded-[10px] border border-[#005485] text-[#005485] font-semibold text-sm hover:bg-[#f0f7fb]"
-                    >
-                      Детальніше
-                    </a>
-                  )}
                 </div>
               </div>
 
@@ -444,13 +436,6 @@ export default async function MaleAgeDo30CityPage({ citySlug }: { citySlug: stri
                   );
                 })}
               </ul>
-            )}
-            {clinic.website && (
-              <p className="mt-4 text-sm">
-                <a href={clinic.website} className="font-semibold text-[#005485] hover:underline">
-                  Сторінка клініки на check-up.in.ua →
-                </a>
-              </p>
             )}
               </div>
               ) : null,
