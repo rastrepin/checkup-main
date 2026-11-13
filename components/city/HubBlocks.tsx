@@ -68,20 +68,18 @@ export function hubVars(
   if (minPrice !== null) vars.min_price = priceText(minPrice);
   if (clinics.length > 0) {
     vars.clinic_names = joinWithI(clinics.map((c) => clinicLabel(c, shortNames)));
-    // «[коротка назва](clinic_url) (адреса філії)»; кілька філій – адреси через «; » без метро (щоб не було дужок у
-    // дужках); філії немає – лише посилання.
+    // «коротка назва (адреса філії)» без посилання (рішення Ігоря 13.11: сайт клініки не для аудиторії чекапів);
+    // кілька філій – адреси через «; » без метро (щоб не було дужок у дужках); філії немає – лише назва.
     vars.clinic_links = joinWithI(
       clinics.map((c) => {
         const addrs = c.branches.map((b) => b.address_ua).join('; ');
-        return `[${clinicLabel(c, shortNames)}](${c.url})${addrs ? ` (${addrs})` : ''}`;
+        return `${clinicLabel(c, shortNames)}${addrs ? ` (${addrs})` : ''}`;
       }),
     );
   }
   if (variant === 'a') {
     const c = clinics[0];
     if (c) vars.clinic = clinicLabel(c, shortNames);
-    // Двері до клініки: субдомен, інакше сторінка клініки на Tilda – навіть коли клініки ще немає в базі.
-    vars.clinic_url = c?.url ?? `${SITE}${city.clinics[0].tildaPath}`;
     const bl = c ? branchList(c.branches) : null;
     if (bl) vars.branch_list = bl;
   } else if (clinics.length > 0) {
@@ -369,7 +367,7 @@ export function GeoBlock({
     for (const c of clinics) {
       const bl = branchList(c.branches);
       if (!bl) continue;
-      const text = fillPlaceholders(raw, { ...vars, clinic: clinicLabel(c, shortNames), branch_list: bl, clinic_url: c.url });
+      const text = fillPlaceholders(raw, { ...vars, clinic: clinicLabel(c, shortNames), branch_list: bl });
       lines.push({ heading: null, eyebrow: null, blocks: [{ type: 'p', content: parseLine(text) }] });
     }
   }
