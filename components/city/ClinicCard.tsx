@@ -5,7 +5,8 @@ import { branchesWord, scheduleText, type HubClinic } from '@/lib/cities/hub-dat
 // (docs/ux/specs/2026-11-city-hub.md §3.2–3.3, ui-kit §6.13, PLATFORM-LINE §5 «Двері до клініки»).
 // Картка платформи: білий фон, рамка --border, радіус 12 (--radius-lg), відступ --space-card. Кольорів, логотипа
 // і теми клініки немає.
-// Склад: назва (H3) · тип закладу · dl · акордеон «Адреси філій» · «Сторінка клініки →».
+// Склад: назва (H3) · тип закладу · dl · акордеон «Адреси філій».
+// Посилання «Сторінка клініки →» прибрано (рішення Ігоря 13.11): сайт клініки не зроблений для аудиторії чекапів.
 // Одна філія: dl «Адреса / Графік / Ліцензія», акордеона немає – адреса видна одразу.
 // Кілька філій: dl «Філії / Ліцензія» (кількість і метро), адреси – в акордеоні; графіків філій у картці немає
 // (рішення Ігоря 02.11: графіки кожної філії в картці зайві).
@@ -59,14 +60,6 @@ export default function ClinicCard({ clinic, name }: { clinic: HubClinic; name?:
           </ul>
         </Accordion>
       )}
-      <p className="mt-auto pt-3">
-        <a
-          href={clinic.url}
-          className="inline-flex items-center min-h-11 text-[15px] font-semibold text-link hover:underline underline-offset-[3px]"
-        >
-          Сторінка клініки →
-        </a>
-      </p>
     </article>
   );
 }
