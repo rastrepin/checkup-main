@@ -19,7 +19,6 @@ import Accordion from '@/components/frame/Accordion'
 import AccordionMobile from '@/components/frame/AccordionMobile'
 import ProgramLocation from '@/components/frame/ProgramLocation'
 import ProgramCard, { countText } from '@/components/frame/ProgramCard'
-import { buttonClass } from '@/components/frame/Button';
 import BookingFlow, { BookCta } from '@/components/city/BookingFlow';
 import {
   pageDatesText,
@@ -443,15 +442,6 @@ export default async function FemaleAge3040CityPage({ citySlug }: { citySlug: st
                 city={`в ${city.loc}`}
                 moreLabel="Адреси і графік"
                 branches={branches.map((b) => ({ id: b.id, name: b.name_ua, address: b.address_ua, metro: b.metro_ua, schedule: scheduleText(b) }))}
-                footer={
-                  <>
-                    {clinic.website && (
-                      <a href={clinic.website} className="font-semibold text-link hover:underline">
-                        Сторінка клініки на check-up.in.ua →
-                      </a>
-                    )}
-                  </>
-                }
               />
             )}
             {program && clinic && composition ? (
@@ -476,11 +466,6 @@ export default async function FemaleAge3040CityPage({ citySlug }: { citySlug: st
                     </div>
                     <div className="flex flex-col gap-2.5">
                       <BookCta programSlug={program.slug} sourceCta={`${SOURCE_CTA}_card`} label="Записатися" className="uppercase tracking-[0.06em] text-[13px]" />
-                      {clinic.website && (
-                        <a href={clinic.website} className={`${buttonClass({ variant: 'secondary', size: 'lg', caps: true })} text-[13px]`}>
-                          Детальніше
-                        </a>
-                      )}
                     </div>
                   </>
                 }
