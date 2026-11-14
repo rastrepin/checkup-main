@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import SiteFooter from '@/components/frame/SiteFooter';
 
 // Контент: content/screening/psa.md дослівно (v0, SPRINT-KHARKIV-v0, сторінка 9)
 // Структура і верстка – як app/ukr/screening/pap-test/page.tsx (ті самі секції).
@@ -107,6 +108,7 @@ export default function ScreeningPsaPage() {
   ];
 
   return (
+    <>
     <main className="text-[#0b1a24]">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
@@ -262,5 +264,7 @@ export default function ScreeningPsaPage() {
         </div>
       </section>
     </main>
+    <SiteFooter city={null} />
+    </>
   );
 }
