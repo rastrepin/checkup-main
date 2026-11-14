@@ -40,6 +40,7 @@ import {
 } from '@/lib/programs/age-page-shared';
 import MyPlan from '@/components/plan/MyPlan';
 import { fetchMyPlan } from '@/lib/plan/data';
+import SiteFooter from '@/components/frame/SiteFooter';
 
 // Вікова сторінка міста – SPRINT-KHARKIV-v0, тип 5a. Шаблон для всіх міст з lib/cities/checkup-cities.ts (конвеєр міграції, 30.10.2026).
 // Контент: content/kharkiv/female-do-30-rokiv.md дослівно.
@@ -611,9 +612,9 @@ export default async function FemaleAgeDo30CityPage({ citySlug }: { citySlug: st
         </div>
 
         {/* Другорядна інформація (правка Ігоря 26.09.2026): окрема смуга на всю ширину, поза колонками –
-            картка програм сюди вже не заходить. Нижній відступ під закріплену кнопку запису на mobile – тут, а не в main,
-            щоб під смугою не лишалося білої полоси. */}
-        <section aria-label="Додаткова інформація" className="bg-[#e9edf1] border-t border-[#dde2e8] pb-24 md:pb-0">
+            картка програм сюди вже не заходить. Нижній відступ під закріплену кнопку запису на mobile – під футером
+            (SiteFooter stickyPad, HEADER-SPEC v1.2 10.3). */}
+        <section aria-label="Додаткова інформація" className="bg-[#e9edf1] border-t border-[#dde2e8]">
           <div className="max-w-[1200px] mx-auto lg:px-14">
             {/* 8a. Інші вікові групи */}
             <div className="px-5 sm:px-6 lg:px-0 pt-10 pb-8">
@@ -678,6 +679,7 @@ export default async function FemaleAgeDo30CityPage({ citySlug }: { citySlug: st
           </div>
         </section>
       </main>
+      <SiteFooter city={city.slug} stickyPad={Boolean(program && clinic && composition)} />
 
       {program && clinic && composition && (
         <>
