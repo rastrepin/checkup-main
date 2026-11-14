@@ -26,6 +26,7 @@ import { faqItems, loadCityMdSections, resolvedBlocks, sectionHeading, sectionTe
 import { getCheckupCity, type CheckupCity } from '@/lib/cities/checkup-cities';
 import { cityVariant, fetchCityClinics, fetchScopeOffers, minPriceFor, SITE } from '@/lib/cities/hub-data';
 import { HUB_REVIEWERS } from '@/lib/cities/hub-reviewers';
+import SiteFooter from '@/components/frame/SiteFooter';
 
 // Сторінка статі в місті /ukr/{female,male}-checkup/{slug} – спільний шаблон обох статей (хвиля 1, 01.11.2026).
 // Обгортки: app/ukr/{stat}-checkup/city-page.tsx → app/ukr/{stat}-checkup/{slug}/page.tsx.
@@ -213,6 +214,7 @@ export default async function GenderHubPage({ gender, citySlug }: { gender: HubG
         {/* 11. GEO – без H2, статичний текст з даних */}
         {showGeo && <GeoBlock doc={doc} city={city} clinics={clinics} vars={vars} shortNames tone={tone('geo')} />}
       </main>
+      <SiteFooter city={city.slug} />
 
       {bookingClinic && programs.length > 0 && (
         <BookingFlow
