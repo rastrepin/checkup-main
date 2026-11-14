@@ -9,6 +9,7 @@ import {
   pageDatesText,
   reviewerDetails,
 } from '@/lib/programs/age-page-shared';
+import SiteFooter from '@/components/frame/SiteFooter';
 
 // Контент: content/screening/mamografiia.md дослівно (v3.1, updated 2026-09-12)
 // Layout: layout-standards-v2 (py-14, borderTop, Eyebrow перед H2, чергування фонів)
@@ -317,6 +318,7 @@ export default function ScreeningMamografiiaPage() {
         </div>
       </section>
     </main>
+    <SiteFooter city={null} />
     </>
   );
 }

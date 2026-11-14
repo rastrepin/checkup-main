@@ -9,6 +9,7 @@ import {
   pageDatesText,
   reviewerDetails,
 } from '@/lib/programs/age-page-shared';
+import SiteFooter from '@/components/frame/SiteFooter';
 
 // Контент: content/screening/pap-test.md дослівно (v0, SPRINT-KHARKIV-v0, сторінка 2)
 // Структура і верстка – за app/ukr/screening/mamografiia/page.tsx (еталон скринінгової сторінки).
@@ -315,6 +316,7 @@ export default function ScreeningPapTestPage() {
         </div>
       </section>
     </main>
+    <SiteFooter city={null} />
     </>
   );
 }

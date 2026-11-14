@@ -11,6 +11,7 @@ import StickyMobileCta from '@/components/program-page/StickyMobileCta';
 import OffersArea from '@/components/hub-diagnosis/OffersArea';
 import { fetchProlapsOffers } from '@/lib/hub/prolaps-offers';
 import { GEO_BLOCKS, HUB_URL, OFFERS_ANCHOR } from '@/lib/hub/prolaps-content';
+import SiteFooter from '@/components/frame/SiteFooter';
 
 // Хаб діагнозу платформи (тип 1): опущення матки і піхви (пролапс), реліз 1.
 // Контент: content/hub/prolaps-tazovykh-orhaniv.md (v3.1) дослівно. Примітки «> …» з MD не рендеряться.
@@ -610,6 +611,7 @@ export default async function ProlapsHubPage() {
           </div>
         </section>
       </main>
+      <SiteFooter city={null} stickyPad />
       {/* Закріплена панель mobile (рішення Ігоря 21.10, 3А): до зони лікарів – «Обрати лікаря», у зоні схована. */}
       <StickyMobileCta browseOnly revealAfterId="hero" zoneId={OFFERS_ANCHOR} browseLabel="Обрати лікаря" />
     </>

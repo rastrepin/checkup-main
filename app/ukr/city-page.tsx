@@ -27,13 +27,14 @@ import { getCheckupCity, type CheckupCity, type OtherServiceKey } from '@/lib/ci
 import { cityVariant, fetchCityClinics, minPriceFor, SITE, type HubClinic } from '@/lib/cities/hub-data';
 import { HUB_REVIEWERS } from '@/lib/cities/hub-reviewers';
 import { isApprovedRoute } from '@/lib/seo/approved-routes';
+import SiteFooter from '@/components/frame/SiteFooter';
 
 // Хаб міста /ukr/{slug} – шаблон для всіх міст з lib/cities/checkup-cities.ts (хвиля 1: Харків, Дніпро, Одеса – варіант А,
 // Ужгород – варіант Б). Сторінка міста – тонка обгортка app/ukr/{slug}/page.tsx (scripts/cities/new-city-pages.mjs).
 // Тексти – content/{city.contentDir}/city.md (CITY-HUB-TEXTS v1.9 дослівно). Порядок і вигляд блоків –
 // docs/ux/specs/2026-11-city-hub.md v0.1, §1, без блоку 6 «Окремі скринінги» (прибрано, CITY-HUB-TEXTS v1.9, рішення 15):
 //   1 шапка · 2 hero темний без кнопки (H1 з двох частин, ui-kit 5.5) · 3 хаби статі · 4 як пройти · 5 клініки ·
-//   7 навіщо потрібен Check-up · 8 FAQ і рецензент · 9 інші послуги · 10 про команду · 11 GEO (12 футер – не на цих сторінках).
+//   7 навіщо потрібен Check-up · 8 FAQ і рецензент · 9 інші послуги · 10 про команду · 11 GEO · 12 футер (SiteFooter, HEADER-SPEC v1.2 розділ 10).
 // Назви клінік у текстах, картках і GEO хабу – короткі («ОН Клінік», «Кредоклінік», рішення 21) з конфігурації міста.
 // Кнопки запису на хабі немає (специфікація §1, ui-kit §6.13): ні BookingFlow, ні закріпленої панелі.
 // Дані – Supabase: клініки й філії (lib/cities/hub-data.ts), {min_price} – один розрахунок для meta і рядка ціни.
@@ -204,6 +205,7 @@ export default async function CityHubPage({ citySlug }: { citySlug: string }) {
         {/* 11. GEO – без H2, статичний текст з даних */}
         {showGeo && <GeoBlock doc={doc} city={city} clinics={clinics} vars={vars} tone={tone('geo')} shortNames />}
       </main>
+      <SiteFooter city={city.slug} />
     </>
   );
 }
