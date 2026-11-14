@@ -16,6 +16,7 @@ import { HERO_DISCLAIMER, programsItemListLd } from '@/lib/programs/age-page-sha
 import MyPlan from '@/components/plan/MyPlan';
 import TwoWays from '@/components/frame/TwoWays';
 import { fetchMyPlan } from '@/lib/plan/data';
+import SiteFooter from '@/components/frame/SiteFooter';
 
 // Вікова сторінка міста – чернетка SPRINT-KHARKIV-v0, каркас 5.2 (12 блоків).
 // Контент: content/kharkiv/male-40-50-rokiv.md (v0) дослівно; файл згенеровано з того самого джерела, що й MD.
@@ -257,7 +258,7 @@ export default async function MaleAge4050CityPage({ citySlug }: { citySlug: stri
     <>
       {/* Аудит Ужгорода S1 №1: шапка міста, активний пункт «Чоловікам». */}
       <Header city={city.slug} section="male" />
-      <main className="text-[#0b1a24] pb-24 md:pb-0">
+      <main className="text-[#0b1a24]">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
         {/* 1. Hero – без ціни */}
@@ -573,6 +574,7 @@ export default async function MaleAge4050CityPage({ citySlug }: { citySlug: stri
           </div>
         </section>
       </main>
+      <SiteFooter city={city.slug} stickyPad={Boolean(program && clinic && composition)} />
 
       {program && clinic && composition && (
         <>
