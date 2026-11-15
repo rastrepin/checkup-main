@@ -23,7 +23,9 @@ export interface OfferBranch {
   name_ua: string;
   address_ua: string;
   metro_ua: string | null;
-  schedule: Record<string, string> | null;
+  /** Графік на сторінках чекапів не показується і не запитується (рішення Ігоря 15.11, age-page-zones v0.7.2 §4.1а):
+   *  інакше він потрапляє в дані клієнтської форми запису в HTML. Графік – лише на сторінці філії. */
+  schedule?: Record<string, string> | null;
 }
 
 export interface OfferProgram extends CheckupProgram {
@@ -61,7 +63,7 @@ async function fetchClinicAndBranches(sb: any, clinicSlug: string) {
   const [{ data: branches }, { data: services }] = await Promise.all([
     sb
       .from('clinic_branches')
-      .select('id, name_ua, address_ua, metro_ua, schedule')
+      .select('id, name_ua, address_ua, metro_ua')
       .eq('clinic_id', clinic.id)
       .order('sort_order', { ascending: true }),
     sb.from('clinic_services').select('name_ua').eq('clinic_id', clinic.id).eq('is_active', true),

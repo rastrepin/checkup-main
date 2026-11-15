@@ -1,5 +1,5 @@
 import Accordion from '@/components/frame/Accordion';
-import { branchesWord, scheduleText, type HubClinic } from '@/lib/cities/hub-data';
+import { branchesWord, type HubClinic } from '@/lib/cities/hub-data';
 
 // ClinicCard – нейтральна картка клініки-партнера на хабі міста і сторінках статі
 // (docs/ux/specs/2026-11-city-hub.md §3.2–3.3, ui-kit §6.13, PLATFORM-LINE §5 «Двері до клініки»).
@@ -7,7 +7,8 @@ import { branchesWord, scheduleText, type HubClinic } from '@/lib/cities/hub-dat
 // і теми клініки немає.
 // Склад: назва (H3) · тип закладу · dl · акордеон «Адреси філій».
 // Посилання «Сторінка клініки →» прибрано (рішення Ігоря 13.11): сайт клініки не зроблений для аудиторії чекапів.
-// Одна філія: dl «Адреса / Графік / Ліцензія», акордеона немає – адреса видна одразу.
+// Одна філія: dl «Адреса / Ліцензія», акордеона немає – адреса видна одразу. Графіка немає (рішення Ігоря 15.11,
+// city-hub v0.3.3 §3.2): графік – лише на сторінці філії.
 // Кілька філій: dl «Філії / Ліцензія» (кількість і метро), адреси – в акордеоні; графіків філій у картці немає
 // (рішення Ігоря 02.11: графіки кожної філії в картці зайві).
 // Відповідає docs/ux/specs/2026-11-city-hub.md v0.2.1 §3.2 (checkup-platform, PR #185, #187).
@@ -27,8 +28,6 @@ export default function ClinicCard({ clinic, name }: { clinic: HubClinic; name?:
   if (n === 1) {
     const b = clinic.branches[0];
     rows.push(['Адреса', `${b.address_ua}${b.metro_ua ? `, ${b.metro_ua}` : ''}`]);
-    const schedule = scheduleText(b);
-    if (schedule) rows.push(['Графік', schedule]);
   } else if (n > 1) {
     rows.push(['Філії', `${n} ${branchesWord(n)}${metro ? ` · ${metro}` : ''}`]);
   }

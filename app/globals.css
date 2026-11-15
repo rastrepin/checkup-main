@@ -207,6 +207,8 @@
 .hero-stack { display: flex; flex-direction: column; gap: 0; }
 .hero-stack > * { margin-top: 0; }
 .hero-stack > [data-hero="eyebrow"] { margin-top: var(--space-hero-crumbs) !important; }
+/* Hero без eyebrow (хаби міста і статі, ui-kit v1.14 §5.2): відступ від хлібних крихт до H1 – --space-hero-crumbs. */
+.hero-stack > [data-hero="crumbs"] + [data-hero="title"] { margin-top: var(--space-hero-crumbs) !important; }
 .hero-stack > [data-hero="title"]   { margin-top: var(--space-hero-eyebrow) !important; }
 .hero-stack > [data-hero="sub"]     { margin-top: var(--space-hero-sub) !important; }
 .hero-stack > [data-hero="lead"]    { margin-top: var(--space-hero-lead) !important; }

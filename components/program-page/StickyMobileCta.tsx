@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { BookCta } from '@/components/city/BookingFlow';
 import { buttonClass } from '@/components/frame/Button';
+import { openProgramPicker } from '@/components/city/ProgramPicker';
 
 // Блок 1c обох MD (5a-female-40-50/vid-50-kharkiv.md): постійний CTA на мобільному,
 // зʼявляється після прокрутки повз Hero. components-map-FIXED.md §16 не містить
@@ -34,21 +35,21 @@ export interface StickyMobileCtaProps {
   /** Хаб діагнозу (рішення Ігоря 21.10, 3А): лише кнопка-перехід у зону лікарів (`zoneId`) на всю ширину,
    *  без назви і ціни; у зоні панель схована (у картках лікарів – свої кнопки запису). Кнопка – structural (не запис). */
   browseOnly?: boolean;
-  /** Вікова сторінка (age-page-zones v0.6 §6): одна панель, вміст за зоною. У зоні програм (`programsZoneId`) –
-   *  «Записатися на програму»; деінде – якорі «Мій план» (`planAnchor`, якщо блок є на сторінці) і «Програми клінік»
-   *  (`programsAnchor`), без запису. У блоці «Мій план» панель схована через `hideWhenVisibleId` – там панель плану. */
-  ageZones?: { programsZoneId: string; programsAnchor: string; planAnchor?: string };
+  /** Вікова сторінка (age-page-zones v0.7.1 §6; ui-kit v1.14 §6.1, §6.11). Одна crimson-кнопка на екрані.
+   *  2+ програми – «Обрати програму · від {min} грн» → список програм (ProgramPicker); видно після першого екрана,
+   *  крім блоку «Мій план» (`hideWhenVisibleId`: 'plan-zone' – там панель плану).
+   *  Одна програма – «Записатися · {ціна} грн» → форма запису; схована, поки кнопку картки видно ('program-buy').
+   *  Панель не змінює програму під час прокрутки. Desktop (від 1024px) – панелі немає, плаваючий блок праворуч. */
+  agePrograms?: { count: number; minPrice: number | null };
 }
 
 function fmt(n: number) {
   return n.toLocaleString('uk-UA');
 }
 
-export default function StickyMobileCta({ programNameShort, price, programSlug, sourceCta, revealAfterId, look = 'default', zoneId, browseLabel = 'Переглянути', hideWhenVisibleId, browseOnly = false, ageZones }: StickyMobileCtaProps) {
+export default function StickyMobileCta({ programNameShort, price, programSlug, sourceCta, revealAfterId, look = 'default', zoneId, browseLabel = 'Переглянути', hideWhenVisibleId, browseOnly = false, agePrograms }: StickyMobileCtaProps) {
   const [visible, setVisible] = useState(false);
   const [inZone, setInZone] = useState(!zoneId);
-  const [inPrograms, setInPrograms] = useState(false);
-  const [hasPlan, setHasPlan] = useState(false);
 
   useEffect(() => {
     const onScroll = () => {
@@ -59,11 +60,6 @@ export default function StickyMobileCta({ programNameShort, price, programSlug, 
         return r ? r.top < window.innerHeight && r.bottom > 0 : false;
       });
       setVisible((el ? el.getBoundingClientRect().bottom < 0 : window.scrollY > 400) && !buyOnScreen);
-      if (ageZones) {
-        const r = document.getElementById(ageZones.programsZoneId)?.getBoundingClientRect();
-        setInPrograms(r ? r.top < window.innerHeight * 0.5 && r.bottom > 0 : false);
-        setHasPlan(Boolean(ageZones.planAnchor && document.getElementById(ageZones.planAnchor)));
-      }
       if (zoneId) {
         const z = document.getElementById(zoneId);
         setInZone(z ? z.getBoundingClientRect().top < window.innerHeight * 0.5 : true);
@@ -76,34 +72,27 @@ export default function StickyMobileCta({ programNameShort, price, programSlug, 
 
   if (!visible) return null;
 
-  if (ageZones) {
+  if (agePrograms) {
+    if (agePrograms.count < 1) return null;
     const shell =
-      'fixed bottom-0 left-0 right-0 z-[150] md:hidden bg-white border-t border-gray-200 px-5 pt-3 pb-[calc(12px+env(safe-area-inset-bottom,0px))] flex items-center gap-3';
-    if (inPrograms) {
-      return (
-        <div className={`${shell} justify-between`} style={{ boxShadow: '0 -8px 24px rgba(0,0,0,0.04)' }}>
-          <div className="min-w-0 flex-1">
-            <p className="text-xs text-gray-500 truncate leading-tight">{programNameShort}</p>
-            {typeof price === 'number' && (
-              <p className="text-[19px] font-bold text-[#005485] leading-tight mt-0.5" style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}>
-                {fmt(price)} грн
-              </p>
-            )}
-          </div>
-          <BookCta programSlug={programSlug ?? ''} sourceCta={sourceCta ?? ''} label="Записатися на програму" className="!w-auto shrink-0 px-5" />
-        </div>
-      );
-    }
+      'fixed bottom-0 left-0 right-0 z-[150] lg:hidden bg-white border-t border-gray-200 px-5 pt-3 pb-[calc(12px+env(safe-area-inset-bottom,0px))]';
     return (
       <div className={shell} style={{ boxShadow: '0 -8px 24px rgba(0,0,0,0.04)' }}>
-        {hasPlan && ageZones.planAnchor && (
-          <a href={`#${ageZones.planAnchor}`} className={`${buttonClass({ variant: 'secondary', size: 'lg' })} flex-1 px-3`}>
-            Мій план
-          </a>
+        {agePrograms.count > 1 ? (
+          <button
+            type="button"
+            onClick={() => openProgramPicker(agePrograms.count)}
+            className={buttonClass({ variant: 'booking', size: 'lg', fullWidth: true })}
+          >
+            {agePrograms.minPrice ? `Обрати програму · від ${fmt(agePrograms.minPrice)} грн` : 'Обрати програму'}
+          </button>
+        ) : (
+          <BookCta
+            programSlug={programSlug ?? ''}
+            sourceCta={sourceCta ?? ''}
+            label={typeof price === 'number' ? `Записатися · ${fmt(price)} грн` : 'Записатися'}
+          />
         )}
-        <a href={`#${ageZones.programsAnchor}`} className={`${buttonClass({ variant: 'secondary', size: 'lg' })} flex-1 px-3`}>
-          Програми клінік
-        </a>
       </div>
     );
   }
