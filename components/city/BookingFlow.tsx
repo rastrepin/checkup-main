@@ -4,6 +4,7 @@ import { buttonClass } from '@/components/frame/Button';
 
 import { useEffect, useState } from 'react';
 import type { CheckupProgram } from '@/lib/types';
+import { priceDiscount } from '@/lib/programs/price';
 
 export interface BranchLite {
   id: string;
@@ -70,7 +71,8 @@ export function BookCta({
   programSlug?: string;
   sourceCta: string;
   label: string;
-  variant?: 'primary' | 'hero' | 'crimson';
+  /** secondary – «Записатися» в картці, коли програм на сторінці 2+ (age-page-zones v0.7.1 §4.1, ui-kit §6.1). */
+  variant?: 'primary' | 'hero' | 'crimson' | 'secondary';
   className?: string;
   /** Резолвлені назви обраних доп. послуг (AdditionalServices) — опційно,
    *  прокидається в open-booking-flow. Рішення Cowork 29.08.2026 п.2. */
@@ -82,7 +84,9 @@ export function BookCta({
   const base =
     variant === 'hero'
       ? `${buttonClass({ variant: 'hero', size: 'lg' })}`
-      : `${buttonClass({ variant: 'booking', size: 'lg', fullWidth: true })}`;
+      : variant === 'secondary'
+        ? `${buttonClass({ variant: 'secondary', size: 'lg', fullWidth: true })}`
+        : `${buttonClass({ variant: 'booking', size: 'lg', fullWidth: true })}`;
   return (
     <button
       type="button"
@@ -106,6 +110,8 @@ export default function BookingFlow({ programs, branches, clinicId, clinicSlug, 
   const [sourceCta, setSourceCta] = useState('');
   const [selectedAdditionalServices, setSelectedAdditionalServices] = useState<string[]>([]);
   const [programSlug, setProgramSlug] = useState<string | null>(null);
+  // Форма відкрита зі списку програм (age-page-zones v0.7.1 §7): «← Інша програма» повертає до списку.
+  const [fromPicker, setFromPicker] = useState(false);
   const [branchId, setBranchId] = useState<string>(branches[0]?.id ?? '');
   const [dateLabel, setDateLabel] = useState('');
   const [name, setName] = useState('');
@@ -123,10 +129,12 @@ export default function BookingFlow({ programs, branches, clinicId, clinicSlug, 
         programSlug: string | null;
         sourceCta: string;
         selectedAdditionalServices?: string[];
+        fromPicker?: boolean;
       };
       // Кілька клінік на сторінці – по модалу на клініку: модал відкривається лише для своїх програм.
       if (detail.programSlug && programs.length > 0 && !programs.some((p) => p.slug === detail.programSlug)) return;
       setProgramSlug(detail.programSlug);
+      setFromPicker(Boolean(detail.fromPicker));
       setSourceCta(detail.sourceCta);
       setSelectedAdditionalServices(detail.selectedAdditionalServices ?? []);
       setStep(1);
@@ -245,16 +253,39 @@ export default function BookingFlow({ programs, branches, clinicId, clinicSlug, 
           </div>
         ) : (
           <>
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">Крок {step} з 2</p>
+            {fromPicker && step === 1 && (
+              <button
+                type="button"
+                onClick={() => {
+                  close();
+                  window.dispatchEvent(new CustomEvent('open-program-picker'));
+                }}
+                className="-ml-1 mb-2 min-h-11 px-1 text-[15px] font-semibold text-link"
+              >
+                ← Інша програма
+              </button>
+            )}
+            {/* «Крок 1 з 2» – без капсу і трекінгу, 13px 600, --text-secondary (НОРМАТИВ 14.11, А.2). */}
+            <p className="text-[13px] font-semibold text-text-secondary mb-1">Крок {step} з 2</p>
 
             {/* Summary-card */}
             <div className="bg-[#f4f9fb] border border-[#d8e8f0] rounded-[10px] p-4 mb-5">
               {program ? (
                 <>
                   <div className="text-sm font-bold text-[#0b1a24]">{program.name_ua}</div>
+                  {/* Закреслена ціна і «−N%» – лише коли ціна в клініці більша за ціну до сплати (lib/programs/price.ts, А.1). */}
                   <div className="text-sm text-[#005485] font-semibold mt-0.5">
-                    {fmt(program.price_discount)} грн{' '}
-                    <span className="text-gray-400 line-through font-normal">{fmt(program.price_regular)} грн</span>
+                    {fmt(program.price_discount)} грн
+                    {(() => {
+                      const disc = priceDiscount(program.price_regular, program.price_discount);
+                      return disc ? (
+                        <>
+                          {' '}
+                          <span className="text-gray-400 line-through font-normal">{fmt(disc.regular)} грн</span>{' '}
+                          <span className="text-gray-500 font-normal">−{disc.pct}%</span>
+                        </>
+                      ) : null;
+                    })()}
                   </div>
                   <div className="text-xs text-gray-500 mt-1">
                     {(() => {
@@ -329,7 +360,7 @@ export default function BookingFlow({ programs, branches, clinicId, clinicSlug, 
                         />
                         <span className="text-sm">
                           <span className="font-semibold text-[#0b1a24]">{b.address_ua}</span>
-                          {b.metro_ua && <span className="text-gray-500"> · м. {b.metro_ua}</span>}
+                          {b.metro_ua && <span className="text-gray-500"> · {b.metro_ua}</span>}
                         </span>
                       </label>
                     ))}
