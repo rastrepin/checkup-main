@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse, after } from 'next/server';
 import { db } from '@/lib/supabase';
+import { checkControlChat } from '@/lib/leads/control-chat';
 
 export const runtime = 'nodejs';
 
@@ -19,8 +20,10 @@ const PLATFORM_ORIGIN = (process.env.LEADS_PLATFORM_ORIGIN ?? 'https://onclinic.
 // Версія 2: у контрольний чат ідуть лише тестові заявки-приклади (ім'я містить «приклад», перевірка позначає
 // так 2–3 перші заявки запуску) і один підсумковий звіт запуску (поле qa_report). Решта тестових заявок
 // лише пишеться в базу зі status = 'test'.
+// Версія 3: запобіжник контрольного чату – перед кожним надсиланням TELEGRAM_CHAT_ID звіряється з чатами клінік
+// (lib/leads/control-chat.ts); GET повертає control_chat_ok, і перевірка без нього заявок не відправляє.
 const QA_TEST_PHONE_DIGITS = '380000000000';
-const QA_TEST_MODE_VERSION = 2;
+const QA_TEST_MODE_VERSION = 3;
 const QA_SAMPLE_MARK = 'приклад';
 const QA_REPORT_MAX = 3500;
 
@@ -104,7 +107,18 @@ function sendTelegramText(text: string): Promise<void> {
   return postTelegram(token, chatId, text);
 }
 
-function postTelegram(token: string, chatId: string, text: string): Promise<void> {
+async function postTelegram(token: string, chatId: string, text: string): Promise<void> {
+  // Запобіжник: усі повідомлення в TELEGRAM_CHAT_ID (приклади, звіт, прев'ю, запасна копія) – лише після звірки
+  // з чатами клінік. ID чату в лог не пишемо.
+  const verdict = await checkControlChat();
+  if (verdict === 'match') {
+    console.error('[leads] TELEGRAM_CHAT_ID збігається з чатом клініки – надсилання заблоковано');
+    return;
+  }
+  if (verdict !== 'ok') {
+    console.error('[leads] не вдалося звірити TELEGRAM_CHAT_ID з чатами клінік – надсилання заблоковано');
+    return;
+  }
   return fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -177,7 +191,9 @@ async function deliverToClinic(leadId: string, lead: LeadPayload): Promise<void>
 
 /** Перевірка (scripts/qa) питає, чи є тестовий режим, перш ніж відправити тестову заявку. */
 export async function GET() {
-  return NextResponse.json({ qa_test_mode: QA_TEST_MODE_VERSION, env: process.env.VERCEL_ENV ?? 'local' });
+  // control_chat_ok: true – TELEGRAM_CHAT_ID заданий і не збігається з жодним чатом клініки. ID у відповіді немає.
+  const controlChatOk = (await checkControlChat()) === 'ok';
+  return NextResponse.json({ qa_test_mode: QA_TEST_MODE_VERSION, control_chat_ok: controlChatOk, env: process.env.VERCEL_ENV ?? 'local' });
 }
 
 export async function POST(req: NextRequest) {
