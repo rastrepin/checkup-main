@@ -79,11 +79,14 @@ function page(path) {
 }
 
 // ---------- тестовий режим ----------
+const CHAT_BAD = 'TELEGRAM_CHAT_ID вказує на чат клініки – виправити у Vercel';
 async function probeTestMode(request) {
   try {
     const res = await request.get(`${BASE}/api/leads`, { timeout: 20000 });
     if (!res.ok()) return { ok: false, why: `GET /api/leads → ${res.status()}` };
     const j = await res.json().catch(() => null);
+    // Запобіжник (тестовий режим 3): сервер звірив TELEGRAM_CHAT_ID з чатами клінік. false – заявок не надсилаємо.
+    if (j && Number(j.qa_test_mode) >= 1 && j.control_chat_ok === false) return { ok: false, chatBad: true, why: CHAT_BAD };
     if (j && Number(j.qa_test_mode) >= 1) return { ok: true, env: j.env, version: Number(j.qa_test_mode) };
     return { ok: false, why: 'сайт не повідомляє тестового режиму' };
   } catch (e) {
@@ -246,7 +249,7 @@ async function checkProgram(p, r, canSubmit) {
     const priceEl = buy.first().locator('[data-price]').first();
     priceText = (await priceEl.count())
       ? await priceEl.getAttribute('data-price')
-      : ((await buy.first().locator('p').first().textContent()) ?? '').match(/([\d\s  ]+)\s*грн/)?.[1] ?? '';
+      : ((await buy.first().locator('p').first().textContent()) ?? '').match(/([\d\s  ]+)\s*грн/)?.[1] ?? '';
   } else {
     const box = buy.first().locator('xpath=..');
     title = (await box.locator('p.text-xl').first().textContent({ timeout: 5000 }).catch(() => ''))?.trim() ?? '';
@@ -386,6 +389,7 @@ const lines = [
   `Сайт: ${BASE}`,
   `Сторінок: ${report.pages.length}, з помилками: ${bad.length}`,
   canSubmit ? `Тестові заявки: відправлялись (тестовий режим є, клініці не йдуть)` : `Тестові заявки: НЕ відправлялись – ${probe.why}`,
+  ...(probe.chatBad ? [`❌ ${CHAT_BAD}`] : []),
   ``,
 ];
 for (const x of report.pages) {
@@ -422,4 +426,4 @@ if (canSubmit && Number(probe.version) >= 2) {
     .catch((e) => console.error('звіт у чат не надіслано:', e.message));
   await reportRequest.dispose().catch(() => {});
 }
-process.exit(bad.length ? 1 : 0);
+process.exit(bad.length || probe.chatBad ? 1 : 0);
