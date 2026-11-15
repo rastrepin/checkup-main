@@ -138,10 +138,9 @@ export default async function CityHubPage({ citySlug }: { citySlug: string }) {
       <main className="text-ink">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
-        {/* 2. Hero – темний, без кнопки і без ціни */}
+        {/* 2. Hero – темний, без кнопки, без ціни і без eyebrow (city-hub v0.3.2 §2, ui-kit v1.14 §5.2) */}
         <HubHero
           breadcrumbs={[{ label: 'check-up.in.ua', href: '/' }, { label: city.name }]}
-          eyebrow={`Чекап · ${city.name}`}
           h1={h1}
           h1Sub={h1Sub}
           lead={sectionText(s[`lead_${variant}`])}
