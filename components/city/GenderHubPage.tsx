@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Header from '@/components/frame/Header';
 import Section from '@/components/frame/Section';
-import BookingFlow, { BookCta } from '@/components/city/BookingFlow';
 import CityMdBlocks from '@/components/city/CityMdBlocks';
 import {
   absUrl,
@@ -24,7 +23,7 @@ import {
 } from '@/components/city/HubBlocks';
 import { faqItems, loadCityMdSections, resolvedBlocks, sectionHeading, sectionText } from '@/lib/content/city-md';
 import { getCheckupCity, type CheckupCity } from '@/lib/cities/checkup-cities';
-import { cityVariant, fetchCityClinics, fetchScopeOffers, minPriceFor, SITE } from '@/lib/cities/hub-data';
+import { cityVariant, fetchCityClinics, minPriceFor, SITE } from '@/lib/cities/hub-data';
 import { HUB_REVIEWERS } from '@/lib/cities/hub-reviewers';
 import SiteFooter from '@/components/frame/SiteFooter';
 
@@ -35,34 +34,20 @@ import SiteFooter from '@/components/frame/SiteFooter';
 // Блоки 5 (клініки), 8 (рецензент FAQ), 10 (автор, рейтинг), 11 (GEO) – за правилами хабу міста
 // (docs/ux/specs/2026-11-city-hub.md §8); блок «Контакти клініки» v0 замінено блоком клінік (CITY-HUB-TEXTS §9).
 // Порядок: hero · вікові картки · що змінюється з віком · клініки · FAQ і рецензент · автор і джерела · GEO.
-// Запис – кнопки «Записатися» на вікових картках (BookingFlow → /api/leads, source_cta на кожну картку), лише у
-// варіанті А: у варіанті Б програму однієї клініки на картці не показуємо (порядок і рівність клінік, PLATFORM-LINE 2.2, 6).
+// Вікові картки – лише посилання на вікові сторінки: без рядка програми і без «Записатися» (рішення Ігоря 14.11,
+// НОРМАТИВ 14.11 В.1). Клініка і ціна – лише в блоці клінік. Запису і crimson на сторінці немає (ui-kit §6.1).
 // Телефонів немає (PLATFORM-LINE §5). hreflang немає (SEO-MIGRATION §4).
 
 export type HubGender = 'female' | 'male';
 
 const UPDATED_ISO = '2026-11-01';
 
-const G: Record<HubGender, { crumb: string; eyebrow: string; programs: Record<string, string> }> = {
+const G: Record<HubGender, { crumb: string }> = {
   female: {
     crumb: 'Жінкам',
-    eyebrow: 'Жіночий чекап',
-    programs: {
-      'do-30-rokiv': 'female-checkup-do-30',
-      'do-40-rokiv': 'female-checkup-30-40',
-      '40-50-rokiv': 'female-checkup-40-50',
-      'vid-50-rokiv': 'female-checkup-vid-50',
-    },
   },
   male: {
     crumb: 'Чоловікам',
-    eyebrow: 'Чоловічий чекап',
-    programs: {
-      'do-30-rokiv': 'male-checkup-do-30',
-      'do-40-rokiv': 'male-checkup-30-40',
-      '40-50-rokiv': 'male-checkup-40-50',
-      'vid-50-rokiv': 'male-checkup-vid-50',
-    },
   },
 };
 
@@ -70,18 +55,14 @@ function pageCity(gender: HubGender, citySlug: string) {
   const city = getCheckupCity(citySlug);
   if (!city) notFound();
   const PAGE_PATH = `/ukr/${gender}-checkup/${city.slug}`;
-  return { city, PAGE_PATH, PAGE_URL: `${SITE}${PAGE_PATH}`, SOURCE_CTA: `gender_hub_${gender}_${city.slug}` };
+  return { city, PAGE_PATH, PAGE_URL: `${SITE}${PAGE_PATH}` };
 }
 
 async function loadGenderHub(gender: HubGender, city: CheckupCity) {
-  const [clinics, minPrice, offersData] = await Promise.all([
-    fetchCityClinics(city),
-    minPriceFor(city, gender),
-    fetchScopeOffers(gender, city.clinicSlug),
-  ]);
+  const [clinics, minPrice] = await Promise.all([fetchCityClinics(city), minPriceFor(city, gender)]);
   const vars = hubVars(city, clinics, minPrice, { shortNames: true });
   const doc = loadCityMdSections(city.contentDir, `${gender}-checkup`, vars);
-  return { clinics, vars, doc, offersData };
+  return { clinics, vars, doc };
 }
 
 export async function genderHubMetadataFor(gender: HubGender, citySlug: string): Promise<Metadata> {
@@ -98,28 +79,16 @@ export async function genderHubMetadataFor(gender: HubGender, citySlug: string):
   };
 }
 
-/** Сегмент віку з адреси вікової сторінки: /ukr/female-checkup/do-30-rokiv/kharkiv → do-30-rokiv. */
-const ageSegment = (href: string) => href.split('/')[3] ?? '';
-
 export default async function GenderHubPage({ gender, citySlug }: { gender: HubGender; citySlug: string }) {
-  const { city, PAGE_URL, SOURCE_CTA } = pageCity(gender, citySlug);
-  const { clinics, vars, doc, offersData } = await loadGenderHub(gender, city);
+  const { city, PAGE_URL } = pageCity(gender, citySlug);
+  const { clinics, vars, doc } = await loadGenderHub(gender, city);
   if (!doc) notFound();
   const g = G[gender];
   const variant = cityVariant(city);
   const s = doc.sections;
   const h1 = sectionText(s.h1) ?? '';
 
-  // Програма клініки і запис на картці – лише у варіанті А (одна клініка міста).
-  const offers = variant === 'a' ? offersData.offers : [];
-  const bookingClinic = variant === 'a' ? offersData.clinic : null;
-  const programs = offers.map((o) => o.program);
-  const cards = linkItems(s.age_cards).map((c) => {
-    const seg = ageSegment(c.href);
-    const platformSlug = g.programs[seg];
-    const offer = platformSlug ? offers.find((o) => o.platformSlugs.includes(platformSlug)) : undefined;
-    return { ...c, seg, program: offer?.program ?? null };
-  });
+  const cards = linkItems(s.age_cards);
   const cross = firstLink(s.cross);
   const faq = faqItems(s.faq);
   const reviewer = HUB_REVIEWERS[gender];
@@ -153,7 +122,6 @@ export default async function GenderHubPage({ gender, citySlug }: { gender: HubG
 
         <HubHero
           breadcrumbs={[{ label: 'check-up.in.ua', href: '/' }, { label: city.name, href: `/ukr/${city.slug}` }, { label: g.crumb }]}
-          eyebrow={`${g.eyebrow} · ${city.name}`}
           h1={h1}
           lead={sectionText(s[`lead_${variant}`])}
         />
@@ -162,24 +130,16 @@ export default async function GenderHubPage({ gender, citySlug }: { gender: HubG
         <Section tone={tone('cards')} id="vik">
           <H2>{sectionHeading(s.age_cards)}</H2>
           <div className="mt-6 grid grid-cols-1 gap-[var(--space-grid)] md:grid-cols-2">
+            {/* Картка віку (В.1–В.2): уся картка – зона натиску, один <a> з текстом заголовка; hover – рамка --border-strong. */}
             {cards.map((c) => (
-              <div
+              <a
                 key={c.href}
-                className="flex flex-col bg-white border border-[var(--border)] rounded-[var(--radius-lg)] p-[var(--space-card)]"
+                href={c.href}
+                className="group flex flex-col h-full bg-white border border-[var(--border)] rounded-[var(--radius-lg)] p-[var(--space-card)] hover:border-[var(--border-strong)]"
               >
-                <a href={c.href} className="group">
-                  <h3 className="text-[20px] font-semibold leading-[1.3] text-ink group-hover:text-link">{c.label} →</h3>
-                  {c.line && <p className="mt-2 text-[15px] leading-relaxed text-text-secondary">{c.line}</p>}
-                </a>
-                {c.program && (
-                  <div className="mt-5 pt-4 border-t border-section-border">
-                    <p className="text-[13px] text-text-secondary">Програма клініки: «{c.program.name_ua}»</p>
-                    <div className="mt-3">
-                      <BookCta programSlug={c.program.slug} sourceCta={`${SOURCE_CTA}_card_${c.seg}`} label="Записатися" />
-                    </div>
-                  </div>
-                )}
-              </div>
+                <h3 className="text-[20px] font-semibold leading-[1.3] text-ink group-hover:text-link">{c.label} →</h3>
+                {c.line && <p className="mt-2 text-[15px] leading-relaxed text-text-secondary">{c.line}</p>}
+              </a>
             ))}
           </div>
           {cross && (
@@ -215,17 +175,6 @@ export default async function GenderHubPage({ gender, citySlug }: { gender: HubG
         {showGeo && <GeoBlock doc={doc} city={city} clinics={clinics} vars={vars} shortNames tone={tone('geo')} />}
       </main>
       <SiteFooter city={city.slug} />
-
-      {bookingClinic && programs.length > 0 && (
-        <BookingFlow
-          programs={programs}
-          branches={offersData.branches}
-          clinicId={bookingClinic.id}
-          clinicSlug={bookingClinic.slug}
-          city={city.slug}
-          programsComposition={Object.fromEntries(offers.map((o) => [o.program.slug, o.composition.counts]))}
-        />
-      )}
     </>
   );
 }

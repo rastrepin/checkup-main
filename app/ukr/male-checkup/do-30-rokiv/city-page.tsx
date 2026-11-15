@@ -4,7 +4,6 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { fetchClinicOffers, type ClinicOffer, type OfferBranch } from '@/lib/programs/clinic-offer';
 import { priceDateNotice } from '@/lib/programs/type5a';
-import CompositionSummaryText from '@/components/program-page/CompositionSummaryText';
 import StickyMobileCta from '@/components/program-page/StickyMobileCta';
 import AccordionSection from '@/components/shared/AccordionSection';
 import InfoFrame from '@/components/shared/InfoFrame';
@@ -15,8 +14,9 @@ import Header from '@/components/frame/Header';
 import { HERO_DISCLAIMER, programsItemListLd } from '@/lib/programs/age-page-shared';
 import MyPlan from '@/components/plan/MyPlan';
 import TwoWays from '@/components/frame/TwoWays';
-import { fetchMyPlan } from '@/lib/plan/data';
 import SiteFooter from '@/components/frame/SiteFooter';
+import AgeProgramsZone, { pickerPrograms, visitsMeta, type AgeZoneCard } from '@/components/city/AgeProgramsZone';
+import ProgramPicker from '@/components/city/ProgramPicker';
 
 // Вікова сторінка міста – чернетка SPRINT-KHARKIV-v0, каркас 5.2 (12 блоків).
 // Контент: content/kharkiv/male-do-30-rokiv.md (v0) дослівно; файл згенеровано з того самого джерела, що й MD.
@@ -103,12 +103,6 @@ const FAQ: { q: string; a: string }[] = [
   { q: "Що взяти з собою на обстеження?", a: "Результати попередніх аналізів і обстежень, якщо вони є: лікар порівнює нові показники з попередніми." },
 ];
 
-const SCHEDULE_LABELS: [string, string][] = [
-  ['mon_fri', 'пн–пт'],
-  ['sat', 'сб'],
-  ['sun', 'нд'],
-];
-
 function fmt(n: number) {
   return n.toLocaleString('uk-UA');
 }
@@ -116,12 +110,6 @@ function fmt(n: number) {
 function fmtDate(iso: string) {
   const [y, m, d] = iso.slice(0, 10).split('-');
   return `${d}.${m}.${y}`;
-}
-
-function scheduleText(b: OfferBranch): string | null {
-  if (!b.schedule) return null;
-  const parts = SCHEDULE_LABELS.filter(([k]) => b.schedule?.[k]).map(([k, label]) => `${label} ${b.schedule?.[k]}`);
-  return parts.length ? parts.join(', ') : null;
 }
 
 function branchesWord(n: number) {
@@ -212,8 +200,19 @@ export default async function MaleAgeDo30CityPage({ citySlug }: { citySlug: stri
 
   // Картка програми видима, коли є програма, клініка і склад; від цього – TwoWays, якір «Програми клінік», ItemList.
   const showPrograms = Boolean(program && clinic && composition);
-  // Якір hero «Мій план» – лише коли блок є (той самий кешований запит, що в MyPlan).
-  const hasPlan = Boolean(await fetchMyPlan('male', 'do-30-rokiv', city));
+
+  // Картки списку програм (age-page-zones v0.7.1 §4.1): видимі – коли є програма, клініка і склад; порядок – як у cards.
+  const zoneCards: AgeZoneCard[] = cards.flatMap((c) =>
+    c.program && c.clinic && c.composition
+      ? [{
+          key: c.key, program: c.program, clinic: c.clinic, branches: c.branches, composition: c.composition,
+          meta: visitsMeta(c.composition),
+          note: c.hasComposition ? null : 'Склад програми на сайті поки не опублікований. Чи входять у неї обстеження з переліку вище, уточніть у клініці під час запису.',
+          notice: c.notice,
+        }]
+      : [],
+  );
+  const zoneMin = showPrograms ? minPrice(clinicsData.flatMap((d) => d.offers)) : null;
 
   const jsonLd: object[] = [
     {
@@ -282,21 +281,7 @@ export default async function MaleAgeDo30CityPage({ citySlug }: { citySlug: stri
                 Чекап для чоловіків до 30 років – що перевіряти і де пройти в {city.loc}
               </h1>
               <p className="text-lg text-gray-700 leading-relaxed mt-2">Сторінка для чоловіків до 30 років без скарг, які хочуть зрозуміти, що варто перевірити зараз. Спочатку перелік за клінічними настановами, потім готова програма клініки в {city.loc}.</p>
-              {/* Кнопки-якорі hero (age-page-zones v0.6 §2, рядок 2), без кнопки запису; порядок: лід → якорі → застереження (рішення Ігоря 06.11). */}
-              {(hasPlan || showPrograms) && (
-                <ul className="mt-6 flex flex-wrap gap-2" role="list">
-                  {hasPlan && (
-                    <li>
-                      <a href="#plan" className="inline-flex items-center min-h-10 px-4 rounded-full border border-[#005485] text-[#005485] font-semibold text-sm hover:bg-[#f0f7fb]">Мій план</a>
-                    </li>
-                  )}
-                  {showPrograms && (
-                    <li>
-                      <a href="#programs" className="inline-flex items-center min-h-10 px-4 rounded-full border border-[#005485] text-[#005485] font-semibold text-sm hover:bg-[#f0f7fb]">Програми клінік</a>
-                    </li>
-                  )}
-                </ul>
-              )}
+              {/* Hero без якорів (age-page-zones v0.7.1 §2, ui-kit §5.6). */}
               {/* Аудит Ужгорода S1 №2: медичне застереження під лідом, ui-kit §5.3. */}
               <p className="text-sm text-gray-600 leading-relaxed mt-4">{HERO_DISCLAIMER}</p>
             </div>
@@ -326,79 +311,28 @@ export default async function MaleAgeDo30CityPage({ citySlug }: { citySlug: stri
 
         {/* Зона програм (age-page-zones v0.6 §2, рядок 6): блоки 4–8; #programs-zone – межа зони для закріпленої панелі (§6). */}
         <div id="programs-zone">
-        {/* 4. Програма клініки з даних: H2 «Програма {клініка}» (одна клініка), без клініки – «Програми клінік в {місті}» */}
-        <Section bg={BG_WHITE} eyebrow={multiClinic ? 'Програми клінік' : 'Програма клініки'}>
-          <H2 id="programs">{clinic && !multiClinic ? `Програма ${clinic.name}` : `Програми клінік в ${city.loc}`}</H2>
-          {cards.map((card, ci) => {
-            const { clinic, program, composition, hasComposition, groups, notice } = card;
-            return (
-            <div key={card.key} className={ci > 0 ? 'mt-12' : undefined}>
-          {program && clinic && composition ? (
-            <>
-              <div className="mt-6 border border-[#e8edf3] rounded-[14px] p-6 bg-white">
-                <p className="text-xs font-semibold text-gray-500">{clinic.name}</p>
-                <p className="text-xl font-bold text-[#0b1a24] mt-1">{program.name_ua}</p>
-                <p className="text-2xl font-bold text-[#0b1a24] mt-4">{fmt(program.price_discount)} грн</p>
-                {program.price_date && (
-                  <p className="text-xs text-gray-500 mt-1">Ціна клініки станом на {fmtDate(program.price_date)}</p>
-                )}
-                {notice && <p className="text-xs text-gray-500 mt-1">{notice}</p>}
-                {hasComposition && (
-                <div className="mt-5">
-                  <CompositionSummaryText
-                    consultationsSummary={composition.consultationsSummary}
-                    instrumentalSummary={composition.instrumentalSummary}
-                    labSummary={composition.labSummary}
-                  />
-                </div>
-                )}
-                <div id={ci === 0 ? 'program-buy' : `program-buy-${ci}`} className="mt-6 flex flex-col sm:flex-row gap-3">
-                  <BookCta programSlug={program.slug} sourceCta={`${SOURCE_CTA}_card`} label="Записатися" className="sm:!w-auto sm:px-8" />
-                </div>
-              </div>
-
-              {ci === 0 && (
-              <div className="mt-6 text-[13px] text-gray-500 leading-relaxed space-y-2">
-                <p>Перелік на цій сторінці – орієнтир, а не призначення. Повний перелік обстежень визначає лікар за результатами огляду і розмови з вами.</p>
-                <p>Програма дає лікарю ширшу картину, ніж окремий аналіз: висновок він робить за сукупністю показників.</p>
-              </div>
-              )}
-
-              {!hasComposition && (
-                <p className={P}>
-                  Склад програми на сайті поки не опублікований. Чи входять у неї обстеження з переліку вище, уточніть у
-                  клініці під час запису.
-                </p>
-              )}
-
-              {/* «Що входить» – нативний <details>: склад у серверному HTML (age-page-zones v0.6 §4.1). */}
-              {groups.length > 0 && (
-                <div className="mt-6">
-                  <AccordionSection summary="Що входить">
-                    <div className="space-y-4 text-[14px] text-gray-700 leading-relaxed">
-                      {groups.map((g) => (
-                        <div key={g.title}>
-                          <p className="text-xs font-semibold text-gray-500 mb-1">{g.title}</p>
-                          <ul className="list-disc pl-5 space-y-1">
-                            {g.names.map((n) => (
-                              <li key={n}>{n}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      ))}
-                    </div>
-                  </AccordionSection>
-                </div>
-              )}
-
-            </>
-          ) : (
-            <p className={P}>Дані про програму клініки зараз недоступні. Перелік вище можна пройти в будь-якій клініці.</p>
-          )}
+        {/* 4. Програми клінік (age-page-zones v0.7.1 §4.1): одна картка на програму з рядком клініки, без окремих блоків
+            «Контакти» і «Як це проходить» – адреси, графік, візити і підготовка в картці. H2 – як був. */}
+        <section style={{ backgroundColor: BG_WHITE, borderTop: BORDER }}>
+          <div className="max-w-[1200px] mx-auto px-6 lg:px-14 py-14">
+            <div className="max-w-3xl">
+              <Eyebrow>{multiClinic ? 'Програми клінік' : 'Програма клініки'}</Eyebrow>
+              <H2 id="programs">{clinic && !multiClinic ? `Програма ${clinic.name}` : `Програми клінік в ${city.loc}`}</H2>
             </div>
-            );
-          })}
-        </Section>
+            <div className="mt-6">
+              <AgeProgramsZone cards={zoneCards} cityLoc={city.loc} sourceCta={SOURCE_CTA} minPrice={zoneMin}>
+                {zoneCards.length === 0 ? (
+                  <p className={P}>Дані про програму клініки зараз недоступні. Перелік вище можна пройти в будь-якій клініці.</p>
+                ) : (
+                  <div className="mt-2 max-w-3xl text-[13px] text-gray-500 leading-relaxed space-y-2">
+                    <p>Перелік на цій сторінці – орієнтир, а не призначення. Повний перелік обстежень визначає лікар за результатами огляду і розмови з вами.</p>
+                    <p>Програма дає лікарю ширшу картину, ніж окремий аналіз: висновок він робить за сукупністю показників.</p>
+                  </div>
+                )}
+              </AgeProgramsZone>
+            </div>
+          </div>
+        </section>
 
         {/* 6. Якщо готова не підходить */}
         <Section bg={BG_GRAY} eyebrow="Інший шлях">
@@ -409,77 +343,6 @@ export default async function MaleAgeDo30CityPage({ citySlug }: { citySlug: stri
             </InfoFrame>
           </div>
         </Section>
-
-        {/* 7. Двері до клініки */}
-        {clinic && (
-          <Section bg={BG_WHITE} eyebrow="Контакти">
-            <H2 id="kontakty">{multiClinic ? 'Контакти клінік' : 'Контакти клініки'}</H2>
-            {clinicsData.map(({ clinic, branches }, k) =>
-              clinic ? (
-              <div key={clinic.slug} className={k > 0 ? 'mt-8' : undefined}>
-            <p className={P}>
-              {clinic.name}
-              {branches.length > 0 ? ` – ${branches.length} ${branchesWord(branches.length)} у ${city.loc}.` : '.'}
-            </p>
-            {branches.length > 0 && (
-              <ul className="mt-4 space-y-3">
-                {branches.map((b) => {
-                  const sch = scheduleText(b);
-                  return (
-                    <li key={b.id} className="border border-[#e8edf3] rounded-[10px] px-4 py-3 bg-white">
-                      <p className="text-sm font-semibold text-[#0b1a24]">{b.name_ua}</p>
-                      <p className="text-[14px] text-gray-700 mt-1">
-                        {b.address_ua}
-                        {b.metro_ua ? `, ${b.metro_ua}` : ''}
-                      </p>
-                      {sch && <p className="text-[13px] text-gray-500 mt-1">{sch}</p>}
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-              </div>
-              ) : null,
-            )}
-          </Section>
-        )}
-
-        {/* 8. Як це проходить */}
-        {program && composition && composition.visitCount > 0 && (
-          <Section bg={BG_GRAY} eyebrow="Візити">
-            <H2 id="yak-tse-prokhodyt">Як це проходить</H2>
-            <p className={P}>
-              Програма проходить за {composition.visitCount} {composition.visitCount === 1 ? 'візит' : 'візити'}.
-            </p>
-            <h3 className="text-lg font-semibold text-[#0b1a24] mt-8">Перший візит</h3>
-            <div className="mt-3">
-              <CompositionSummaryText
-                consultationsSummary={composition.consultationsSummary}
-                instrumentalSummary={composition.instrumentalSummary}
-                labSummary={composition.labSummary}
-              />
-            </div>
-            {composition.visit2Items.length > 0 && (
-              <>
-                <h3 className="text-lg font-semibold text-[#0b1a24] mt-8">Другий візит</h3>
-                <p className={P}>{composition.visit2Items.join(', ')}.</p>
-              </>
-            )}
-            {composition.preparationNotes.length > 0 && (
-              <>
-                <h3 className="text-lg font-semibold text-[#0b1a24] mt-8">Підготовка</h3>
-                <ul className="mt-3 list-disc pl-5 space-y-1 text-[14px] text-gray-700 leading-relaxed">
-                  {composition.preparationNotes.map((n) => (
-                    <li key={n}>{n}</li>
-                  ))}
-                </ul>
-              </>
-            )}
-            <p className={P}>
-              Якщо ви приїжджаєте з іншого міста або з-за кордону, скажіть про це під час запису і вкажіть бажану дату.
-            </p>
-          </Section>
-        )}
 
         </div>
 
@@ -576,25 +439,27 @@ export default async function MaleAgeDo30CityPage({ citySlug }: { citySlug: stri
       <SiteFooter city={city.slug} stickyPad={Boolean(program && clinic && composition)} />
 
       {program && clinic && composition && (
-        <>
-          <BookingFlow
-            programs={[program]}
-            branches={branches}
-            clinicId={clinic.id}
-            clinicSlug={clinic.slug}
-            city={city.slug}
-            programsComposition={{ [program.slug]: composition.counts }}
-          />
-          <StickyMobileCta
-            programNameShort={program.name_ua}
-            price={program.price_discount}
-            programSlug={program.slug}
-            sourceCta={`${SOURCE_CTA}_sticky`}
-            hideWhenVisibleId={['program-buy', 'plan-zone']}
-            ageZones={{ programsZoneId: 'programs-zone', programsAnchor: 'programs', planAnchor: 'plan' }}
-          />
-        </>
+        <BookingFlow
+          programs={[program]}
+          branches={branches}
+          clinicId={clinic.id}
+          clinicSlug={clinic.slug}
+          city={city.slug}
+          programsComposition={{ [program.slug]: composition.counts }}
+        />
       )}
+      {/* Закріплена панель (age-page-zones v0.7.1 §6): 2+ програми – «Обрати програму · від {min} грн» → список; одна – «Записатися · {ціна} грн».
+          Одна програма – панель схована, поки кнопку картки видно; у «Мій план» – панель плану. */}
+      {zoneCards.length > 0 && (
+        <StickyMobileCta
+          agePrograms={{ count: zoneCards.length, minPrice: zoneMin }}
+          price={zoneCards[0].program.price_discount}
+          programSlug={zoneCards[0].program.slug}
+          sourceCta={`${SOURCE_CTA}_sticky`}
+          hideWhenVisibleId={zoneCards.length > 1 ? ['plan-zone'] : ['program-buy', 'plan-zone']}
+        />
+      )}
+      {zoneCards.length > 1 && <ProgramPicker programs={pickerPrograms(zoneCards)} sourceCta={SOURCE_CTA} />}
       {/* Інші клініки сторінки: модал запису на клініку, відкривається лише для її програм (BookingFlow). */}
       {clinicsData.slice(1).map((d) =>
         d.clinic && d.offers.length > 0 ? (

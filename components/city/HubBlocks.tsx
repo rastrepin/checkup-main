@@ -122,7 +122,8 @@ export function HubHero({
   lead,
 }: {
   breadcrumbs: { label: string; href?: string }[];
-  eyebrow: string;
+  /** Хаби міста і статі – без eyebrow (ui-kit v1.14 §5.2, рішення Ігоря 14.11); відступ крихти → H1 – --space-hero-crumbs. */
+  eyebrow?: string;
   h1: string;
   /** Друга частина H1 у тому самому <h1>: другим рядком курсивом, роздільник візуально прихований (ui-kit 5.5). */
   h1Sub?: string | null;
