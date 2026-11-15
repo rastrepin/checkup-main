@@ -1,7 +1,7 @@
 // Список програм вікової сторінки – age-page-zones v0.7.1 §4.1, §6.1; ui-kit v1.14 §6.1, §6.11 (НОРМАТИВ 14.11, Б.2–Б.5).
 // Спільний для 8 шаблонів app/ukr/{female,male}-checkup/{вік}/city-page.tsx.
-// Одна картка на програму: назва → рядок клініки (одна філія – адреса і графік одразу; кілька – «N філії в …» і
-// акордеон «Адреси і графік») → лічильники → акордеони («Що входить» у серверному HTML, «Як це проходить», «Підготовка»)
+// Одна картка на програму: назва → рядок клініки (одна філія – адреса з метро; кілька – «N філії в …» і
+// акордеон «Адреси філій»; графіка немає – age-page-zones v0.7.2 §4.1, §4.1а, рішення Ігоря 15.11) → лічильники → акордеони («Що входить» у серверному HTML, «Як це проходить», «Підготовка»)
 // → ціна і «Записатися». Окремої картки клініки (ProgramLocation) немає. Склад відкритим текстом не дублюється.
 // Одна crimson-кнопка на екрані (ui-kit §6.1): одна програма – «Записатися» booking у картці; 2+ – у картках secondary,
 // crimson лише «Обрати програму» (закріплена панель mobile, плаваючий блок desktop праворуч).
@@ -16,7 +16,6 @@ import type { OfferBranch, OfferClinic, OfferProgram } from '@/lib/programs/clin
 import type { ProgramComposition } from '@/lib/programs/composition';
 import { branchesWord, FIRST_VISIT_TEXT, preparationItems, SECOND_VISIT_TEXT_V2, visitsText } from '@/lib/programs/age-page-shared';
 import { priceDiscount } from '@/lib/programs/price';
-import { formatSchedule } from '@/lib/programs/schedule';
 
 export interface AgeZoneCard {
   key: string;
@@ -60,18 +59,14 @@ export function visitsMeta(composition: ProgramComposition | null, prefix: (stri
 
 function ClinicRow({ clinic, branches, cityLoc }: { clinic: OfferClinic; branches: OfferBranch[]; cityLoc: string }) {
   const one = branches.length === 1 ? branches[0] : null;
-  const sch = one ? formatSchedule(one.schedule) : null;
   return (
     <div className="mt-3 border-l-2 border-[var(--border)] pl-3">
       <p className="text-[15px] font-semibold text-ink leading-snug">{clinic.name}</p>
       {one && (
-        <>
-          <p className="mt-0.5 text-[14px] text-text-secondary leading-snug">
-            {one.address_ua}
-            {one.metro_ua ? `, ${one.metro_ua}` : ''}
-          </p>
-          {sch && <p className="text-[14px] text-text-secondary leading-snug">{sch}</p>}
-        </>
+        <p className="mt-0.5 text-[14px] text-text-secondary leading-snug">
+          {one.address_ua}
+          {one.metro_ua ? `, ${one.metro_ua}` : ''}
+        </p>
       )}
       {branches.length > 1 && (
         <p className="mt-0.5 text-[14px] text-text-secondary leading-snug">
@@ -114,20 +109,14 @@ function AgeProgramCard({
       </h3>
       <ClinicRow clinic={clinic} branches={branches} cityLoc={cityLoc} />
       {branches.length > 1 && (
-        <Accordion size="sm" summary="Адреси і графік" className="mt-3">
+        <Accordion size="sm" summary="Адреси філій" className="mt-3">
           <ul className="space-y-2 text-[14px]">
-            {branches.map((b) => {
-              const sch = formatSchedule(b.schedule);
-              return (
-                <li key={b.id}>
-                  <span className="text-ink">
-                    {b.address_ua}
-                    {b.metro_ua ? `, ${b.metro_ua}` : ''}
-                  </span>
-                  {sch && <span className="block">{sch}</span>}
-                </li>
-              );
-            })}
+            {branches.map((b) => (
+              <li key={b.id} className="text-ink">
+                {b.address_ua}
+                {b.metro_ua ? `, ${b.metro_ua}` : ''}
+              </li>
+            ))}
           </ul>
         </Accordion>
       )}
@@ -222,7 +211,7 @@ function AgeProgramCard({
       <div id={index === 0 ? 'program-buy' : `program-buy-${index}`} className="mt-5 pt-5 border-t border-section-border grid gap-3.5">
         <div>
           <p className="flex flex-wrap items-baseline gap-x-2">
-            <span className="text-[30px] font-bold text-[var(--brand-primary)] leading-tight" style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}>
+            <span data-price={program.price_discount} className="text-[30px] font-bold text-[var(--brand-primary)] leading-tight" style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}>
               {fmt(program.price_discount)} грн
             </span>
             {disc && (

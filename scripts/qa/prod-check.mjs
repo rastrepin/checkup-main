@@ -225,14 +225,18 @@ async function checkProgram(p, r, canSubmit) {
     r.warnings.push('Програма клініки: картки з кнопкою запису немає');
     return;
   }
-  // Дві розмітки картки: жіночі сторінки – ProgramCard (<article>, назва в h3, ціна в блоці запису);
-  // чоловічі – блок <div> (назва p.text-xl, ціна p.text-2xl поруч із блоком запису).
+  // Після PR #94 картка одна для жіночих і чоловічих сторінок – AgeProgramsZone (<article>, назва в h3, блок запису #program-buy).
+  // Ціна до сплати – атрибут data-price на ціні картки: при знижці поруч стоять закреслена ціна і «−N%», тому весь <p> не беремо.
+  // Запасний шлях – перше число перед «грн». Гілка без <article> – стара розмітка (блок <div>), лишена на випадок відкату.
   const card = buy.first().locator('xpath=ancestor::article[1]');
   let title;
   let priceText;
   if (await card.count()) {
     title = (await card.locator('h3').first().textContent())?.trim() ?? '';
-    priceText = await buy.first().locator('p').first().textContent();
+    const priceEl = buy.first().locator('[data-price]').first();
+    priceText = (await priceEl.count())
+      ? await priceEl.getAttribute('data-price')
+      : ((await buy.first().locator('p').first().textContent()) ?? '').match(/([\d\s  ]+)\s*грн/)?.[1] ?? '';
   } else {
     const box = buy.first().locator('xpath=..');
     title = (await box.locator('p.text-xl').first().textContent({ timeout: 5000 }).catch(() => ''))?.trim() ?? '';
