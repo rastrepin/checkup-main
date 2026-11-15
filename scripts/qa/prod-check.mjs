@@ -28,6 +28,11 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const TEST_NAME = 'Тест Автоперевірка';
 const TEST_PHONE = '0000000000'; // поле саме додає +38 → +380000000000
 const TEST_DATE = 'тест автоперевірки';
+// Лише перші SAMPLES заявок запуску мають «приклад» в імені – сервер шле в контрольний чат тільки їх.
+const SAMPLES = 3;
+let samplesLeft = SAMPLES;
+let lastName = TEST_NAME;
+const samples = [];
 
 // ---------- аргументи ----------
 const args = process.argv.slice(2);
@@ -79,7 +84,7 @@ async function probeTestMode(request) {
     const res = await request.get(`${BASE}/api/leads`, { timeout: 20000 });
     if (!res.ok()) return { ok: false, why: `GET /api/leads → ${res.status()}` };
     const j = await res.json().catch(() => null);
-    if (j && Number(j.qa_test_mode) >= 1) return { ok: true, env: j.env };
+    if (j && Number(j.qa_test_mode) >= 1) return { ok: true, env: j.env, version: Number(j.qa_test_mode) };
     return { ok: false, why: 'сайт не повідомляє тестового режиму' };
   } catch (e) {
     return { ok: false, why: `GET /api/leads: ${e.message}` };
@@ -94,7 +99,12 @@ async function fillAndSubmit(p, dialog) {
   const next = dialog.getByRole('button', { name: /Далі/ });
   if (await next.count()) await next.first().click();
   // Крок 2: ім'я, телефон, згода.
-  await dialog.locator('input[type="text"]:not([name="website"])').first().fill(TEST_NAME);
+  lastName = samplesLeft > 0 ? `${TEST_NAME} приклад` : TEST_NAME;
+  if (samplesLeft > 0) {
+    samplesLeft -= 1;
+    samples.push(p.url().replace(/^https?:\/\/[^/]+/, '').split('?')[0]);
+  }
+  await dialog.locator('input[type="text"]:not([name="website"])').first().fill(lastName);
   const tel = dialog.locator('input[type="tel"]').first();
   await tel.fill('');
   await tel.pressSequentially(TEST_PHONE);
@@ -112,7 +122,7 @@ async function fillAndSubmit(p, dialog) {
 }
 
 function checkPatient(r, label, sent, saved) {
-  const need = { name: TEST_NAME, phone: '+380000000000', city: true, source_page: true };
+  const need = { name: lastName, phone: '+380000000000', city: true, source_page: true };
   const miss = [];
   if (norm(saved?.name) !== norm(need.name)) miss.push("ім'я");
   if (saved?.phone !== need.phone) miss.push('телефон');
@@ -389,4 +399,27 @@ const md = lines.join('\n');
 writeFileSync(join(OUT, 'qa-report.md'), md);
 writeFileSync(join(OUT, 'qa-report.json'), JSON.stringify(report, null, 2));
 console.log(md);
+
+// Підсумок у контрольний чат: один звіт за запуск (сервер з тестовим режимом 2+).
+if (canSubmit && Number(probe.version) >= 2) {
+  const tg = [
+    `🧪 Автоперевірка: ${bad.length ? '❌ є помилки' : '✅ без помилок'}`,
+    `Сайт: ${BASE}`,
+    `Сторінок: ${report.pages.length}, з помилками: ${bad.length}`,
+    `Тестових заявок: у базі зі статусом «тест»; прикладів у цьому чаті: ${samples.length}`,
+    ...(samples.length ? [`Приклади зі сторінок: ${samples.join(', ')}`] : []),
+  ];
+  for (const x of bad.slice(0, 15)) {
+    tg.push('', `❌ ${BASE}${x.path}`);
+    for (const e of x.errors.slice(0, 3)) tg.push(`• ${e}`);
+  }
+  if (bad.length > 15) tg.push('', `…і ще ${bad.length - 15} сторінок, повний звіт – у GitHub Actions`);
+  const reportRequest = await pwRequest.newContext({
+    extraHTTPHeaders: BYPASS ? { 'x-vercel-protection-bypass': BYPASS } : {},
+  });
+  await reportRequest
+    .post(`${BASE}/api/leads`, { data: { qa_report: tg.join('\n').slice(0, 3500), phone: '+380000000000' }, timeout: 20000 })
+    .catch((e) => console.error('звіт у чат не надіслано:', e.message));
+  await reportRequest.dispose().catch(() => {});
+}
 process.exit(bad.length ? 1 : 0);

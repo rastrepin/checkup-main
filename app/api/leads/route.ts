@@ -16,8 +16,13 @@ const PLATFORM_ORIGIN = (process.env.LEADS_PLATFORM_ORIGIN ?? 'https://onclinic.
 // містить те, що сервер зберіг (програма, ціна, послуги з назвами і цінами з бази), – перевірка звіряє це
 // з тим, що бачив користувач. GET /api/leads повідомляє перевірці, що тестовий режим є: без нього
 // перевірка заявок не відправляє.
+// Версія 2: у контрольний чат ідуть лише тестові заявки-приклади (ім'я містить «приклад», перевірка позначає
+// так 2–3 перші заявки запуску) і один підсумковий звіт запуску (поле qa_report). Решта тестових заявок
+// лише пишеться в базу зі status = 'test'.
 const QA_TEST_PHONE_DIGITS = '380000000000';
-const QA_TEST_MODE_VERSION = 1;
+const QA_TEST_MODE_VERSION = 2;
+const QA_SAMPLE_MARK = 'приклад';
+const QA_REPORT_MAX = 3500;
 
 interface ResolvedService {
   id: string;
@@ -85,10 +90,25 @@ function notifyTelegram(lead: LeadPayload, warning?: string, extra: string[] = [
     lead.source_cta ? `CTA: ${lead.source_cta}` : null,
   ].filter(Boolean);
 
+  return postTelegram(token, chatId, lines.join('\n'));
+}
+
+/** Довільний текст у контрольний чат (звіт автоперевірки). */
+function sendTelegramText(text: string): Promise<void> {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  const chatId = process.env.TELEGRAM_CHAT_ID;
+  if (!token || !chatId) {
+    console.error('[leads] telegram env missing');
+    return Promise.resolve();
+  }
+  return postTelegram(token, chatId, text);
+}
+
+function postTelegram(token: string, chatId: string, text: string): Promise<void> {
   return fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chat_id: chatId, text: lines.join('\n') }),
+    body: JSON.stringify({ chat_id: chatId, text }),
   })
     .then((res) => {
       if (!res.ok) console.error('[leads] telegram', res.status);
@@ -168,6 +188,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'invalid json' }, { status: 400 });
   }
 
+  // Підсумковий звіт автоперевірки: лише з тестовим номером, лише в контрольний чат, у базу не пишеться.
+  const reportPhone = String((body as any).phone ?? '').replace(/\D/g, '');
+  if (typeof (body as any).qa_report === 'string' && reportPhone === QA_TEST_PHONE_DIGITS) {
+    const text = String((body as any).qa_report).slice(0, QA_REPORT_MAX);
+    after(() => sendTelegramText(text));
+    return NextResponse.json({ ok: true, report: true });
+  }
+
   // Honeypot: тихо приймаємо, нічого не пишемо
   if (body.website) {
     return NextResponse.json({ ok: true });
@@ -230,7 +258,8 @@ export async function POST(req: NextRequest) {
 
   if (isTest) {
     const services = await resolveServices(addedServiceIds);
-    after(() => notifyTest(body, services));
+    // У контрольний чат – лише приклади; решта тестових заявок тільки в базі.
+    if (name.toLowerCase().includes(QA_SAMPLE_MARK)) after(() => notifyTest(body, services));
     return NextResponse.json({
       ok: true,
       test: true,

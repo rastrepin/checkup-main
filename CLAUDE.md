@@ -20,6 +20,7 @@
 - `git push origin main` з будь-якого приводу
 - force push
 - `vercel deploy` або `vercel --prod`
+- змінювати перевірку після деплою, маршрут заявок або змінні `TELEGRAM_*` без PR і згоди Ігоря; надсилати тестові заявки в чати чи на пошту клінік (AGENTS.md, `docs/QA-AFTER-DEPLOY.md`)
 
 ## Перед завершенням роботи
 
