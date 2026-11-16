@@ -232,17 +232,17 @@ offer_card:
 
   profile_link:
     label: «Детальніше на сторінці «Володимир Петрович Бондарук»»
-    href: https://bondaruk.check-up.in.ua/
+    href: https://bondaruk.com.ua/
 
   method_links:
     - label: «Детальніше на сторінці «Лапароскопічне лікування опущення матки і піхви»»
-      href: https://bondaruk.check-up.in.ua/laparoskopichne-likuvannia-prolapsu
+      href: https://bondaruk.com.ua/laparoskopichne-likuvannia-prolapsu
     - label: «Детальніше на сторінці «Кольпорафія, пластика стінок піхви»»
-      href: https://bondaruk.check-up.in.ua/kolporafiia
+      href: https://bondaruk.com.ua/kolporafiia
     - label: «Детальніше на сторінці «Вагінальна фіксація матки і купола піхви»»
-      href: https://bondaruk.check-up.in.ua/vahinalna-fiksatsiia-matky
+      href: https://bondaruk.com.ua/vahinalna-fiksatsiia-matky
     - label: «Детальніше на сторінці «Слінгова операція при нетриманні сечі»»
-      href: https://bondaruk.check-up.in.ua/slinhova-operatsiia
+      href: https://bondaruk.com.ua/slinhova-operatsiia
 
   cta: «Записатися на консультацію»
   openBookingModal:
