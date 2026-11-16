@@ -1,6 +1,6 @@
 # TURKEY-MIGRATION – міграція сторінок «Чекап у Туреччині» з Tilda
 
-Версія: 0.1 · 16.11.2026
+Версія: 0.2 · 16.11.2026
 Власник: чат ТУРЕЧЧИНА · міграція з Tilda (проєкт «check-up · Міграція check-up.in.ua на Next.js»)
 Затверджено: Ігор, 16.11.2026 (розділи 1–3)
 Джерела фактів: знімок до міграції, 15–16.11.2026 – https://claude.ai/artifact/6rLkyT4RzmaECZjdBt6QT2
@@ -71,7 +71,7 @@
 
 ## 3. Сторінки
 
-Компоненти – лише наявні, за docs/ux/ і docs/components-map.md (checkup-platform, dev). Перед задачею виконавцю чат «Норматив» звіряє структуру нижче з UI-kit. [УТОЧНИТИ: який наявний компонент картки програми підходить]
+Компоненти – лише наявні, за docs/ux/ і docs/components-map.md (checkup-platform, dev). Компоненти названо за звіркою чату «Норматив» (нижче).
 
 **Хаб `/turkey`**
 
@@ -93,13 +93,21 @@
 
 **SEO на кожній сторінці:** Title і H1 – як на Tilda (знімок, розділ 1), canonical на себе, `lang="ru"`, Schema: MedicalClinic + Offer з `priceCurrency: USD`. Зміна Title і H1 – лише в кроці оптимізації.
 
-**Форми і заявки:** POST `/api/leads`, honeypot і consent обов'язкові, `clinic_slug` – клініка сторінки, `source_page` – адреса, програма – у `program_name`. Telegram – лише група «тест бот з лідами». Полів про здоров'я (хронічні хвороби, скарги) не збираємо.
+**Форми і заявки:** форма – `BookingFlow` + `BookCta` (CM §30.3), не `LeadForm`. POST `/api/leads`, honeypot і consent обов'язкові, `clinic_slug` – клініка сторінки, `source_page` – адреса, програма – у `program_name` як `name_ru`. Посилання згоди – `/ukr/policy`. Telegram – лише група «тест бот з лідами». Полів про здоров'я (хронічні хвороби, скарги) не збираємо.
+
+**Компоненти (звірка НОРМАТИВ, 16.11.2026, ui-kit v1.15, components-map v7.3):** хаб – `LinkRows` (ціна в `line`); програма – `ProgramCard` + `Accordion` (sm, h4) + `BookCta`; 5 кроків – `StageScale`; розділи – `Section`; hero – `Hero` tone dark. Звірка: https://claude.ai/artifact/TTKLi4zzAbB3SE2bctvbim
+
+**Залежності – до них виконавець не стартує:**
+1. Чат UX: проп словника підписів у `BookingFlow`, `StickyMobileCta`, `ProgramPicker` (українські значення за замовчуванням).
+2. Чат UX: проп валюти в цих трьох компонентах (грн за замовчуванням).
+3. Чат UX: рішення про ціну кожної клініки в `LinkRows` на хабі.
+4. Чат UX / Library Engineer: копія GEO-блоку (§12) у `components/frame/` з пропами тексту і адрес. До неї – `Section` зі статичним абзацом.
 
 ## 4. Порядок робіт
 
 1. Ігор сказав «так» на розділи 1–3 (16.11.2026).
 2. Чат ТУРЕЧЧИНА кладе цей документ і файли `docs/turkey/` у репо. Окремий PR у dev, лише документи.
-3. Чат «Норматив» звіряє розділ 3 з UI-kit і називає компоненти.
+3. Чат «Норматив» звірив розділ 3 з UI-kit (16.11.2026). Чат UX закриває залежності 1–4.
 4. Виконавець (окремий чат, Claude Code, Sonnet medium) робить міграцію бази, сторінки і DATABASE.md в одному PR у dev. Адреси в `approved-routes.json` не додає.
 5. Чат ТУРЕЧЧИНА перевіряє прев'ю (`?drafts=1`): ціни, склад, Title, H1, canonical, Schema, GEO у View Source, форма.
 6. Ігор зливає PR. Потім по одній адресі – додати в `approved-routes.json`, перевірити (200, Title, H1, canonical, форма), далі наступна. Після кожної – SEO Audit Report.
