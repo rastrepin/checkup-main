@@ -1,6 +1,6 @@
 # TURKEY-MIGRATION – міграція сторінок «Чекап у Туреччині» з Tilda
 
-Версія: 0.2 · 16.11.2026
+Версія: 0.3 · 16.11.2026
 Власник: чат ТУРЕЧЧИНА · міграція з Tilda (проєкт «check-up · Міграція check-up.in.ua на Next.js»)
 Затверджено: Ігор, 16.11.2026 (розділи 1–3)
 Джерела фактів: знімок до міграції, 15–16.11.2026 – https://claude.ai/artifact/6rLkyT4RzmaECZjdBt6QT2
@@ -98,10 +98,13 @@
 **Компоненти (звірка НОРМАТИВ, 16.11.2026, ui-kit v1.15, components-map v7.3):** хаб – `LinkRows` (ціна в `line`); програма – `ProgramCard` + `Accordion` (sm, h4) + `BookCta`; 5 кроків – `StageScale`; розділи – `Section`; hero – `Hero` tone dark. Звірка: https://claude.ai/artifact/TTKLi4zzAbB3SE2bctvbim
 
 **Залежності – до них виконавець не стартує:**
-1. Чат UX: проп словника підписів у `BookingFlow`, `StickyMobileCta`, `ProgramPicker` (українські значення за замовчуванням).
-2. Чат UX: проп валюти в цих трьох компонентах (грн за замовчуванням).
-3. Чат UX: рішення про ціну кожної клініки в `LinkRows` на хабі.
-4. Чат UX / Library Engineer: копія GEO-блоку (§12) у `components/frame/` з пропами тексту і адрес. До неї – `Section` зі статичним абзацом.
+
+Рішення чату UX 16.11.2026 – ui-kit v1.16 (checkup-platform PR #230): підписи і посилання згоди – словник-проп у BookingFlow (і BookCta), StickyMobileCta, ProgramPicker (§6.14 п. 1, 2, 4, 5); валюта – проп `currency`, USD для /turkey*, формат «1 200 USD» (§6.14 п. 3); хаб – LinkRows, рядок на клініку з «от {minPrice} USD», кнопок запису на хабі немає (§6.13а); GEO-блок – копія §12 у components/frame/ (§6.14 п. 7). Назви програм і адреси сторінка передає готовими рядками.
+
+Лишилось:
+1. Library Engineer реалізує пропи і копію GEO-блоку, оновлює CM (задача: https://claude.ai/artifact/7BnA3fhfkKzjeAV3JfB739). Звіт – версія CM і ключі словника.
+2. Чат ТУРЕЧЧИНА заповнює `ui-ru.json` за ключами словника.
+3. Ігор вирішує, чи лишається форма на хабі /turkey (§6.13а забороняє кнопки запису на хабі; на Tilda форма на /turkey є і дає більшість заявок).
 
 ## 4. Порядок робіт
 
