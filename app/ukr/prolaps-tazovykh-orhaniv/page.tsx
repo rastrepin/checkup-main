@@ -39,7 +39,7 @@ const DESCRIPTION =
 // Рецензент (v3.1, розділ 9): лікар погодив 17.10. ПІБ і регалії – з реєстру через formatDoctorName і
 // formatRegalia (картка пропозиції bondaruk-volodymyr). Немає даних у реєстрі – рядок не рендериться.
 const REVIEWER_SLUG = 'bondaruk-volodymyr';
-const REVIEWER_URL = 'https://bondaruk.check-up.in.ua/';
+const REVIEWER_URL = 'https://bondaruk.com.ua/';
 const REVIEWED_ISO = '2026-10-17';
 const REVIEWER_DISCLOSURE = 'Рецензент сторінки є одним із лікарів, до яких можна записатися через неї.';
 
