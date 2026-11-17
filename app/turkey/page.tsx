@@ -33,10 +33,14 @@ export const revalidate = 3600;
 const TITLE = 'ᐈ Пройдите Check-up в Турции ᐈ 3 Лучших Мед. Центра';
 const URL = `${TURKEY_SITE}/turkey`;
 
+// Description – дослівно з «- Description:» у docs/turkey/tilda/turkey.md (через extract-content), не з коду.
+const DESCRIPTION = TURKEY_CONTENT.hub.description;
+
 export const metadata: Metadata = {
   title: { absolute: TITLE },
+  description: DESCRIPTION,
   alternates: { canonical: URL },
-  openGraph: { title: TITLE, url: URL, type: 'website' },
+  openGraph: { title: TITLE, description: DESCRIPTION, url: URL, type: 'website' },
 };
 
 export default async function TurkeyHubPage() {

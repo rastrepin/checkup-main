@@ -40,11 +40,14 @@ const TITLES: Record<TurkeyClinicKey, string> = {
 
 export function turkeyClinicMetadata(key: TurkeyClinicKey): Metadata {
   const url = `${TURKEY_SITE}/turkey/${key}`;
+  // Description – дослівно з «- Description:» у docs/turkey/tilda/ (через extract-content), не з коду.
+  const description = TURKEY_CONTENT.clinics[key].description;
   return {
     // absolute: без суфікса «| check-up.in.ua» з root layout – Title дослівно як на Tilda.
     title: { absolute: TITLES[key] },
+    description,
     alternates: { canonical: url },
-    openGraph: { title: TITLES[key], url, type: 'website' },
+    openGraph: { title: TITLES[key], description, url, type: 'website' },
   };
 }
 

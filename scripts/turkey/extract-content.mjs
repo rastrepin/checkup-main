@@ -19,6 +19,13 @@ function blocks(file) {
 }
 const strip = (s, prefix) => (s.startsWith(prefix) ? s.slice(prefix.length) : s);
 
+/** Блок H1: рядок «Description: …» (meta description з живої Tilda) відділяється від решти рядків блоку. */
+function heroLines(lines) {
+  const description = lines.find((l) => l.startsWith('Description: '));
+  if (!description) throw new Error('У блоці H1 немає рядка «- Description: …»');
+  return { description: strip(description, 'Description: '), rest: lines.filter((l) => l !== description) };
+}
+
 /** Блок «Как проходит…»: [заголовок H2, [[номер, назва, текст] × 5]]. */
 function steps(lines) {
   const title = strip(lines[0], 'H2: ');
@@ -45,9 +52,11 @@ const out = { hub: {}, clinics: {} };
 
 const hub = blocks('turkey.md');
 const hubCards = hub.rec202344048;
+const hubHero = heroLines(hub.rec197686332);
 out.hub = {
-  h1: strip(hub.rec197686332[0], 'H1: '),
-  sub: hub.rec197686332[1],
+  h1: strip(hubHero.rest[0], 'H1: '),
+  sub: hubHero.rest[1],
+  description: hubHero.description,
   crumbs: [hub.rec197686333[0], hub.rec197686333[2]],
   h2: strip(hubCards[0], 'H2: '),
   // Порядок карток на Tilda: Anadolu, Acibadem, LIV Hospital.
@@ -66,10 +75,12 @@ out.hub = {
 
 for (const [slug, s] of Object.entries(SPEC)) {
   const b = blocks(s.file);
+  const hero = heroLines(b[s.h1]);
   out.clinics[slug] = {
-    h1: strip(b[s.h1][0], 'H1: '),
-    sub: b[s.h1][1],
-    chips: b[s.h1].slice(2),
+    h1: strip(hero.rest[0], 'H1: '),
+    sub: hero.rest[1],
+    description: hero.description,
+    chips: hero.rest.slice(2),
     crumbs: b[s.crumbs].filter((x) => x !== '→'),
     about: about(s.about, b),
     howTitle: steps(b[s.steps]).title,
