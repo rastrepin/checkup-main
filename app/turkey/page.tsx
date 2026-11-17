@@ -25,6 +25,7 @@ import {
   TURKEY_LANG,
   TURKEY_POLICY_HREF,
   TURKEY_SITE,
+  turkeySeo,
 } from './_shared';
 
 export const revalidate = 3600;
@@ -33,10 +34,13 @@ export const revalidate = 3600;
 const TITLE = 'ᐈ Пройдите Check-up в Турции ᐈ 3 Лучших Мед. Центра';
 const URL = `${TURKEY_SITE}/turkey`;
 
+const SEO = turkeySeo('/turkey');
+
 export const metadata: Metadata = {
   title: { absolute: TITLE },
+  description: SEO.description,
   alternates: { canonical: URL },
-  openGraph: { title: TITLE, url: URL, type: 'website' },
+  openGraph: { title: TITLE, description: SEO.ogDescription, url: URL, type: 'website' },
 };
 
 export default async function TurkeyHubPage() {
