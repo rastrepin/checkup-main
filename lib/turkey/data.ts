@@ -13,6 +13,10 @@ export const TURKEY_CLINICS: Record<TurkeyClinicKey, { slug: string }> = {
   anadolu: { slug: 'anadolu-istanbul' },
 };
 
+/** Клініка, на яку йдуть заявки з хабу /turkey (форма без вибору клініки): група DMU, рішення Ігоря 17.11.2026.
+ *  Запис створює чат ТУРЕЧЧИНА; на хабі як клініка не показується. */
+export const TURKEY_HUB_LEAD_CLINIC_SLUG = 'dmu-turkey';
+
 export interface TurkeyBranch {
   id: string;
   address_ua: string;
@@ -61,6 +65,17 @@ export async function fetchTurkeyClinic(key: TurkeyClinicKey): Promise<TurkeyCli
     return { clinic, branches: (branches ?? []) as TurkeyBranch[], programs: (programs ?? []) as TurkeyProgram[] };
   } catch {
     return EMPTY;
+  }
+}
+
+/** id і slug клініки для заявок з хабу (clinics, за slug). null – запису немає або він неактивний: форма тоді працює як раніше, без клініки. */
+export async function fetchTurkeyHubLeadClinic(): Promise<{ id: string; slug: string } | null> {
+  try {
+    const sb = db() as any;
+    const { data } = await sb.from('clinics').select('id, slug').eq('slug', TURKEY_HUB_LEAD_CLINIC_SLUG).single();
+    return data?.id ? { id: data.id, slug: data.slug } : null;
+  } catch {
+    return null;
   }
 }
 
