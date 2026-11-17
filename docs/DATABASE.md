@@ -1,7 +1,7 @@
 # DATABASE.md – checkup-main
 
 Проект Supabase: `apuivrfokciooovrpmgj` (одна база для checkup-main, checkup-platform і medok).
-Версія: 2.1.1 · 05.11.2026 · 5 · НОРМАТИВ (§6.2 – порожній min_age не потрапляє в «Додати дослідження»). Попередня: 2.1 · 04.11.2026 (§1 – 4 таблиці кроку 2 A9; §6.2 – нова редакція під «Мій план»; §6.6, §6.7). Попередня: 2.0 · 27.09.2026. Схему знято з live-бази 27.09.2026 (information_schema, pg_policies, pg_constraint, schema_migrations), використання таблиць – grep коду checkup-main (sprint/kharkiv-v0) і checkup-platform (dev).
+Версія: 2.2 · 17.11.2026 · Турція: `checkup_programs.currency` і `details`, 3 турецькі клініки, 2 філії, 19 програм USD (TURKEY-MIGRATION v0.6, розділ 2). Попередня: 2.1.1 · 05.11.2026 · 5 · НОРМАТИВ (§6.2 – порожній min_age не потрапляє в «Додати дослідження»). Попередня: 2.1 · 04.11.2026 (§1 – 4 таблиці кроку 2 A9; §6.2 – нова редакція під «Мій план»; §6.6, §6.7). Попередня: 2.0 · 27.09.2026. Схему знято з live-бази 27.09.2026 (information_schema, pg_policies, pg_constraint, schema_migrations), використання таблиць – grep коду checkup-main (sprint/kharkiv-v0) і checkup-platform (dev).
 
 Файл – довідник, не джерело правди. Перед міграцією або запитом, що спирається на структуру, звіряти live-схему через Supabase MCP.
 
@@ -18,7 +18,7 @@
 | Таблиця | Власник | Пише | Читає | Рядків | RLS | Деталі |
 |---|---|---|---|---|---|---|
 | leads | checkup-main | /api/leads; legacy прямі вставки з браузера (2.1) | – | 2 | insert public; select anon – усі рядки (2.1) | 2.1 |
-| checkup_programs | checkup-main | міграції | checkup-main | 35 | read public | 2.2 |
+| checkup_programs | checkup-main | міграції | checkup-main | 156 (137 + 19 USD, live 17.11.2026) | read public | 2.2 |
 | platform_programs | checkup-main | міграції | checkup-main | 15 | read public | 2.3 |
 | platform_program_offers | checkup-main | міграції | checkup-main | 41 | read public | 2.3 |
 | clinic_services | checkup-main | міграції | checkup-main | 43 | read public | 2.4 |
@@ -29,8 +29,8 @@
 | clinic_service_examinations | checkup-main | Ігор (Table Editor) | checkup-main | 0 | read public | 6.2 |
 | patient_criteria | заморожений квіз (Р40, Р48) | не знайдено | не знайдено | 0 | insert public | 2.5 |
 | quiz_configs | заморожений квіз | не знайдено | не знайдено | 2 | read public (is_active) | 2.5 |
-| clinics | спільна | міграції обох репо | обидва репо | 33 | read public (is_active) | 3.1 |
-| clinic_branches | спільна | міграції | обидва репо | 10 | read public | 3.2 |
+| clinics | спільна | міграції обох репо | обидва репо | 42 (live 17.11.2026, з них 3 турецькі) | read public (is_active) | 3.1 |
+| clinic_branches | спільна | міграції | обидва репо | 21 (live 17.11.2026, з них 2 турецькі) | read public | 3.2 |
 | onclinic_leads | checkup-platform | /api/leads/onclinic | CRM | 44 | insert public і service_role; select, update – service_role | 4 |
 | ccrm_leads | checkup-platform | /api/leads/tilda (вебхук Tilda) | CRM | 29 | insert public | 4 |
 | services | checkup-platform | міграції | checkup-platform | 34 | read public | 4 |
@@ -114,8 +114,12 @@ RLS live: `Public insert leads` (INSERT, public, WITH true); `leads_select_by_id
 | standard_slug | text | | |
 | program_type | text | | `clinic` / `standard` |
 | price_date | date | | без дати запис не рендериться (Р27) |
+| currency | text | NN | `UAH` (за замовчуванням) / `USD` / `EUR`, CHECK `checkup_programs_currency_check`; ціна, `price_regular` і `price_discount` – в одній валюті (міграція `turkey_currency_details`, 17.11.2026; наявні рядки отримали `UAH`) |
+| details | jsonb | | картка програми турецьких клінік: `summary`, `duration`, `description[]`, `goals[]`, `preparation[{group, items[]}]`. Склад за напрямками – у `composition` (для `/turkey*` – масив `{group, items[]}`) |
 
 Фільтр читання на платформі: `program_type = 'clinic'`.
+
+**Турецькі клініки (17.11.2026, TURKEY-MIGRATION.md v0.6, розділ 2).** `clinics`: `liv-hospital-istanbul`, `acibadem-istanbul`, `anadolu-istanbul` (city `istanbul`, tier `catalog`, без `telegram_chat_id` і `notify_email`). `clinic_branches`: `liv-hospital-ulus`, `gebze-anadolu-medical-center` (Acibadem – без філії). `checkup_programs`: 19 програм з `currency = 'USD'`, `price_regular = price_discount`, `price_date = 2026-11-16` (LIV 10, Acibadem 4, Anadolu 5). Джерело – `docs/turkey/programs.json`; SQL – `supabase/migrations/20261117_turkey_*.sql`, генератор `scripts/turkey/gen-seed.mjs`, перевірка `scripts/turkey/verify-seed.mjs`.
 
 ### 2.3 platform_programs, platform_program_offers
 
@@ -479,6 +483,7 @@ where tablename in ('examinations', 'risk_factors', 'examination_recommendations
 
 ## 7. Історія
 
+- 2.2 · 17.11.2026 – міграції `turkey_currency_details`, `turkey_seed_1_clinics_branches`, `turkey_seed_2_programs_{acibadem,anadolu,liv}` (TURKEY-MIGRATION.md v0.6, розділ 2): колонки `checkup_programs.currency` (NOT NULL DEFAULT 'UAH', CHECK UAH/USD/EUR; 137 наявних рядків отримали UAH) і `details` (jsonb); 3 клініки, 2 філії, 19 програм USD. Live-лічильники в розділі 1 оновлено (programs 156, clinics 42, branches 21).
 - 2.1.1 · 05.11.2026 – §6.2, «Додати дослідження»: обстеження з порожнім `min_age` не показується (my-plan v0.5 §6, рішення Ігоря 05.11).
 - 2.1 · 04.11.2026 – крок 2 A9 у новій редакції під `docs/ux/specs/2026-11-my-plan.md` v0.2: `examinations` з полями картки (min_age, purpose_ua, rationale_type, rationale_ua, source_ref, harm_ua, harm_reviewed_at, included_in_slug, offer_as_extra); нова `risk_factors`; `examination_recommendations` – `platform_program_slug`, `risk_factor_code`, `locked` замість `platform_program_id` і `condition_code`; `clinic_service_examinations.in_price` – правило ціни; правила Базового плану, «Додати дослідження», ризик-флоу, ціни і заявки; крок 6 – наповнює Ігор. Чернетка 2.1 від 30.09 у dev не потрапила, її зміни тут не відтворено.
 - 2.0 · 27.09.2026 – файл перебудовано за live-схемою: карта 26 таблиць з власниками, деталі таблиць основного домену і спільних, контракт A9. Виправлено застарілі твердження 1.0 (`clinic_services.price` nullable з 30.08; `program_services` наповнено; кількість рядків).
