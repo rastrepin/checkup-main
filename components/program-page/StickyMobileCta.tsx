@@ -4,11 +4,32 @@ import { useEffect, useState } from 'react';
 import { BookCta } from '@/components/city/BookingFlow';
 import { buttonClass } from '@/components/frame/Button';
 import { openProgramPicker } from '@/components/city/ProgramPicker';
+import { formatPrice, type Currency } from '@/lib/format/price';
+import { fillLabel, mergeLabels } from '@/lib/format/labels';
 
 // Блок 1c обох MD (5a-female-40-50/vid-50-kharkiv.md): постійний CTA на мобільному,
 // зʼявляється після прокрутки повз Hero. components-map-FIXED.md §16 не містить
 // реального контракту цього компонента (лише якорі InPageNav іншого набору) —
 // будується за описом завдання, підтверджено Cowork 29.08.2026 п.4.
+
+/** Словник підписів (ui-kit v1.16.1 §6.14 п. 1; components-map v7.5 §30.1). Дефолти – українські. */
+export interface StickyMobileCtaLabels {
+  pickProgram: string;
+  /** {price} – ціна з валютою, напр. «10 460 грн». */
+  pickProgramFrom: string;
+  book: string;
+  /** {price} – ціна з валютою. */
+  bookWithPrice: string;
+  browse: string;
+}
+
+export const STICKY_MOBILE_CTA_LABELS: StickyMobileCtaLabels = {
+  pickProgram: 'Обрати програму',
+  pickProgramFrom: 'Обрати програму · від {price}',
+  book: 'Записатися',
+  bookWithPrice: 'Записатися · {price}',
+  browse: 'Переглянути',
+};
 
 export interface StickyMobileCtaProps {
   /** Скорочена назва програми, напр. "Check-Up жіночий після 40" */
@@ -26,8 +47,6 @@ export interface StickyMobileCtaProps {
   /** Макет зон 20.10: id заголовка зони програми. До неї панель веде в зону програми («Переглянути»),
    *  від неї – «Записатися». Без пропу – як раніше. */
   zoneId?: string;
-  /** Напис кнопки до зони програми. */
-  browseLabel?: string;
   /** Макет зони програми v2 (21.10): id блоку ціни в картці програми. Поки він на екрані, панель схована –
    *  дві кнопки «Записатися» одночасно не видно. Кілька id – панель схована, поки на екрані будь-який з них
    *  («Мій план» v0.4 §8б: 'plan-zone' – від H2 блоку до кінця ризик-флоу). */
@@ -41,13 +60,14 @@ export interface StickyMobileCtaProps {
    *  Одна програма – «Записатися · {ціна} грн» → форма запису; схована, поки кнопку картки видно ('program-buy').
    *  Панель не змінює програму під час прокрутки. Desktop (від 1024px) – панелі немає, плаваючий блок праворуч. */
   agePrograms?: { count: number; minPrice: number | null };
+  /** Підписи: передаються лише змінені ключі, решта – українські дефолти. Напис кнопки до зони програми – `labels.browse`. */
+  labels?: Partial<StickyMobileCtaLabels>;
+  /** Валюта цін у панелі, дефолт 'UAH'. */
+  currency?: Currency;
 }
 
-function fmt(n: number) {
-  return n.toLocaleString('uk-UA');
-}
-
-export default function StickyMobileCta({ programNameShort, price, programSlug, sourceCta, revealAfterId, look = 'default', zoneId, browseLabel = 'Переглянути', hideWhenVisibleId, browseOnly = false, agePrograms }: StickyMobileCtaProps) {
+export default function StickyMobileCta({ programNameShort, price, programSlug, sourceCta, revealAfterId, look = 'default', zoneId, hideWhenVisibleId, browseOnly = false, agePrograms, labels, currency = 'UAH' }: StickyMobileCtaProps) {
+  const L = mergeLabels(STICKY_MOBILE_CTA_LABELS, labels);
   const [visible, setVisible] = useState(false);
   const [inZone, setInZone] = useState(!zoneId);
 
@@ -84,13 +104,13 @@ export default function StickyMobileCta({ programNameShort, price, programSlug, 
             onClick={() => openProgramPicker(agePrograms.count)}
             className={buttonClass({ variant: 'booking', size: 'lg', fullWidth: true })}
           >
-            {agePrograms.minPrice ? `Обрати програму · від ${fmt(agePrograms.minPrice)} грн` : 'Обрати програму'}
+            {agePrograms.minPrice ? fillLabel(L.pickProgramFrom, { price: formatPrice(agePrograms.minPrice, currency) }) : L.pickProgram}
           </button>
         ) : (
           <BookCta
             programSlug={programSlug ?? ''}
             sourceCta={sourceCta ?? ''}
-            label={typeof price === 'number' ? `Записатися · ${fmt(price)} грн` : 'Записатися'}
+            label={typeof price === 'number' ? fillLabel(L.bookWithPrice, { price: formatPrice(price, currency) }) : L.book}
           />
         )}
       </div>
@@ -105,7 +125,7 @@ export default function StickyMobileCta({ programNameShort, price, programSlug, 
         style={{ boxShadow: '0 -8px 24px rgba(0,0,0,0.04)' }}
       >
         <a href={`#${zoneId}`} className={buttonClass({ variant: 'structural', size: 'lg', fullWidth: true })}>
-          {browseLabel}
+          {L.browse}
         </a>
       </div>
     );
@@ -121,7 +141,7 @@ export default function StickyMobileCta({ programNameShort, price, programSlug, 
           <p className="text-xs text-gray-500 truncate leading-tight">{programNameShort}</p>
           {typeof price === 'number' && (
             <p className="text-[19px] font-bold text-[#005485] leading-tight mt-0.5" style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}>
-              {fmt(price)} грн
+              {formatPrice(price, currency)}
             </p>
           )}
         </div>
@@ -129,12 +149,12 @@ export default function StickyMobileCta({ programNameShort, price, programSlug, 
           <BookCta
             programSlug={programSlug ?? ''}
             sourceCta={sourceCta ?? ''}
-            label="Записатися"
+            label={L.book}
             className="!w-auto shrink-0 px-6 uppercase tracking-[0.06em]"
           />
         ) : (
           <a href={`#${zoneId}`} className={`${buttonClass({ variant: 'secondary', size: 'lg' })} shrink-0 px-6`}>
-            {browseLabel}
+            {L.browse}
           </a>
         )}
       </div>
@@ -149,13 +169,13 @@ export default function StickyMobileCta({ programNameShort, price, programSlug, 
       <div className="min-w-0 flex-1">
         <p className="text-[11px] text-gray-500 truncate leading-tight">{programNameShort}</p>
         {typeof price === 'number' && (
-          <p className="text-sm font-bold text-[#0b1a24] leading-tight">{fmt(price)} грн</p>
+          <p className="text-sm font-bold text-[#0b1a24] leading-tight">{formatPrice(price, currency)}</p>
         )}
       </div>
       <BookCta
         programSlug={programSlug ?? ''}
         sourceCta={sourceCta ?? ''}
-        label="Записатися"
+        label={L.book}
         variant="crimson"
         className="!w-auto shrink-0 px-5"
       />
