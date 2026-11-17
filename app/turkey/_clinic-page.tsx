@@ -31,6 +31,7 @@ import {
   TURKEY_POLICY_HREF,
   TURKEY_SITE,
   formatPriceDate,
+  turkeyHeading,
   turkeySeo,
 } from './_shared';
 
@@ -135,6 +136,7 @@ export default async function TurkeyClinicPage({ clinicKey }: { clinicKey: Turke
   if (!data.clinic) notFound();
   const { clinic, branches, programs } = data;
   const c = TURKEY_CONTENT.clinics[clinicKey];
+  const heading = turkeyHeading(`/turkey/${clinicKey}`);
   const url = `${TURKEY_SITE}/turkey/${clinicKey}`;
   const sourceCta = `turkey_${clinicKey}`;
   const multi = programs.length > 1;
@@ -169,8 +171,8 @@ export default async function TurkeyClinicPage({ clinicKey }: { clinicKey: Turke
           tone="dark"
           breadcrumbs={<Breadcrumbs items={[{ label: c.crumbs[0], href: '/' }, { label: c.crumbs[1], href: '/turkey' }, { label: c.crumbs[2] }]} />}
           h1Size="clamp(30px, 5vw, 56px)"
-          h1={c.h1}
-          lead={c.sub}
+          h1={heading.h1}
+          lead={heading.lead ?? c.sub}
         />
 
         <Section tone="white" width="read" id="o-klinike">

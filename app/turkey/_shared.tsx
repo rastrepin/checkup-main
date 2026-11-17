@@ -26,6 +26,15 @@ export function turkeySeo(path: keyof typeof SEO.pages): { description: string; 
   return { description: p.description, ogDescription: p.og_description };
 }
 
+/**
+ * H1, останній пункт хлібних крихт хабу і рядок під H1 – дослівно з docs/turkey/seo.json v0.2 (рішення Ігоря 17.11.2026).
+ * breadcrumb є лише в хаба, lead – лише в Acibadem; для решти сторінок поле лишається undefined (тоді сторінка бере текст Tilda).
+ */
+export function turkeyHeading(path: keyof typeof SEO.pages): { h1: string; breadcrumb?: string; lead?: string } {
+  const p = SEO.pages[path] as { h1: string; breadcrumb?: string; lead?: string };
+  return { h1: p.h1, breadcrumb: p.breadcrumb, lead: p.lead };
+}
+
 /** Дата ціни: ISO (checkup_programs.price_date) → ДД.ММ.ГГГГ. */
 export function formatPriceDate(iso: string): string {
   const [y, m, d] = iso.slice(0, 10).split('-');
