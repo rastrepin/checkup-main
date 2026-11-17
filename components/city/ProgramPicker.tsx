@@ -9,6 +9,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { buttonClass } from '@/components/frame/Button';
 import { programEvents } from '@/lib/ga4';
+import { formatPrice, type Currency } from '@/lib/format/price';
+import { mergeLabels } from '@/lib/format/labels';
 
 export interface PickerProgram {
   slug: string;
@@ -17,7 +19,21 @@ export interface PickerProgram {
   price: number;
 }
 
-const fmt = (n: number) => n.toLocaleString('uk-UA');
+/** Словник підписів (ui-kit v1.16.1 §6.14 п. 1; components-map v7.5 §30.9). Дефолти – українські. */
+export interface ProgramPickerLabels {
+  pickerTitle: string;
+  orderNote: string;
+  /** aria-label кнопки закриття. */
+  close: string;
+  cheapFirst: string;
+}
+
+export const PROGRAM_PICKER_LABELS: ProgramPickerLabels = {
+  pickerTitle: 'Оберіть програму',
+  orderNote: 'Порядок – не рейтинг.',
+  close: 'Закрити',
+  cheapFirst: 'Спочатку дешевші',
+};
 
 export const OPEN_PICKER_EVENT = 'open-program-picker';
 
@@ -36,7 +52,21 @@ export function OpenPickerButton({ label, count, className = '' }: { label: stri
   );
 }
 
-export default function ProgramPicker({ programs, sourceCta }: { programs: PickerProgram[]; sourceCta: string }) {
+export default function ProgramPicker({
+  programs,
+  sourceCta,
+  labels,
+  currency = 'UAH',
+}: {
+  /** Готові рядки для показу: назву програми і клініки дає сторінка. */
+  programs: PickerProgram[];
+  sourceCta: string;
+  /** Підписи: передаються лише змінені ключі, решта – українські дефолти. */
+  labels?: Partial<ProgramPickerLabels>;
+  /** Валюта цін, дефолт 'UAH'. */
+  currency?: Currency;
+}) {
+  const L = mergeLabels(PROGRAM_PICKER_LABELS, labels);
   const [open, setOpen] = useState(false);
   const [cheapFirst, setCheapFirst] = useState(false);
   const touchY = useRef<number | null>(null);
@@ -85,14 +115,14 @@ export default function ProgramPicker({ programs, sourceCta }: { programs: Picke
         <div className="flex items-start justify-between gap-3 px-5 pt-3 lg:pt-5">
           <div>
             <h2 id="program-picker-h" className="text-[20px] font-bold text-ink leading-tight">
-              Оберіть програму
+              {L.pickerTitle}
             </h2>
-            <p className="mt-1 text-[13px] text-text-secondary">Порядок – не рейтинг.</p>
+            <p className="mt-1 text-[13px] text-text-secondary">{L.orderNote}</p>
           </div>
           <button
             type="button"
             onClick={() => setOpen(false)}
-            aria-label="Закрити"
+            aria-label={L.close}
             className="w-11 h-11 shrink-0 -mr-2 flex items-center justify-center text-text-secondary hover:text-ink"
           >
             ✕
@@ -108,7 +138,7 @@ export default function ProgramPicker({ programs, sourceCta }: { programs: Picke
                 cheapFirst ? 'border-link text-link bg-brand-primary-soft' : 'border-[var(--border)] text-text-secondary'
               }`}
             >
-              Спочатку дешевші
+              {L.cheapFirst}
             </button>
           </div>
         )}
@@ -125,7 +155,7 @@ export default function ProgramPicker({ programs, sourceCta }: { programs: Picke
                   <span className="block mt-0.5 text-[14px] text-text-secondary">{p.clinic}</span>
                 </span>
                 <span className="shrink-0 text-[18px] font-bold text-ink" style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}>
-                  {fmt(p.price)} грн
+                  {formatPrice(p.price, currency)}
                 </span>
                 <svg className="w-5 h-5 shrink-0 text-link" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2} aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />

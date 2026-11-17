@@ -5,12 +5,93 @@ import { buttonClass } from '@/components/frame/Button';
 import { useEffect, useState } from 'react';
 import type { CheckupProgram } from '@/lib/types';
 import { priceDiscount } from '@/lib/programs/price';
+import { countText } from '@/components/frame/ProgramCard';
+import { formatPrice, type Currency } from '@/lib/format/price';
+import { fillLabel, mergeLabels, type PluralForms } from '@/lib/format/labels';
 
 export interface BranchLite {
   id: string;
   address_ua: string;
   metro_ua: string | null;
+  /** Готова адреса для показу (мова сторінки). Немає – address_ua (ui-kit v1.16.1 §6.14 п. 2). */
+  address?: string;
+  /** Готове метро для показу. undefined – metro_ua; null – метро немає. */
+  metro?: string | null;
 }
+
+/** Словник підписів (ui-kit v1.16.1 §6.14 п. 1; components-map v7.5 §30.3). Дефолти – українські. */
+export interface BookingFlowLabels {
+  /** aria-label кнопки закриття. */
+  close: string;
+  successTitle: string;
+  successTextProgram: string;
+  successTextNoProgram: string;
+  successClose: string;
+  otherProgram: string;
+  /** {step} – номер кроку. */
+  step: string;
+  consultations: PluralForms;
+  analyses: PluralForms;
+  diagnostics: PluralForms;
+  additionalChosen: string;
+  noProgramHint: string;
+  programLabel: string;
+  dontKnow: string;
+  branchLabel: string;
+  dateLabel: string;
+  dateOptional: string;
+  datePlaceholder: string;
+  next: string;
+  nameLabel: string;
+  phoneLabel: string;
+  phonePlaceholder: string;
+  contactLabel: string;
+  contactCall: string;
+  consentBefore: string;
+  consentLink: string;
+  consentAfter: string;
+  error: string;
+  submit: string;
+  submitting: string;
+  back: string;
+  /** У коментар заявки, не на екран. {list} – обрані послуги через кому. */
+  leadAdditional: string;
+}
+
+export const BOOKING_FLOW_LABELS: BookingFlowLabels = {
+  close: 'Закрити',
+  successTitle: 'ЗАЯВКУ НАДІСЛАНО',
+  successTextProgram: "Менеджер зв'яжеться з вами найближчим часом, підтвердить склад програми і запише на зручний час.",
+  successTextNoProgram: "Менеджер зв'яжеться з вами найближчим часом, допоможе обрати програму та запише на зручний час.",
+  successClose: 'Закрити',
+  otherProgram: '← Інша програма',
+  step: 'Крок {step} з 2',
+  consultations: ['консультація', 'консультації', 'консультацій'],
+  analyses: ['аналіз', 'аналізи', 'аналізів'],
+  diagnostics: ['обстеження', 'обстеження', 'обстежень'],
+  additionalChosen: 'Додатково обрано:',
+  noProgramHint: 'Адміністратор допоможе обрати програму під ваш вік і потреби.',
+  programLabel: 'Програма',
+  dontKnow: 'Не знаю – порадьте на дзвінку',
+  branchLabel: 'Філія',
+  dateLabel: 'Бажаний день',
+  dateOptional: '(опційно)',
+  datePlaceholder: 'Напр., субота вранці',
+  next: 'Далі →',
+  nameLabel: "Ім'я",
+  phoneLabel: 'Телефон',
+  phonePlaceholder: '+38 0__ ___ __ __',
+  contactLabel: "Спосіб зв'язку",
+  contactCall: 'Дзвінок',
+  consentBefore: 'Погоджуюся на',
+  consentLink: 'обробку персональних даних',
+  consentAfter: 'для запису на обстеження',
+  error: 'Не вдалося надіслати. Спробуйте ще раз.',
+  submit: 'Залишити заявку',
+  submitting: 'Надсилаємо…',
+  back: '← Назад',
+  leadAdditional: 'Додатково цікавить: {list}',
+};
 
 interface BookingFlowProps {
   programs: CheckupProgram[];
@@ -24,6 +105,14 @@ interface BookingFlowProps {
    *  (каталог міста) не передають, картка лишається на старих полях програми.
    *  Задача Cowork "Форма запису" (29.08.2026), п.2. */
   programsComposition?: Record<string, { consultations: number; analyses: number; diagnostics: number }>;
+  /** Підписи: передаються лише змінені ключі, решта – українські дефолти. */
+  labels?: Partial<BookingFlowLabels>;
+  /** Валюта цін у формі, дефолт 'UAH'. */
+  currency?: Currency;
+  /** Посилання «обробку персональних даних», дефолт '/ukr/policy'. */
+  policyHref?: string;
+  /** Готові назви програм для показу: slug → назва. Немає – program.name_ua (ui-kit v1.16.1 §6.14 п. 2). */
+  programNames?: Record<string, string>;
 }
 
 type Contact = 'call' | 'telegram' | 'viber';
@@ -50,10 +139,6 @@ function getSessionId(): string {
   } catch {
     return '';
   }
-}
-
-function fmt(n: number) {
-  return n.toLocaleString('uk-UA');
 }
 
 /**
@@ -104,7 +189,22 @@ export function BookCta({
   );
 }
 
-export default function BookingFlow({ programs, branches, clinicId, clinicSlug, city, programsComposition }: BookingFlowProps) {
+export default function BookingFlow({
+  programs,
+  branches,
+  clinicId,
+  clinicSlug,
+  city,
+  programsComposition,
+  labels,
+  currency = 'UAH',
+  policyHref = '/ukr/policy',
+  programNames,
+}: BookingFlowProps) {
+  const L = mergeLabels(BOOKING_FLOW_LABELS, labels);
+  const programName = (p: CheckupProgram) => programNames?.[p.slug] ?? p.name_ua;
+  const branchAddress = (b: BranchLite) => b.address ?? b.address_ua;
+  const branchMetro = (b: BranchLite) => (b.metro !== undefined ? b.metro : b.metro_ua);
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<1 | 2>(1);
   const [sourceCta, setSourceCta] = useState('');
@@ -188,10 +288,10 @@ export default function BookingFlow({ programs, branches, clinicId, clinicSlug, 
           clinic_id: clinicId,
           clinic_slug: clinicSlug,
           selected_program_slug: program?.slug ?? null,
-          program_name: program?.name_ua ?? null,
+          program_name: program ? programName(program) : null,
           price: program?.price_discount ?? null,
           selected_branch_id: branchId || null,
-          branch_address: branch?.address_ua ?? null,
+          branch_address: branch ? branchAddress(branch) : null,
           selected_date_label: dateLabel || null,
           source_page: window.location.pathname,
           source_cta: sourceCta,
@@ -200,7 +300,7 @@ export default function BookingFlow({ programs, branches, clinicId, clinicSlug, 
           // передається текстом у comment, той самий рядок іде в Telegram.
           comment:
             selectedAdditionalServices.length > 0
-              ? `Додатково цікавить: ${selectedAdditionalServices.join(', ')}`
+              ? fillLabel(L.leadAdditional, { list: selectedAdditionalServices.join(', ') })
               : null,
           session_id: getSessionId(),
           utm_source: params.get('utm_source'),
@@ -213,7 +313,7 @@ export default function BookingFlow({ programs, branches, clinicId, clinicSlug, 
       if (!res.ok) throw new Error('submit failed');
       setSubmitted(true);
     } catch {
-      setError('Не вдалося надіслати. Спробуйте ще раз.');
+      setError(L.error);
     } finally {
       setSubmitting(false);
     }
@@ -228,7 +328,7 @@ export default function BookingFlow({ programs, branches, clinicId, clinicSlug, 
         <button
           type="button"
           onClick={close}
-          aria-label="Закрити"
+          aria-label={L.close}
           className="absolute top-4 right-4 w-11 h-11 flex items-center justify-center text-gray-400 hover:text-gray-600"
         >
           ✕
@@ -237,18 +337,14 @@ export default function BookingFlow({ programs, branches, clinicId, clinicSlug, 
         {submitted ? (
           <div className="text-center py-8">
             <div className="text-2xl mb-3">✓</div>
-            <h3 className="text-lg font-bold text-[#0b1a24] mb-2">ЗАЯВКУ НАДІСЛАНО</h3>
-            <p className="text-sm text-gray-600">
-              {program
-                ? <>Менеджер зв&apos;яжеться з вами найближчим часом, підтвердить склад програми і запише на зручний час.</>
-                : <>Менеджер зв&apos;яжеться з вами найближчим часом, допоможе обрати програму та запише на зручний час.</>}
-            </p>
+            <h3 className="text-lg font-bold text-[#0b1a24] mb-2">{L.successTitle}</h3>
+            <p className="text-sm text-gray-600">{program ? L.successTextProgram : L.successTextNoProgram}</p>
             <button
               type="button"
               onClick={close}
               className="mt-6 min-h-12 px-6 rounded-[10px] border border-gray-300 text-sm font-semibold text-[#0b1a24]"
             >
-              Закрити
+              {L.successClose}
             </button>
           </div>
         ) : (
@@ -262,26 +358,26 @@ export default function BookingFlow({ programs, branches, clinicId, clinicSlug, 
                 }}
                 className="-ml-1 mb-2 min-h-11 px-1 text-[15px] font-semibold text-link"
               >
-                ← Інша програма
+                {L.otherProgram}
               </button>
             )}
             {/* «Крок 1 з 2» – без капсу і трекінгу, 13px 600, --text-secondary (НОРМАТИВ 14.11, А.2). */}
-            <p className="text-[13px] font-semibold text-text-secondary mb-1">Крок {step} з 2</p>
+            <p className="text-[13px] font-semibold text-text-secondary mb-1">{fillLabel(L.step, { step })}</p>
 
             {/* Summary-card */}
             <div className="bg-[#f4f9fb] border border-[#d8e8f0] rounded-[10px] p-4 mb-5">
               {program ? (
                 <>
-                  <div className="text-sm font-bold text-[#0b1a24]">{program.name_ua}</div>
+                  <div className="text-sm font-bold text-[#0b1a24]">{programName(program)}</div>
                   {/* Закреслена ціна і «−N%» – лише коли ціна в клініці більша за ціну до сплати (lib/programs/price.ts, А.1). */}
                   <div className="text-sm text-[#005485] font-semibold mt-0.5">
-                    {fmt(program.price_discount)} грн
+                    {formatPrice(program.price_discount, currency)}
                     {(() => {
                       const disc = priceDiscount(program.price_regular, program.price_discount);
                       return disc ? (
                         <>
                           {' '}
-                          <span className="text-gray-400 line-through font-normal">{fmt(disc.regular)} грн</span>{' '}
+                          <span className="text-gray-400 line-through font-normal">{formatPrice(disc.regular, currency)}</span>{' '}
                           <span className="text-gray-500 font-normal">−{disc.pct}%</span>
                         </>
                       ) : null;
@@ -294,9 +390,9 @@ export default function BookingFlow({ programs, branches, clinicId, clinicSlug, 
                       const analyses = live ? live.analyses : program.analyses_count;
                       const diagnostics = live ? live.diagnostics : program.diagnostics_count;
                       return [
-                        consultations ? `${consultations} консультацій` : null,
-                        analyses ? `${analyses} аналізів` : null,
-                        diagnostics ? `${diagnostics} обстежень` : null,
+                        consultations ? countText(consultations, L.consultations) : null,
+                        analyses ? countText(analyses, L.analyses) : null,
+                        diagnostics ? countText(diagnostics, L.diagnostics) : null,
                       ]
                         .filter(Boolean)
                         .join(' · ');
@@ -304,12 +400,12 @@ export default function BookingFlow({ programs, branches, clinicId, clinicSlug, 
                   </div>
                   {selectedAdditionalServices.length > 0 && (
                     <div className="text-xs text-[#0b1a24] mt-2 pt-2 border-t border-[#d8e8f0]">
-                      <span className="font-semibold">Додатково обрано:</span> {selectedAdditionalServices.join(', ')}
+                      <span className="font-semibold">{L.additionalChosen}</span> {selectedAdditionalServices.join(', ')}
                     </div>
                   )}
                 </>
               ) : (
-                <div className="text-sm text-gray-600">Адміністратор допоможе обрати програму під ваш вік і потреби.</div>
+                <div className="text-sm text-gray-600">{L.noProgramHint}</div>
               )}
             </div>
 
@@ -317,7 +413,7 @@ export default function BookingFlow({ programs, branches, clinicId, clinicSlug, 
               <>
                 {!program && programs.length > 0 && (
                   <div className="mb-4">
-                    <label className="block text-sm font-semibold text-[#0b1a24] mb-2">Програма</label>
+                    <label className="block text-sm font-semibold text-[#0b1a24] mb-2">{L.programLabel}</label>
                     <div className="space-y-2">
                       {programs.map((p) => (
                         <button
@@ -326,8 +422,8 @@ export default function BookingFlow({ programs, branches, clinicId, clinicSlug, 
                           onClick={() => setProgramSlug(p.slug)}
                           className="w-full text-left border border-gray-200 rounded-[10px] px-4 py-3 text-sm hover:border-[#005485] min-h-11"
                         >
-                          <span className="font-semibold">{p.name_ua}</span>
-                          <span className="text-gray-500"> · {fmt(p.price_discount)} грн</span>
+                          <span className="font-semibold">{programName(p)}</span>
+                          <span className="text-gray-500"> · {formatPrice(p.price_discount, currency)}</span>
                         </button>
                       ))}
                       <button
@@ -335,14 +431,14 @@ export default function BookingFlow({ programs, branches, clinicId, clinicSlug, 
                         onClick={() => setStep(2)}
                         className="w-full text-left border border-dashed border-gray-300 rounded-[10px] px-4 py-3 text-sm text-gray-500 hover:border-[#005485] min-h-11"
                       >
-                        Не знаю — порадьте на дзвінку
+                        {L.dontKnow}
                       </button>
                     </div>
                   </div>
                 )}
 
                 <div className="mb-4">
-                  <label className="block text-sm font-semibold text-[#0b1a24] mb-2">Філія</label>
+                  <label className="block text-sm font-semibold text-[#0b1a24] mb-2">{L.branchLabel}</label>
                   <div className="space-y-2">
                     {branches.map((b) => (
                       <label
@@ -359,8 +455,8 @@ export default function BookingFlow({ programs, branches, clinicId, clinicSlug, 
                           className="mt-1"
                         />
                         <span className="text-sm">
-                          <span className="font-semibold text-[#0b1a24]">{b.address_ua}</span>
-                          {b.metro_ua && <span className="text-gray-500"> · {b.metro_ua}</span>}
+                          <span className="font-semibold text-[#0b1a24]">{branchAddress(b)}</span>
+                          {branchMetro(b) && <span className="text-gray-500"> · {branchMetro(b)}</span>}
                         </span>
                       </label>
                     ))}
@@ -369,13 +465,13 @@ export default function BookingFlow({ programs, branches, clinicId, clinicSlug, 
 
                 <div className="mb-5">
                   <label className="block text-sm font-semibold text-[#0b1a24] mb-2">
-                    Бажаний день <span className="font-normal text-gray-400">(опційно)</span>
+                    {L.dateLabel} <span className="font-normal text-gray-400">{L.dateOptional}</span>
                   </label>
                   <input
                     type="text"
                     value={dateLabel}
                     onChange={(e) => setDateLabel(e.target.value)}
-                    placeholder="Напр., субота вранці"
+                    placeholder={L.datePlaceholder}
                     className="w-full border border-gray-300 rounded-[10px] px-4 py-3 text-base"
                     style={{ fontSize: 16 }}
                   />
@@ -386,13 +482,13 @@ export default function BookingFlow({ programs, branches, clinicId, clinicSlug, 
                   onClick={() => setStep(2)}
                   className="w-full min-h-12 rounded-[10px] bg-[#005485] text-white font-semibold text-base hover:bg-[#004470] transition-colors"
                 >
-                  Далі →
+                  {L.next}
                 </button>
               </>
             ) : (
               <>
                 <div className="mb-4">
-                  <label className="block text-sm font-semibold text-[#0b1a24] mb-2">Ім&apos;я</label>
+                  <label className="block text-sm font-semibold text-[#0b1a24] mb-2">{L.nameLabel}</label>
                   <input
                     type="text"
                     value={name}
@@ -404,12 +500,12 @@ export default function BookingFlow({ programs, branches, clinicId, clinicSlug, 
                 </div>
 
                 <div className="mb-4">
-                  <label className="block text-sm font-semibold text-[#0b1a24] mb-2">Телефон</label>
+                  <label className="block text-sm font-semibold text-[#0b1a24] mb-2">{L.phoneLabel}</label>
                   <input
                     type="tel"
                     value={phone}
                     onChange={handlePhoneChange}
-                    placeholder="+38 0__ ___ __ __"
+                    placeholder={L.phonePlaceholder}
                     autoComplete="tel"
                     inputMode="tel"
                     className="w-full border border-gray-300 rounded-[10px] px-4 py-3"
@@ -430,7 +526,7 @@ export default function BookingFlow({ programs, branches, clinicId, clinicSlug, 
                 />
 
                 <div className="mb-4">
-                  <span className="block text-sm font-semibold text-[#0b1a24] mb-2">Спосіб зв&apos;язку</span>
+                  <span className="block text-sm font-semibold text-[#0b1a24] mb-2">{L.contactLabel}</span>
                   <div className="flex gap-2">
                     {(['call', 'telegram', 'viber'] as Contact[]).map((opt) => (
                       <button
@@ -441,7 +537,7 @@ export default function BookingFlow({ programs, branches, clinicId, clinicSlug, 
                           contact === opt ? 'border-[#005485] bg-[#f4f9fb] text-[#005485]' : 'border-gray-200 text-gray-600'
                         }`}
                       >
-                        {opt === 'call' ? 'Дзвінок' : opt === 'telegram' ? 'Telegram' : 'Viber'}
+                        {opt === 'call' ? L.contactCall : opt === 'telegram' ? 'Telegram' : 'Viber'}
                       </button>
                     ))}
                   </div>
@@ -450,11 +546,11 @@ export default function BookingFlow({ programs, branches, clinicId, clinicSlug, 
                 <label className="flex items-start gap-3 mb-5 cursor-pointer">
                   <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-1" />
                   <span className="text-xs text-gray-500">
-                    Погоджуюся на{' '}
-                    <a href="/ukr/policy" target="_blank" rel="noopener" className="text-[#005485] underline">
-                      обробку персональних даних
+                    {L.consentBefore}{' '}
+                    <a href={policyHref} target="_blank" rel="noopener" className="text-[#005485] underline">
+                      {L.consentLink}
                     </a>{' '}
-                    для запису на обстеження
+                    {L.consentAfter}
                   </span>
                 </label>
 
@@ -466,10 +562,10 @@ export default function BookingFlow({ programs, branches, clinicId, clinicSlug, 
                   disabled={!canSubmit}
                   className="w-full min-h-12 rounded-[10px] bg-[#d60242] text-white font-semibold text-base disabled:opacity-50 hover:bg-[#b80238] transition-colors"
                 >
-                  {submitting ? 'Надсилаємо…' : 'Залишити заявку'}
+                  {submitting ? L.submitting : L.submit}
                 </button>
                 <button type="button" onClick={() => setStep(1)} className="w-full mt-2 min-h-11 text-sm text-gray-500">
-                  ← Назад
+                  {L.back}
                 </button>
               </>
             )}

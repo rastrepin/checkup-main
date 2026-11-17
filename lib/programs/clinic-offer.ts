@@ -23,6 +23,10 @@ export interface OfferBranch {
   name_ua: string;
   address_ua: string;
   metro_ua: string | null;
+  /** Готова адреса для показу (мова сторінки). Немає – address_ua (ui-kit v1.16.1 §6.14 п. 2). */
+  address?: string;
+  /** Готове метро для показу. undefined – metro_ua; null – метро немає. */
+  metro?: string | null;
   /** Графік на сторінках чекапів не показується і не запитується (рішення Ігоря 15.11, age-page-zones v0.7.2 §4.1а):
    *  інакше він потрапляє в дані клієнтської форми запису в HTML. Графік – лише на сторінці філії. */
   schedule?: Record<string, string> | null;
