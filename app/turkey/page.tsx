@@ -25,6 +25,7 @@ import {
   TURKEY_LANG,
   TURKEY_POLICY_HREF,
   TURKEY_SITE,
+  turkeyHeading,
   turkeySeo,
 } from './_shared';
 
@@ -45,6 +46,7 @@ export const metadata: Metadata = {
 
 export default async function TurkeyHubPage() {
   const h = TURKEY_CONTENT.hub;
+  const heading = turkeyHeading('/turkey');
   const keys = h.cards.map((c) => c.clinic as TurkeyClinicKey);
   const [data, leadClinic] = await Promise.all([Promise.all(keys.map((k) => fetchTurkeyClinic(k))), fetchTurkeyHubLeadClinic()]);
   const items = h.cards.map((card, i) => {
@@ -83,9 +85,9 @@ export default async function TurkeyHubPage() {
         <JsonLd data={jsonLd} />
         <Hero
           tone="dark"
-          breadcrumbs={<Breadcrumbs items={[{ label: h.crumbs[0], href: '/' }, { label: h.crumbs[1] }]} />}
+          breadcrumbs={<Breadcrumbs items={[{ label: h.crumbs[0], href: '/' }, { label: heading.breadcrumb ?? h.crumbs[1] }]} />}
           h1Size="clamp(30px, 5vw, 56px)"
-          h1={h.h1}
+          h1={heading.h1}
           lead={h.sub}
         />
 
