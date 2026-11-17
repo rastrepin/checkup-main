@@ -285,8 +285,9 @@ export default function BookingFlow({
           phone,
           preferred_contact: contact,
           city,
-          clinic_id: clinicId,
-          clinic_slug: clinicSlug,
+          // Порожні значення (форма на хабі без клініки) – null: порожній рядок у колонці uuid дав би помилку бази.
+          clinic_id: clinicId || null,
+          clinic_slug: clinicSlug || null,
           selected_program_slug: program?.slug ?? null,
           program_name: program ? programName(program) : null,
           price: program?.price_discount ?? null,
