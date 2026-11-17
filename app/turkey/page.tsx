@@ -13,7 +13,7 @@ import { LinkRows } from '@/components/city/HubBlocks';
 import { formatPrice } from '@/lib/format/price';
 import { fillLabel } from '@/lib/format/labels';
 import { TURKEY_CONTENT } from '@/lib/turkey/content.generated';
-import { fetchTurkeyClinic, minPriceUsd, type TurkeyClinicKey } from '@/lib/turkey/data';
+import { fetchTurkeyClinic, fetchTurkeyHubLeadClinic, minPriceUsd, type TurkeyClinicKey } from '@/lib/turkey/data';
 import {
   Breadcrumbs,
   JsonLd,
@@ -25,6 +25,7 @@ import {
   TURKEY_LANG,
   TURKEY_POLICY_HREF,
   TURKEY_SITE,
+  turkeyHeading,
   turkeySeo,
 } from './_shared';
 
@@ -45,8 +46,9 @@ export const metadata: Metadata = {
 
 export default async function TurkeyHubPage() {
   const h = TURKEY_CONTENT.hub;
+  const heading = turkeyHeading('/turkey');
   const keys = h.cards.map((c) => c.clinic as TurkeyClinicKey);
-  const data = await Promise.all(keys.map((k) => fetchTurkeyClinic(k)));
+  const [data, leadClinic] = await Promise.all([Promise.all(keys.map((k) => fetchTurkeyClinic(k))), fetchTurkeyHubLeadClinic()]);
   const items = h.cards.map((card, i) => {
     const min = minPriceUsd(data[i].programs);
     return {
@@ -83,9 +85,9 @@ export default async function TurkeyHubPage() {
         <JsonLd data={jsonLd} />
         <Hero
           tone="dark"
-          breadcrumbs={<Breadcrumbs items={[{ label: h.crumbs[0], href: '/' }, { label: h.crumbs[1] }]} />}
+          breadcrumbs={<Breadcrumbs items={[{ label: h.crumbs[0], href: '/' }, { label: heading.breadcrumb ?? h.crumbs[1] }]} />}
           h1Size="clamp(30px, 5vw, 56px)"
-          h1={h.h1}
+          h1={heading.h1}
           lead={h.sub}
         />
 
@@ -114,12 +116,13 @@ export default async function TurkeyHubPage() {
         </Section>
       </main>
       <SiteFooter city={null} />
-      {/* Форма консультації без вибору програми і без клініки: заявка без clinic_id / clinic_slug. */}
+      {/* Форма консультації без вибору програми. Заявки з хабу – на клініку dmu-turkey (група DMU, рішення Ігоря 17.11.2026);
+          у списку клінік хабу її немає. Немає запису в clinics – як раніше, без клініки. */}
       <BookingFlow
         programs={[]}
         branches={[]}
-        clinicId=""
-        clinicSlug=""
+        clinicId={leadClinic?.id ?? ''}
+        clinicSlug={leadClinic?.slug ?? ''}
         city={TURKEY_CITY}
         labels={TURKEY_BOOKING_LABELS}
         currency={TURKEY_CURRENCY}
