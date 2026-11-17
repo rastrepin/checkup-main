@@ -16,6 +16,8 @@ import type { OfferBranch, OfferClinic, OfferProgram } from '@/lib/programs/clin
 import type { ProgramComposition } from '@/lib/programs/composition';
 import { branchesWord, FIRST_VISIT_TEXT, preparationItems, SECOND_VISIT_TEXT_V2, visitsText } from '@/lib/programs/age-page-shared';
 import { priceDiscount } from '@/lib/programs/price';
+import { formatPrice, type Currency } from '@/lib/format/price';
+import { fillLabel, mergeLabels, type PluralForms } from '@/lib/format/labels';
 
 export interface AgeZoneCard {
   key: string;
@@ -29,9 +31,30 @@ export interface AgeZoneCard {
   note?: string | null;
   /** «Ціна може змінитися…» – priceDateNotice з дати ціни. */
   notice?: string;
+  /** Готова назва програми для показу (мова сторінки). Немає – program.name_ua (ui-kit v1.16.1 §6.14 п. 2). */
+  programName?: string;
 }
 
-const fmt = (n: number) => n.toLocaleString('uk-UA');
+/** Словник плаваючого блоку desktop (ui-kit v1.16.1 §6.14 п. 1; components-map v7.5 §30.10). Дефолти – українські. */
+export interface AgeProgramsZoneLabels {
+  /** Форми слова «програма» [one, few, many]; рядок: «{n} {форма} в {cityLoc}». */
+  programsCount: PluralForms;
+  /** {price} – ціна з валютою. */
+  fromPrice: string;
+  pickProgram: string;
+}
+
+export const AGE_PROGRAMS_ZONE_LABELS: AgeProgramsZoneLabels = {
+  programsCount: ['програма', 'програми', 'програм'],
+  fromPrice: 'від {price}',
+  pickProgram: 'Обрати програму',
+};
+
+/** Адреса і метро філії для показу: готові рядки сторінки, інакше address_ua / metro_ua. */
+function branchText(b: OfferBranch): string {
+  const metro = b.metro !== undefined ? b.metro : b.metro_ua;
+  return `${b.address ?? b.address_ua}${metro ? `, ${metro}` : ''}`;
+}
 
 function fmtDate(iso: string) {
   const [y, m, d] = iso.slice(0, 10).split('-');
@@ -63,10 +86,7 @@ function ClinicRow({ clinic, branches, cityLoc }: { clinic: OfferClinic; branche
     <div className="mt-3 border-l-2 border-[var(--border)] pl-3">
       <p className="text-[15px] font-semibold text-ink leading-snug">{clinic.name}</p>
       {one && (
-        <p className="mt-0.5 text-[14px] text-text-secondary leading-snug">
-          {one.address_ua}
-          {one.metro_ua ? `, ${one.metro_ua}` : ''}
-        </p>
+        <p className="mt-0.5 text-[14px] text-text-secondary leading-snug">{branchText(one)}</p>
       )}
       {branches.length > 1 && (
         <p className="mt-0.5 text-[14px] text-text-secondary leading-snug">
@@ -83,12 +103,14 @@ function AgeProgramCard({
   cityLoc,
   sourceCta,
   multi,
+  currency,
 }: {
   card: AgeZoneCard;
   index: number;
   cityLoc: string;
   sourceCta: string;
   multi: boolean;
+  currency: Currency;
 }) {
   const { program, clinic, branches, composition, notice } = card;
   const id = index === 0 ? 'sklad-prohramy' : `sklad-prohramy-${index}`;
@@ -105,7 +127,7 @@ function AgeProgramCard({
       className="scroll-mt-20 bg-white border border-[var(--border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-card)] p-[var(--space-card)]"
     >
       <h3 id={`${id}-h`} className="text-[21px] font-bold text-ink leading-tight [text-wrap:balance]">
-        {program.name_ua}
+        {card.programName ?? program.name_ua}
       </h3>
       <ClinicRow clinic={clinic} branches={branches} cityLoc={cityLoc} />
       {branches.length > 1 && (
@@ -113,8 +135,7 @@ function AgeProgramCard({
           <ul className="space-y-2 text-[14px]">
             {branches.map((b) => (
               <li key={b.id} className="text-ink">
-                {b.address_ua}
-                {b.metro_ua ? `, ${b.metro_ua}` : ''}
+                {branchText(b)}
               </li>
             ))}
           </ul>
@@ -212,11 +233,11 @@ function AgeProgramCard({
         <div>
           <p className="flex flex-wrap items-baseline gap-x-2">
             <span data-price={program.price_discount} className="text-[30px] font-bold text-[var(--brand-primary)] leading-tight" style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}>
-              {fmt(program.price_discount)} грн
+              {formatPrice(program.price_discount, currency)}
             </span>
             {disc && (
               <>
-                <span className="text-[14px] text-text-secondary line-through">{fmt(disc.regular)} грн</span>
+                <span className="text-[14px] text-text-secondary line-through">{formatPrice(disc.regular, currency)}</span>
                 <span className="text-[14px] text-text-secondary">−{disc.pct}%</span>
               </>
             )}
@@ -243,7 +264,7 @@ function minOf(cards: AgeZoneCard[]): number | null {
 
 /** Рядки списку програм (§6.1) у порядку карток. */
 export function pickerPrograms(cards: AgeZoneCard[]): PickerProgram[] {
-  return cards.map((c) => ({ slug: c.program.slug, name: c.program.name_ua, clinic: c.clinic.name, price: c.program.price_discount }));
+  return cards.map((c) => ({ slug: c.program.slug, name: c.programName ?? c.program.name_ua, clinic: c.clinic.name, price: c.program.price_discount }));
 }
 
 export default function AgeProgramsZone({
@@ -252,6 +273,8 @@ export default function AgeProgramsZone({
   sourceCta,
   minPrice,
   children,
+  labels,
+  currency = 'UAH',
 }: {
   cards: AgeZoneCard[];
   cityLoc: string;
@@ -260,29 +283,34 @@ export default function AgeProgramsZone({
   minPrice?: number | null;
   /** Під картками: примітка «лікар визначає» тощо – як у шаблоні. */
   children?: ReactNode;
+  /** Підписи плаваючого блоку: передаються лише змінені ключі, решта – українські дефолти. */
+  labels?: Partial<AgeProgramsZoneLabels>;
+  /** Валюта цін у картках і блоці, дефолт 'UAH'. */
+  currency?: Currency;
 }) {
+  const L = mergeLabels(AGE_PROGRAMS_ZONE_LABELS, labels);
   const multi = cards.length > 1;
   const min = minPrice ?? minOf(cards);
   return (
     <div className="lg:grid lg:grid-cols-[minmax(0,720px)_360px] lg:justify-between lg:gap-x-12 lg:items-start">
       <div className="min-w-0 flex flex-col gap-4">
         {cards.map((card, i) => (
-          <AgeProgramCard key={card.key} card={card} index={i} cityLoc={cityLoc} sourceCta={sourceCta} multi={multi} />
+          <AgeProgramCard key={card.key} card={card} index={i} cityLoc={cityLoc} sourceCta={sourceCta} multi={multi} currency={currency} />
         ))}
         {children}
       </div>
       {multi && (
         <aside className="hidden lg:block lg:sticky lg:top-24 bg-white border border-[var(--border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-card)] p-[var(--space-card)]">
           <p className="text-[17px] font-bold text-ink">
-            {cards.length} {cards.length % 10 >= 2 && cards.length % 10 <= 4 && (cards.length % 100 < 12 || cards.length % 100 > 14) ? 'програми' : 'програм'} в {cityLoc}
+            {countText(cards.length, L.programsCount)} в {cityLoc}
           </p>
           {min !== null && (
             <p className="mt-1 text-[20px] font-bold text-ink" style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}>
-              від {fmt(min)} грн
+              {fillLabel(L.fromPrice, { price: formatPrice(min, currency) })}
             </p>
           )}
           <div className="mt-4">
-            <OpenPickerButton label="Обрати програму" count={cards.length} />
+            <OpenPickerButton label={L.pickProgram} count={cards.length} />
           </div>
         </aside>
       )}

@@ -613,7 +613,7 @@ export default async function ProlapsHubPage() {
       </main>
       <SiteFooter city={null} stickyPad />
       {/* Закріплена панель mobile (рішення Ігоря 21.10, 3А): до зони лікарів – «Обрати лікаря», у зоні схована. */}
-      <StickyMobileCta browseOnly revealAfterId="hero" zoneId={OFFERS_ANCHOR} browseLabel="Обрати лікаря" />
+      <StickyMobileCta browseOnly revealAfterId="hero" zoneId={OFFERS_ANCHOR} labels={{ browse: 'Обрати лікаря' }} />
     </>
   );
 }
