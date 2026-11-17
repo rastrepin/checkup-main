@@ -1,6 +1,6 @@
 # TURKEY-MIGRATION – міграція сторінок «Чекап у Туреччині» з Tilda
 
-Версія: 0.5 · 17.11.2026
+Версія: 0.6 · 17.11.2026
 Власник: чат ТУРЕЧЧИНА · міграція з Tilda (проєкт «check-up · Міграція check-up.in.ua на Next.js»)
 Затверджено: Ігор, 16.11.2026 (розділи 1–3)
 Джерела фактів: знімок до міграції, 15–16.11.2026 – https://claude.ai/artifact/6rLkyT4RzmaECZjdBt6QT2
@@ -104,7 +104,7 @@
 Канон записано 17.11.2026: ui-kit v1.16.1, components-map v7.5 (§29.21 GeoBlock, §30.1, §30.3, §30.9, §30.10). Ключі словника заповнено в `docs/turkey/ui-ru.json` v0.3.
 
 Лишилось:
-1. ⚠ Норматив реалізує в коді checkup-main пропи `labels`, `currency`, `policyHref`, спільну функцію формату ціни і копію GeoBlock у `components/frame/`. Зараз це лише в каталозі.
+1. Пропи `labels`, `currency`, `policyHref`, спільну функцію формату ціни і копію GeoBlock у коді робить виконавець – PR 1 розділу 7. Норматив перевіряє обидва PR; Library Engineer знімає ⚠ у каталозі після злиття PR 1.
 2. Міграція `checkup_programs.currency` – у PR виконавця (розділ 2).
 
 ## 4. Порядок робіт
@@ -112,7 +112,7 @@
 1. Ігор сказав «так» на розділи 1–3 (16.11.2026).
 2. Чат ТУРЕЧЧИНА кладе цей документ і файли `docs/turkey/` у репо. Окремий PR у dev, лише документи.
 3. Чат «Норматив» звірив розділ 3 з UI-kit (16.11.2026). Чат UX закриває залежності 1–4.
-4. Виконавець (окремий чат, Claude Code, Sonnet medium) робить міграцію бази, сторінки і DATABASE.md в одному PR у dev. Адреси в `approved-routes.json` не додає.
+4. Виконавець (окремий чат, Claude Code, Sonnet medium) робить два PR у dev за розділом 7: PR 1 – пропи компонентів, PR 2 – база і сторінки. Адреси в `approved-routes.json` не додає.
 5. Чат ТУРЕЧЧИНА перевіряє прев'ю (`?drafts=1`): ціни, склад, Title, H1, canonical, Schema, GEO у View Source, форма.
 6. Ігор зливає PR. Потім по одній адресі – додати в `approved-routes.json`, перевірити (200, Title, H1, canonical, форма), далі наступна. Після кожної – SEO Audit Report.
 7. Тестова заявка з ім'ям «ТЕСТ» – лише в «тест бот з лідами» (docs/QA-AFTER-DEPLOY.md).
@@ -135,3 +135,31 @@
 - Перелік файлів і міграцій.
 - Кількість програм у базі по клініках (live-запит).
 - Що не зроблено і чому.
+
+## 7. Задача виконавцю
+
+Виконавець бере задачу лише звідси і називає версію документа. Два PR у dev, по черзі: PR 2 починається після злиття PR 1. Перед кожним PR – `npm ci` і `npm run build`.
+
+### PR 1 – пропи компонентів (без змін на сторінках)
+
+Норма: ui-kit v1.16.1 §6.14; components-map v7.5 §29.21, §30.1, §30.3, §30.9, §30.10 (checkup-platform, dev). Ключі і українські дефолти – таблиці цих розділів.
+
+1. `labels?: Partial<Labels>` у `StickyMobileCta`, `BookingFlow` і `BookCta`, `ProgramPicker`, плаваючому блоці `AgeProgramsZone`. Українські дефолти – дослівно з таблиць CM. Усі видимі рядки й `aria-label` – зі словника; форми множини – `[one, few, many]`.
+2. `currency?: 'UAH' | 'USD'` у тих самих компонентах, дефолт `'UAH'`. Одна спільна функція формату ціни: нерозривний пробіл U+00A0 між тисячами і перед валютою, валюта після числа («10 460 грн», «1 200 USD»). Нею замінити локальні `fmt` у цих компонентах.
+3. `policyHref?: string` у `BookingFlow`, дефолт `/ukr/policy`.
+4. Назви програм, адреси, метро: додати в дані компонентів готові рядки для показу. Якщо сторінка їх не передала – брати `name_ua` / `address_ua` / `metro_ua`, як зараз. Так наявні сторінки не змінюються.
+5. `browseLabel` у `StickyMobileCta` → `labels.browse`; один виклик – `app/ukr/prolaps-tazovykh-orhaniv/page.tsx`.
+6. Копія GeoBlock (CM §29.21) у `components/frame/` з пропами тексту і адрес.
+
+Перевірка: на прев'ю вікова сторінка Харкова і Ужгорода виглядає як до PR. Допустимі зміни – лише ті, що прямо вимагає CM: форми множини в лічильниках («1 консультація»), «–» замість «—» у «Не знаю – порадьте на дзвінку», нерозривний пробіл у цінах. У звіті – перелік таких змін.
+
+### PR 2 – база і сторінки /turkey*
+
+1. Міграція: `checkup_programs.currency`, `checkup_programs.details` (розділ 2). DATABASE.md – у тому ж PR.
+2. Сід: 3 клініки, 19 програм з `docs/turkey/programs.json`. Поля: `name_ru`, `name_ua`, ціна з `price_usd` у `price_regular` і `price_discount`, `currency = 'USD'`, `price_date = 2026-11-16`, склад у `composition`, решта (summary, duration, description, goals, preparation) – у `details`.
+3. Філії (`clinic_branches`): LIV – «LIV Hospital Ulus», Ahmet Adnan Saygun Cad., Canan Sokak No:5 34340 Beşiktaş, Стамбул; Anadolu – «Gebze Anadolu Medical Center», Cumhuriyet Mahallesi, 2255. Sk. No:3 41400 Gebze/Kocaeli (обидві – з `docs/turkey/tilda/abroad-*.md`). Acibadem – без філії, GEO-блок без адреси.
+4. Сторінки `/turkey`, `/turkey/livhospital`, `/turkey/acibadem`, `/turkey/anadolu` – за розділом 3, тексти з `docs/turkey/tilda/`, підписи і `currency`, `policyHref` – з `docs/turkey/ui-ru.json`. Сторінки доступні лише в режимі чернетки (`?drafts=1`), у `approved-routes.json` їх немає.
+5. Заявка: `/api/leads`, `clinic_slug` клініки сторінки, `program_name` – `name_ru`. Тестова заявка – лише з ім'ям «ТЕСТ» і лише в «тест бот з лідами».
+
+Звіт – розділ 6, окремо для кожного PR.
+
