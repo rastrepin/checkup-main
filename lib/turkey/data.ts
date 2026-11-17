@@ -24,6 +24,7 @@ export interface TurkeyBranch {
 /** Картка програми з колонкою details (summary, duration, description[], goals[], preparation[]). */
 export interface TurkeyProgram extends CheckupProgram {
   currency: string;
+  price_date: string | null;
   details: {
     summary?: string | null;
     duration?: string | null;

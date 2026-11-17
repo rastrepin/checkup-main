@@ -16,6 +16,7 @@ import SiteFooter from '@/components/frame/SiteFooter';
 import { CheckList, StageScale } from '@/components/frame/TextBlocks';
 import BookingFlow, { BookCta } from '@/components/city/BookingFlow';
 import { formatPrice } from '@/lib/format/price';
+import { fillLabel } from '@/lib/format/labels';
 import { TURKEY_CONTENT } from '@/lib/turkey/content.generated';
 import { fetchTurkeyClinic, type TurkeyClinicKey, type TurkeyProgram } from '@/lib/turkey/data';
 import {
@@ -29,6 +30,8 @@ import {
   TURKEY_LANG,
   TURKEY_POLICY_HREF,
   TURKEY_SITE,
+  formatPriceDate,
+  turkeySeo,
 } from './_shared';
 
 // Title і H1 – як на Tilda (знімок 15.11.2026, розділ 1 документа); зміна – лише в кроці оптимізації.
@@ -40,11 +43,13 @@ const TITLES: Record<TurkeyClinicKey, string> = {
 
 export function turkeyClinicMetadata(key: TurkeyClinicKey): Metadata {
   const url = `${TURKEY_SITE}/turkey/${key}`;
+  const seo = turkeySeo(`/turkey/${key}`);
   return {
     // absolute: без суфікса «| check-up.in.ua» з root layout – Title дослівно як на Tilda.
     title: { absolute: TITLES[key] },
+    description: seo.description,
     alternates: { canonical: url },
-    openGraph: { title: TITLES[key], url, type: 'website' },
+    openGraph: { title: TITLES[key], description: seo.ogDescription, url, type: 'website' },
   };
 }
 
@@ -115,6 +120,7 @@ function ProgramBlock({ program, multi, sourceCta }: { program: TurkeyProgram; m
           <p className="text-[30px] font-bold text-[var(--brand-primary)] leading-tight" style={{ fontFamily: "'Source Serif 4', Georgia, serif" }} data-price={program.price_discount}>
             {formatPrice(program.price_discount, TURKEY_CURRENCY)}
           </p>
+          {program.price_date && <p className="text-[13px] text-text-secondary -mt-2">{fillLabel(L.priceDate, { date: formatPriceDate(program.price_date) })}</p>}
           <BookCta programSlug={program.slug} sourceCta={`${sourceCta}_card`} label={TURKEY_BOOK_CTA_LABEL} variant={multi ? 'secondary' : 'primary'} />
         </>
       }

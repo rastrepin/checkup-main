@@ -4,6 +4,7 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import UI from '@/docs/turkey/ui-ru.json';
+import SEO from '@/docs/turkey/seo.json';
 import type { BookingFlowLabels } from '@/components/city/BookingFlow';
 import type { Currency } from '@/lib/format/price';
 
@@ -18,6 +19,18 @@ export const TURKEY_BOOKING_LABELS = UI.BookingFlow as unknown as Partial<Bookin
 export const TURKEY_BOOK_CTA_LABEL = UI.BookCta_label;
 export const TURKEY_FROM_PRICE = UI.AgeProgramsZone_floating.fromPrice;
 export const TURKEY_CARD_LABELS = UI.program_card;
+
+/** Meta description і og:description сторінки – дослівно з docs/turkey/seo.json (ключ – адреса сторінки). */
+export function turkeySeo(path: keyof typeof SEO.pages): { description: string; ogDescription: string } {
+  const p = SEO.pages[path];
+  return { description: p.description, ogDescription: p.og_description };
+}
+
+/** Дата ціни: ISO (checkup_programs.price_date) → ДД.ММ.ГГГГ. */
+export function formatPriceDate(iso: string): string {
+  const [y, m, d] = iso.slice(0, 10).split('-');
+  return `${d}.${m}.${y}`;
+}
 
 /** Місто в заявці (поле leads.city) – slug міста клінік у таблиці clinics. */
 export const TURKEY_CITY = 'istanbul';
