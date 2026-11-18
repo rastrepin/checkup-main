@@ -7,7 +7,7 @@ import Header from '@/components/frame/Header';
 import Hero from '@/components/frame/Hero';
 import Section from '@/components/frame/Section';
 import SiteFooter from '@/components/frame/SiteFooter';
-import { StageScale } from '@/components/frame/TextBlocks';
+import { CheckList, StageScale } from '@/components/frame/TextBlocks';
 import BookingFlow, { BookCta } from '@/components/city/BookingFlow';
 import { LinkRows } from '@/components/city/HubBlocks';
 import { formatPrice } from '@/lib/format/price';
@@ -106,6 +106,11 @@ export default async function TurkeyHubPage() {
               </span>,
             ])}
           />
+        </Section>
+
+        {/* Блок довіри з abroad (хвиля B, розділ 3, п. 3а): 3 пункти дослівно, без заголовка. */}
+        <Section tone="white" width="read" id="doverie">
+          <CheckList items={[...h.trust]} />
         </Section>
 
         <Section tone="white" width="read" id="forma">
