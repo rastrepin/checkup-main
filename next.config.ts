@@ -83,6 +83,28 @@ function wave1Rules() {
     //  { source: '/ukr/kolonoskopiya/kharkiv/:path*', destination: '/ukr/kharkiv', permanent: true },
 // ];
 
+// Хвиля B: 301 з abroad.check-up.in.ua на check-up.in.ua/turkey* (TURKEY-MIGRATION v0.7, розділ 1 і розділ 7, PR 3).
+// Лише для запитів з Host = abroad.check-up.in.ua: інші хости (check-up.in.ua, піддомени, прев'ю) правила не бачать.
+// Цілі – абсолютні https://check-up.in.ua/..., статус 301 (permanent: true дав би 308). Правила не залежать від
+// approved-routes.json: усі цілі вже погоджені. Порядок важливий: конкретні – раніше, `/:path*` (усе інше, включно з
+// `/`, /ru/thanks/, /page53016105.html, /robots.txt, /sitemap.xml) – останнім. Домен у Vercel і DNS – окремо (Ігор).
+const ABROAD_HOST = 'abroad.check-up.in.ua';
+const ABROAD_TARGET = 'https://check-up.in.ua';
+
+function abroadRules() {
+  const has = [{ type: 'host' as const, value: ABROAD_HOST }];
+  const to = (path: string) => ({ destination: `${ABROAD_TARGET}${path}`, has, statusCode: 301 as const });
+  const clinic = (slug: string, target: string) => [
+    { source: `/ru/clinic/${slug}`, ...to(target) },
+    { source: `/ru/clinic/${slug}/tproduct/:path*`, ...to(target) },
+  ];
+  return [
+    ...clinic('livhospital', '/turkey/livhospital'),
+    ...clinic('anadolumedicalcenter', '/turkey/anadolu'),
+    { source: '/:path*', ...to('/turkey') },
+  ];
+}
+
 const nextConfig: NextConfig = {
   // Необов'язкові блоки сторінок міста читаються з content/ під час рендеру (lib/content/city-md.ts);
   // при ревалідації (ISR) файли мають бути в серверній збірці.
@@ -120,6 +142,8 @@ const nextConfig: NextConfig = {
       { source: '/akusherstvo/planirovanie-beremennosti/kharkov', destination: '/kharkov', permanent: false },
     ];
     return [
+      // abroad першим: інакше `/` спіймало б правило '/' → '/ukr' (воно без умови на хост).
+      ...abroadRules(),
       ...rules.filter((r) => r.destination === '/ukr' || isApproved(r.destination)),
       ...wave1Rules(),
     ];
