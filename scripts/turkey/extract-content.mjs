@@ -35,6 +35,32 @@ function about(ids, b) {
   return kept;
 }
 
+/**
+ * «Ключевые преимущества» (abroad, хвиля B, TURKEY-MIGRATION v0.7, розділ 3, п. 1а). Рядки – дослівно з md.
+ * У md підзаголовки Anadolu не позначені (плоский список), тому їх чотири рядки названо тут явно: усе, що йде
+ * після підзаголовка до наступного, – його пункти. LIV – без підзаголовків (одна група).
+ */
+const ANADOLU_ADVANTAGE_SUBHEADS = [
+  'Международная аккредитация',
+  'Передовая медицинская экспертиза',
+  'Полный спектр услуг для медицинских туристов',
+  'Междисциплинарный подход к диагностике и лечению',
+];
+function advantages(file, id, subheads) {
+  const l = blocks(file)[id];
+  const title = strip(l[0], 'H2: ');
+  const rest = l.slice(1);
+  if (!subheads) return { title, groups: [{ title: null, items: rest }] };
+  const groups = [];
+  for (const line of rest) {
+    if (subheads.includes(line)) groups.push({ title: line, items: [] });
+    else if (groups.length > 0) groups[groups.length - 1].items.push(line);
+    else throw new Error(`«Ключевые преимущества»: перший рядок «${line}» не підзаголовок`);
+  }
+  if (groups.length !== subheads.length) throw new Error('«Ключевые преимущества»: не всі підзаголовки знайдено');
+  return { title, groups };
+}
+
 const SPEC = {
   livhospital: { file: 'turkey-livhospital.md', h1: 'rec194611636', crumbs: 'rec194611637', about: ['rec194611639'], steps: 'rec194611653', form: 'rec194611655' },
   anadolu: { file: 'turkey-anadolu.md', h1: 'rec184754728', crumbs: 'rec202005686', about: ['rec184754730', 'rec184754731'], steps: 'rec185657023', form: 'rec186556493' },
@@ -57,6 +83,8 @@ out.hub = {
     { clinic: 'livhospital', title: hubCards[7], text: hubCards[8], link: hubCards[9] },
   ],
   formTitle: hub.rec202344949[0],
+  // Блок довіри, 3 пункти (abroad-home.md, rec738119221; хвиля B, розділ 3, п. 3а).
+  trust: blocks('abroad-home.md').rec738119221,
   // 5 кроків «Как проходит чек-ап за границей» – abroad-livhospital.md (розділ 3, хаб, п. 3).
   steps: (() => {
     const l = blocks('abroad-livhospital.md').rec781721914;
@@ -77,6 +105,9 @@ for (const [slug, s] of Object.entries(SPEC)) {
     formTitle: b[s.form][0],
   };
 }
+
+out.clinics.livhospital.advantages = advantages('abroad-livhospital.md', 'rec781809938', null);
+out.clinics.anadolu.advantages = advantages('abroad-anadolu.md', 'rec789641742', ANADOLU_ADVANTAGE_SUBHEADS);
 
 const body = `// Згенеровано scripts/turkey/extract-content.mjs з docs/turkey/tilda/*.md. НЕ редагувати вручну: тексти – дослівно з Tilda.\n// Перегенерувати: node scripts/turkey/extract-content.mjs\n\nexport const TURKEY_CONTENT = ${JSON.stringify(out, null, 2)} as const;\n`;
 writeFileSync('lib/turkey/content.generated.ts', body);

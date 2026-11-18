@@ -13,7 +13,7 @@ import Accordion from '@/components/frame/Accordion';
 import ProgramCard from '@/components/frame/ProgramCard';
 import GeoBlock from '@/components/frame/GeoBlock';
 import SiteFooter from '@/components/frame/SiteFooter';
-import { CheckList, StageScale } from '@/components/frame/TextBlocks';
+import { CheckList, InfoCard, StageScale } from '@/components/frame/TextBlocks';
 import BookingFlow, { BookCta } from '@/components/city/BookingFlow';
 import { formatPrice } from '@/lib/format/price';
 import { fillLabel } from '@/lib/format/labels';
@@ -140,6 +140,8 @@ export default async function TurkeyClinicPage({ clinicKey }: { clinicKey: Turke
   const url = `${TURKEY_SITE}/turkey/${clinicKey}`;
   const sourceCta = `turkey_${clinicKey}`;
   const multi = programs.length > 1;
+  // Лише LIV і Anadolu мають блок (на Acibadem його немає в abroad).
+  const advantages = 'advantages' in c ? c.advantages : null;
 
   // Тексти опису: перший рядок і абзаци – <p>; короткі рядки-перелік (Acibadem) – CheckList, як на Tilda.
   const [firstAbout, ...restAbout] = c.about;
@@ -183,6 +185,24 @@ export default async function TurkeyClinicPage({ clinicKey }: { clinicKey: Turke
           </div>
           {aboutList.length > 0 && <CheckList items={aboutList} />}
         </Section>
+
+        {/* «Ключевые преимущества» з abroad (хвиля B, розділ 3, п. 1а): дослівно, Anadolu – з чотирма підзаголовками. */}
+        {advantages && (
+          <Section tone="white" width="read" id="preimushchestva">
+            <h2 className="text-[24px] lg:text-[28px] font-bold text-ink leading-tight">{advantages.title}</h2>
+            {advantages.groups.length === 1 && !advantages.groups[0].title ? (
+              <CheckList items={[...advantages.groups[0].items]} />
+            ) : (
+              <div className="mt-5 grid gap-4">
+                {advantages.groups.map((g) => (
+                  <InfoCard key={g.title} title={g.title ?? ''}>
+                    <CheckList items={[...g.items]} />
+                  </InfoCard>
+                ))}
+              </div>
+            )}
+          </Section>
+        )}
 
         {programs.length > 0 && (
           <Section tone="muted" id="programmy">
