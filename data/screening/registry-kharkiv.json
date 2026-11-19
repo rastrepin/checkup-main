@@ -1,0 +1,476 @@
+{
+  "city": "kharkiv",
+  "as_of": "2026-10-24",
+  "source": "https://screening.moz.gov.ua/",
+  "institutions": [
+    {
+      "edrpou": "30292293",
+      "name": "Медична лабораторія «Аналітика»",
+      "registry_name": "ПП Медична лабораторія «Аналітика»",
+      "addresses": [
+        "Перемоги 61",
+        "Науки 29",
+        "Полтавський шлях 155",
+        "Незалежності 17",
+        "Героїв Праці 12",
+        "Героїв Харкова 293-А",
+        "Тракторобудівників 100"
+      ],
+      "is_partner": false,
+      "online_booking": false
+    },
+    {
+      "edrpou": "02003853",
+      "name": "Міська поліклініка № 18",
+      "registry_name": "КНП «Міська поліклініка № 18» Харківської міської ради",
+      "addresses": [
+        "Миру 11"
+      ],
+      "is_partner": false,
+      "online_booking": false
+    },
+    {
+      "edrpou": "3152006824",
+      "name": "ФОП Коноваленко Т. М.",
+      "registry_name": "ФОП Коноваленко Т. М.",
+      "addresses": [
+        "Данилевського 26"
+      ],
+      "is_partner": false,
+      "online_booking": false
+    },
+    {
+      "edrpou": "38534056",
+      "name": "Центр первинної медико-санітарної допомоги Рубіжанської міської ради Луганської області",
+      "registry_name": "КНП «Центр первинної медико-санітарної допомоги» Рубіжанської міської ради Луганської області",
+      "addresses": [
+        "Георгія Тарасенка 92-А"
+      ],
+      "is_partner": false,
+      "online_booking": false
+    },
+    {
+      "edrpou": "02003445",
+      "name": "Міська поліклініка № 25",
+      "registry_name": "КНП «Міська поліклініка № 25» Харківської міської ради",
+      "addresses": [
+        "Руставелі 14"
+      ],
+      "is_partner": false,
+      "online_booking": false
+    },
+    {
+      "edrpou": "2654001127",
+      "name": "ФОП Пасько О. Г.",
+      "registry_name": "ФОП Пасько О. Г.",
+      "addresses": [
+        "Тракторобудівників 108"
+      ],
+      "is_partner": false,
+      "online_booking": false
+    },
+    {
+      "edrpou": "02003474",
+      "name": "Міська поліклініка № 24",
+      "registry_name": "КНП «Міська поліклініка № 24» Харківської міської ради",
+      "addresses": [
+        "Слави 11",
+        "Полтавський шлях 153",
+        "Верхівський 5",
+        "Велика Панасівська 144"
+      ],
+      "is_partner": false,
+      "online_booking": false
+    },
+    {
+      "edrpou": "43131751",
+      "name": "Слобожанський центр нефрології",
+      "registry_name": "ТОВ «Слобожанський центр нефрології»",
+      "addresses": [
+        "Героїв Харкова 195"
+      ],
+      "is_partner": false,
+      "online_booking": false
+    },
+    {
+      "edrpou": "43703222",
+      "name": "Медікал Адванст",
+      "registry_name": "ТОВ «Медікал Адванст»",
+      "addresses": [
+        "Ярослава Мудрого 30-А"
+      ],
+      "is_partner": true,
+      "partner_brand": "ОН Клінік Харків",
+      "clinic_slug": "onclinic-kharkiv",
+      "online_booking": true
+    },
+    {
+      "edrpou": "45750976",
+      "name": "Центр сімейної медицини № 4",
+      "registry_name": "КНП «Центр сімейної медицини № 4» Харківської міської ради",
+      "addresses": [
+        "Григорія Сковороди 32",
+        "Шевченка 40"
+      ],
+      "is_partner": false,
+      "online_booking": false
+    },
+    {
+      "edrpou": "40454394",
+      "name": "Л+",
+      "registry_name": "ПП «Л+»",
+      "addresses": [
+        "Героїв Харкова 278 літ А-4"
+      ],
+      "is_partner": false,
+      "online_booking": false
+    },
+    {
+      "edrpou": "02001506",
+      "name": "Міська поліклініка № 6",
+      "registry_name": "КНП «Міська поліклініка № 6» Харківської міської ради",
+      "addresses": [
+        "Ювілейний 54-Б"
+      ],
+      "is_partner": false,
+      "online_booking": false
+    },
+    {
+      "edrpou": "32149096",
+      "name": "Міська поліклініка № 5",
+      "registry_name": "КНП «Міська поліклініка № 5» Харківської міської ради",
+      "addresses": [
+        "Олімпійська 3"
+      ],
+      "is_partner": false,
+      "online_booking": false
+    },
+    {
+      "edrpou": "43971516",
+      "name": "МЗ Харківська",
+      "registry_name": "ТОВ «МЗ Харківська»",
+      "addresses": [
+        "Миру 48/1",
+        "Байрона 7",
+        "Героїв Харкова 162"
+      ],
+      "is_partner": false,
+      "online_booking": false
+    },
+    {
+      "edrpou": "34017621",
+      "name": "Міська поліклініка № 22",
+      "registry_name": "КНП «Міська поліклініка № 22» Харківської міської ради",
+      "addresses": [
+        "Москалівська 59"
+      ],
+      "is_partner": false,
+      "online_booking": false
+    },
+    {
+      "edrpou": "22697496",
+      "name": "Доктор Алекс",
+      "registry_name": "ТОВ «Доктор Алекс»",
+      "addresses": [
+        "Воробйова 4"
+      ],
+      "is_partner": false,
+      "online_booking": false
+    },
+    {
+      "edrpou": "42628050",
+      "name": "Продіагностик Центр",
+      "registry_name": "ТОВ «Продіагностик Центр»",
+      "addresses": [
+        "Дарвіна 8/10",
+        "Амосова 37"
+      ],
+      "is_partner": false,
+      "online_booking": false
+    },
+    {
+      "edrpou": "01896866",
+      "name": "Харківський національний медичний університет",
+      "registry_name": "Харківський національний медичний університет",
+      "addresses": [
+        "Олександра Шпейєра 4"
+      ],
+      "is_partner": false,
+      "online_booking": false
+    },
+    {
+      "edrpou": "45808800",
+      "name": "Центр сімейної медицини № 1",
+      "registry_name": "КНП «Центр сімейної медицини № 1» Харківської міської ради",
+      "addresses": [
+        "Аерокосмічний 137"
+      ],
+      "is_partner": false,
+      "online_booking": false
+    },
+    {
+      "edrpou": "22658190",
+      "name": "Міська поліклініка № 9",
+      "registry_name": "КНП «Міська поліклініка № 9» Харківської міської ради",
+      "addresses": [
+        "Роганська 130-А"
+      ],
+      "is_partner": false,
+      "online_booking": false
+    },
+    {
+      "edrpou": "2174000017",
+      "name": "ФОП Донський П. В.",
+      "registry_name": "ФОП Донський П. В.",
+      "addresses": [
+        "Чернишевська 1"
+      ],
+      "is_partner": false,
+      "online_booking": false
+    },
+    {
+      "edrpou": "3340813080",
+      "name": "ФОП Спасібо А. П.",
+      "registry_name": "ФОП Спасібо А. П.",
+      "addresses": [
+        "Чернишевська 1",
+        "Яни Червоної 9-А"
+      ],
+      "is_partner": false,
+      "online_booking": false
+    },
+    {
+      "edrpou": "45719742",
+      "name": "Центр сімейної медицини № 5",
+      "registry_name": "КНП «Центр сімейної медицини № 5» Харківської міської ради",
+      "addresses": [
+        "Гуревича Михайла 14"
+      ],
+      "is_partner": false,
+      "online_booking": false
+    },
+    {
+      "edrpou": "23333767",
+      "name": "Міська поліклініка № 19",
+      "registry_name": "КНП «Міська поліклініка № 19» Харківської міської ради",
+      "addresses": [
+        "Героїв Сталінграда 23-А"
+      ],
+      "is_partner": false,
+      "online_booking": false
+    },
+    {
+      "edrpou": "2641001302",
+      "name": "ФОП Сергієнко О. В.",
+      "registry_name": "ФОП Сергієнко О. В.",
+      "addresses": [
+        "Героїв Харкова 162"
+      ],
+      "is_partner": false,
+      "online_booking": false
+    },
+    {
+      "edrpou": "04528465",
+      "name": "Національний інститут терапії імені Л. Т. Малої НАМН України",
+      "registry_name": "ДУ «Національний інститут терапії імені Л. Т. Малої Національної академії медичних наук України»",
+      "addresses": [
+        "Любові Малої 2-А"
+      ],
+      "is_partner": false,
+      "online_booking": false
+    },
+    {
+      "edrpou": "34017656",
+      "name": "Міська поліклініка № 20",
+      "registry_name": "КНП «Міська поліклініка № 20» Харківської міської ради",
+      "addresses": [
+        "Героїв Харкова 179"
+      ],
+      "is_partner": false,
+      "online_booking": false
+    },
+    {
+      "edrpou": "3073607704",
+      "name": "ФОП Андрусович І. В.",
+      "registry_name": "ФОП Андрусович І. В.",
+      "addresses": [
+        "Ахсарова 19-А"
+      ],
+      "is_partner": false,
+      "online_booking": false
+    },
+    {
+      "edrpou": "01983683",
+      "name": "Рубіжанська центральна міська лікарня Рубіжанської міської ради Луганської області",
+      "registry_name": "КНП «Рубіжанська центральна міська лікарня» Рубіжанської міської ради Луганської області",
+      "addresses": [
+        "Георгія Тарасенка 92-А"
+      ],
+      "is_partner": false,
+      "online_booking": false
+    },
+    {
+      "edrpou": "45855159",
+      "name": "Центр сімейної медицини № 3",
+      "registry_name": "КНП «Центр сімейної медицини № 3» Харківської міської ради",
+      "addresses": [
+        "Антоніна Сохора 5-А"
+      ],
+      "is_partner": false,
+      "online_booking": false
+    },
+    {
+      "edrpou": "03293913",
+      "name": "Міська поліклініка № 8",
+      "registry_name": "КНП «Міська поліклініка № 8» Харківської міської ради",
+      "addresses": [
+        "Перемоги 53"
+      ],
+      "is_partner": false,
+      "online_booking": false
+    },
+    {
+      "edrpou": "34709124",
+      "name": "Сінево Україна",
+      "registry_name": "ТОВ «Сінево Україна»",
+      "addresses": [
+        "Науки 48",
+        "Вернадського 1"
+      ],
+      "is_partner": false,
+      "online_booking": false
+    },
+    {
+      "edrpou": "34017661",
+      "name": "Міська поліклініка № 21",
+      "registry_name": "КНП «Міська поліклініка № 21» Харківської міської ради",
+      "addresses": [
+        "Тарасенка Георгія 126"
+      ],
+      "is_partner": false,
+      "online_booking": false
+    },
+    {
+      "edrpou": "02003698",
+      "name": "Міська поліклініка № 26",
+      "registry_name": "КНП «Міська поліклініка № 26» Харківської міської ради",
+      "addresses": [
+        "Двадцять Третього Серпня 23-А"
+      ],
+      "is_partner": false,
+      "online_booking": false
+    },
+    {
+      "edrpou": "42582687",
+      "name": "Куп'янське територіальне медичне об'єднання Куп'янської міської ради Харківської області",
+      "registry_name": "КНП «Куп'янське територіальне медичне об'єднання» Куп'янської міської ради Харківської області",
+      "addresses": [
+        "Ньютона 125"
+      ],
+      "is_partner": false,
+      "online_booking": false
+    },
+    {
+      "edrpou": "2287401636",
+      "name": "ФОП Крівцов І. Ю.",
+      "registry_name": "ФОП Крівцов І. Ю.",
+      "addresses": [
+        "Воробйова 4"
+      ],
+      "is_partner": false,
+      "online_booking": false
+    },
+    {
+      "edrpou": "02012148",
+      "name": "Інститут неврології, психіатрії та наркології імені П. В. Волошина НАМН України",
+      "registry_name": "ДУ «Інститут неврології, психіатрії та наркології імені П. В. Волошина Національної академії медичних наук України»",
+      "addresses": [
+        "Академіка Павлова 46"
+      ],
+      "is_partner": false,
+      "online_booking": false
+    },
+    {
+      "edrpou": "42254633",
+      "name": "Медичний центр ОН Клінік Харків Палац Спорту",
+      "registry_name": "ТОВ «Медичний центр ОН Клінік Харків Палац Спорту»",
+      "addresses": [
+        "Героїв Харкова 257"
+      ],
+      "is_partner": true,
+      "partner_brand": "ОН Клінік Харків, Палац Спорту",
+      "clinic_slug": "onclinic-kharkiv",
+      "online_booking": true
+    },
+    {
+      "edrpou": "02003646",
+      "name": "Міська студентська лікарня",
+      "registry_name": "КНП «Міська студентська лікарня» Харківської міської ради",
+      "addresses": [
+        "Дарвіна 8/10"
+      ],
+      "is_partner": false,
+      "online_booking": false
+    },
+    {
+      "edrpou": "32032384",
+      "name": "Екомет",
+      "registry_name": "ТОВ «Екомет»",
+      "addresses": [
+        "Полтавський шлях 152"
+      ],
+      "is_partner": false,
+      "online_booking": false
+    },
+    {
+      "edrpou": "02003847",
+      "name": "Міська клінічна лікарня № 31",
+      "registry_name": "КНП «Міська клінічна лікарня № 31» Харківської міської ради",
+      "addresses": [
+        "Ново-Баварський 90"
+      ],
+      "is_partner": false,
+      "online_booking": false
+    },
+    {
+      "edrpou": "34288605",
+      "name": "Сінево Схід",
+      "registry_name": "ТОВ «Сінево Схід»",
+      "addresses": [
+        "Ярослава Мудрого 35-А"
+      ],
+      "is_partner": false,
+      "online_booking": false
+    },
+    {
+      "edrpou": "03293758",
+      "name": "Міська поліклініка № 11",
+      "registry_name": "КНП «Міська поліклініка № 11» Харківської міської ради",
+      "addresses": [
+        "Тракторобудівників 105-А"
+      ],
+      "is_partner": false,
+      "online_booking": false
+    },
+    {
+      "edrpou": "25180090",
+      "name": "Міська поліклініка № 3",
+      "registry_name": "КНП «Міська поліклініка № 3» Харківської міської ради",
+      "addresses": [
+        "Бригади Хартія 12"
+      ],
+      "is_partner": false,
+      "online_booking": false
+    },
+    {
+      "edrpou": "32564897",
+      "name": "Медичний центр здоров'я",
+      "registry_name": "ТОВ «Медичний центр здоров'я»",
+      "addresses": [
+        "Незалежності 13"
+      ],
+      "is_partner": false,
+      "online_booking": false
+    }
+  ]
+}
