@@ -38,5 +38,13 @@
     "city": "uzhgorod",
     "match": "tproduct-id",
     "note": "Check-up жінки 50+ розширений, Кредо Клінік"
+  },
+  {
+    "source": "/ukr/proposal-for-clinics",
+    "destination": "/ukr/about",
+    "class": "thematic-no-traffic",
+    "city": "all",
+    "match": "path",
+    "note": "Співпраця з клініками → вкладка «Партнерам» (рішення Ігоря 21.11.2026)"
   }
 ]
