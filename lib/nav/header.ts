@@ -12,7 +12,7 @@
 export type HeaderCity = string;
 
 /** Розділ сайту, до якого належить сторінка: відповідний пункт меню отримує aria-current="page". */
-export type HeaderSection = 'female' | 'male';
+export type HeaderSection = 'female' | 'male' | 'about';
 
 export interface HeaderLink {
   label: string;
@@ -35,10 +35,8 @@ export interface HeaderNav {
   items: HeaderItem[];
 }
 
-const ABOUT_TEAM: HeaderLink = { label: 'Про команду', href: '/ukr/about' };
-const ABOUT_CLINICS: HeaderLink = { label: 'Співпраця з клініками', href: '/ukr/proposal-for-clinics' };
-
-const ABOUT: HeaderItem = { label: 'Про сервіс', children: [ABOUT_TEAM, ABOUT_CLINICS] };
+// Рішення Ігоря 21.11.2026: «Про сервіс» – один пункт на /ukr/about, без підменю; «Співпраця з клініками» – вкладка «Партнерам» (#partneram).
+const ABOUT: HeaderItem = { label: 'Про сервіс', href: '/ukr/about', section: 'about' };
 
 /** Міський варіант: повне меню, логотип веде на хаб міста. */
 export const HEADER_NAV: Record<string, HeaderNav> = {

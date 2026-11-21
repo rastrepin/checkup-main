@@ -19,8 +19,8 @@ const PROGRAMS_TITLE = 'Програми check-up';
 const ABOUT: FooterColumn = {
   title: 'Про сервіс',
   links: [
-    { label: 'Про команду', href: '/ukr/about' },
-    { label: 'Співпраця з клініками', href: '/ukr/proposal-for-clinics' },
+    { label: 'Про сервіс', href: '/ukr/about' },
+    { label: 'Співпраця з клініками', href: '/ukr/about#partneram' },
     { label: 'Політика конфіденційності', href: '/ukr/policy' },
   ],
 };
