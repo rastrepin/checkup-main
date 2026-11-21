@@ -41,6 +41,11 @@ function Chevron({ className }: { className: string }) {
   );
 }
 
+/** Колір підкреслення активного пункту: на /ukr/about – --link (специфікація UX v0.4 §2), на інших сторінках – --brand-secondary. */
+function activeBorder(section: HeaderSection | undefined) {
+  return section === 'about' ? 'border-[var(--link)]' : 'border-[var(--brand-secondary)]';
+}
+
 function isActive(item: HeaderItem, section: HeaderSection | undefined) {
   return Boolean(section && item.section === section);
 }
@@ -79,7 +84,7 @@ function DesktopItems({ items, section, itemClass }: { items: HeaderItem[]; sect
             <a
               href={item.href}
               aria-current={active ? 'page' : undefined}
-              className={`${FOCUS} py-1 text-[15px] font-medium ${itemClass} border-b-2 hover:border-[var(--brand-secondary)] ${active ? 'border-[var(--brand-secondary)]' : 'border-transparent'}`}
+              className={`${FOCUS} py-1 text-[15px] font-medium ${itemClass} border-b-2 hover:border-[var(--brand-secondary)] ${active ? activeBorder(section) : 'border-transparent'}`}
             >
               {item.label}
             </a>
@@ -126,7 +131,7 @@ function MobileItems({ items, section }: { items: HeaderItem[]; section?: Header
               aria-current={active ? 'page' : undefined}
               className={`${FOCUS} flex items-center min-h-[52px] px-5 sm:px-6 text-[16px] font-medium text-link`}
             >
-              <span className={`border-b-2 ${active ? 'border-[var(--brand-secondary)]' : 'border-transparent'}`}>{item.label}</span>
+              <span className={`border-b-2 ${active ? activeBorder(section) : 'border-transparent'}`}>{item.label}</span>
             </a>
           </li>
         );

@@ -191,7 +191,7 @@ export default function AboutPage() {
   const { rating, reviews, url: googleUrl } = GOOGLE_PROFILE;
   return (
     <>
-      <Header city={null} tone="light" />
+      <Header city={null} tone="light" section="about" />
       <main className={`${s.page} ${unbounded.variable} ${onest.variable} ${jetbrainsMono.variable}`}>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }} />
 
