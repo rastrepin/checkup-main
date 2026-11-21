@@ -45,8 +45,8 @@ export function isApprovedRoute(pathname: string): boolean {
   return approvedSet.has(normalizePath(pathname));
 }
 
-/** Префікси службових файлів Next.js: кадри фото лікарів для карток (scripts/doctor-card-photo.py, ui-kit §6.11). */
-export const SYSTEM_PREFIXES: readonly string[] = ['/assets/doctors/cards/'];
+/** Префікси службових файлів Next.js: кадри фото лікарів для карток (scripts/doctor-card-photo.py, ui-kit §6.11) і фото сторінки /ukr/about. */
+export const SYSTEM_PREFIXES: readonly string[] = ['/assets/doctors/cards/', '/assets/about/'];
 
 export function isSystemRoute(pathname: string): boolean {
   return systemSet.has(normalizePath(pathname)) || SYSTEM_PREFIXES.some((p) => pathname.startsWith(p));
