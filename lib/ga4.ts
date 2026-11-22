@@ -53,10 +53,9 @@ export const planEvents = {
   bookStart: (p: PlanEventBase & { items: number; clinic: string; price: number }) => track('plan_book_start', p),
 };
 
-/** Події списку програм вікової сторінки (age-page-zones v0.7.1 §8). Аналітики ще немає – виклик спільної заглушки track:
- *  без GA подія нікуди не йде. Запис з картки і зі списку розрізняє entry_point (card / sticky); у ліді – суфікс source_cta. */
-export type ProgramEntryPoint = 'card' | 'sticky';
+/** Події списку програм вікової сторінки (age-page-zones v0.9.2 §8). Без GA подія нікуди не йде.
+ *  catalog_link_click – клік по посиланню на каталог хабу статі; спрацьовує лише коли посилання увімкнене.
+ */
 export const programEvents = {
-  pickerOpen: (p: { count: number; entry_point: ProgramEntryPoint }) => track('program_picker_open', p),
-  pick: (p: { program: string; clinic: string; position: number; entry_point: ProgramEntryPoint }) => track('program_pick', p),
+  catalogLinkClick: (p: { filter_age: string; programs_count: number }) => track('catalog_link_click', p),
 };
