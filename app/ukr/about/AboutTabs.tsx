@@ -51,7 +51,7 @@ export default function AboutTabs({ patients, partners }: { patients: ReactNode;
   return (
     <>
       <div className={s.tabsRow}>
-        <h2 className={s.h2}>Кому він підходить</h2>
+        <h2 className={s.h2}>Як я працюю з пацієнтами і партнерами</h2>
         <div role="tablist" aria-label="Кому підходить сервіс" className={s.tablist}>
           {btn('patients', 'Пацієнтам')}
           {btn('partners', 'Партнерам')}
