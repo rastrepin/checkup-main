@@ -1,7 +1,7 @@
 # DATABASE.md – checkup-main
 
 Проект Supabase: `apuivrfokciooovrpmgj` (одна база для checkup-main, checkup-platform і medok).
-Версія: 2.2 · 17.11.2026 · Турція: `checkup_programs.currency` і `details`, 3 турецькі клініки, 2 філії, 19 програм USD (TURKEY-MIGRATION v0.6, розділ 2). Попередня: 2.1.1 · 05.11.2026 · 5 · НОРМАТИВ (§6.2 – порожній min_age не потрапляє в «Додати дослідження»). Попередня: 2.1 · 04.11.2026 (§1 – 4 таблиці кроку 2 A9; §6.2 – нова редакція під «Мій план»; §6.6, §6.7). Попередня: 2.0 · 27.09.2026. Схему знято з live-бази 27.09.2026 (information_schema, pg_policies, pg_constraint, schema_migrations), використання таблиць – grep коду checkup-main (sprint/kharkiv-v0) і checkup-platform (dev).
+Версія: 2.3 · 22.11.2026 · Пакет 2, крок 1: таблиці `body_systems`, `system_sets`, `system_set_items` (міграція в PR, у базі ще не запущена) і об'єктний формат позиції складу. Попередня 2.2 · 17.11.2026 · Турція: `checkup_programs.currency` і `details`, 3 турецькі клініки, 2 філії, 19 програм USD (TURKEY-MIGRATION v0.6, розділ 2). Попередня: 2.1.1 · 05.11.2026 · 5 · НОРМАТИВ (§6.2 – порожній min_age не потрапляє в «Додати дослідження»). Попередня: 2.1 · 04.11.2026 (§1 – 4 таблиці кроку 2 A9; §6.2 – нова редакція під «Мій план»; §6.6, §6.7). Попередня: 2.0 · 27.09.2026. Схему знято з live-бази 27.09.2026 (information_schema, pg_policies, pg_constraint, schema_migrations), використання таблиць – grep коду checkup-main (sprint/kharkiv-v0) і checkup-platform (dev).
 
 Файл – довідник, не джерело правди. Перед міграцією або запитом, що спирається на структуру, звіряти live-схему через Supabase MCP.
 
@@ -13,7 +13,7 @@
 
 ---
 
-## 1. Карта таблиць (26, live 27.09.2026)
+## 1. Карта таблиць (26 live 27.09.2026; +3 з пакету 2 після запуску міграції)
 
 | Таблиця | Власник | Пише | Читає | Рядків | RLS | Деталі |
 |---|---|---|---|---|---|---|
@@ -27,6 +27,9 @@
 | risk_factors | checkup-main | Ігор (Table Editor) | checkup-main | 0 | read public (is_active) | 6.2 |
 | examination_recommendations | checkup-main | Ігор (Table Editor) | checkup-main | 0 | read public (is_active і reviewed_at) | 6.2 |
 | clinic_service_examinations | checkup-main | Ігор (Table Editor) | checkup-main | 0 | read public | 6.2 |
+| body_systems | checkup-main | Дует (Table Editor); міграції | checkup-main | 0 (таблиці ще немає в базі) | read public (is_active) | 6.8 |
+| system_sets | checkup-main | Дует (Table Editor) | checkup-main | 0 (таблиці ще немає в базі) | read public (is_active, reviewed_at і approved_at) | 6.8 |
+| system_set_items | checkup-main | Дует (Table Editor) | checkup-main | 0 (таблиці ще немає в базі) | read public (лише набори, які видно) | 6.8 |
 | patient_criteria | заморожений квіз (Р40, Р48) | не знайдено | не знайдено | 0 | insert public | 2.5 |
 | quiz_configs | заморожений квіз | не знайдено | не знайдено | 2 | read public (is_active) | 2.5 |
 | clinics | спільна | міграції обох репо | обидва репо | 42 (live 17.11.2026, з них 3 турецькі) | read public (is_active) | 3.1 |
@@ -479,10 +482,69 @@ where tablename in ('examinations', 'risk_factors', 'examination_recommendations
 
 Відкат: кроки 1–4 оборотні (drop нових таблиць і колонок, повернення політик). Крок 5 – ні.
 
+### 6.8 Пакет 2, крок 1 – набори за системами організму. Нічого не ламає
+
+Норма: `docs/ux/specs/2026-11-my-plan.md` v0.8.2 §8 (поля затверджує Норматив, 22.11.2026), `docs/ux/specs/2026-10-age-page-zones.md` v0.9.3 §4.1. Файл міграції: `supabase/migrations/20261122_body_system_sets.sql`. У базі міграція не запущена: запуск – після «так» Ігоря на PR. Наповнює Дует (рецензенти: Балан – жіночі набори, Мельник – чоловічі). На сайті після міграції нічого не змінюється: таблиці порожні, нічого їх не читає.
+
+```sql
+create table public.body_systems (
+  code text primary key check (code ~ '^[a-z0-9-]+$'),                    -- cardio, reproductive, endocrine…
+  name_ua text not null check (char_length(name_ua) <= 40),
+  purpose_ua text check (char_length(purpose_ua) <= 80),
+  gender_scope text not null default 'any' check (gender_scope in ('any', 'female', 'male')),
+  sort_order integer not null default 0,
+  is_active boolean not null default true,
+  created_at timestamptz not null default now()
+);
+
+create table public.system_sets (
+  id uuid primary key default gen_random_uuid(),
+  system_code text not null references public.body_systems(code) on update cascade,
+  level text not null check (level in ('base', 'extended')),
+  gender_scope text not null default 'any' check (gender_scope in ('any', 'female', 'male')),
+  min_age smallint check (min_age between 0 and 120),                      -- порожньо – без межі
+  max_age smallint check (max_age between 0 and 120),
+  rationale_type text check (rationale_type in ('guideline', 'know_your_norm', 'doctor')),
+  rationale_ua text check (char_length(rationale_ua) <= 160),
+  source_ref text,
+  reviewed_by text,
+  reviewed_at date,                                                        -- без дати набір не показується
+  approved_at date,                                                        -- погодження Ігоря; без дати не показується
+  is_active boolean not null default true,
+  created_at timestamptz not null default now(),
+  check (min_age is null or max_age is null or min_age <= max_age),
+  unique nulls not distinct (system_code, level, gender_scope, min_age, max_age)
+);
+
+create table public.system_set_items (
+  set_id uuid not null references public.system_sets(id) on delete cascade,
+  examination_slug text not null references public.examinations(slug) on update cascade on delete cascade,
+  purpose_label_ua text check (char_length(purpose_label_ua) <= 60),       -- «оцінка функції печінки»
+  sort_order integer not null default 0,
+  primary key (set_id, examination_slug)
+);
+create index system_set_items_exam_idx on public.system_set_items (examination_slug);
+```
+
+Розширений набір містить усі свої дослідження, разом з базовими (базові в нього повторюються).
+
+RLS (увімкнено на всіх трьох; політик insert/update немає, запис – лише Table Editor і міграції):
+
+- `body_systems` – select де `is_active`;
+- `system_sets` – select де `is_active and reviewed_at is not null and approved_at is not null`;
+- `system_set_items` – select лише для наборів, які видно (та сама умова через `exists` по `system_sets`).
+
+**Склад програми за системами.** Нової схеми немає. Склад – `checkup_programs.composition`: масиви `analyses`, `diagnostics`, `consultations` (запасний шлях `parseStoredComposition`, лише коли `program_services` програми порожні і є ключ `visits`). Позиція масиву – або рядок (як було), або об'єкт `{"name": "…", "system_code": "cardio", "purpose": "…"}`; в одному записі можуть бути обидва види. `system_code` і `purpose` необов'язкові. Позиція без `system_code` (рядок або об'єкт без нього) – група «Загальне обстеження» (`GENERAL_EXAMINATION_LABEL` у `lib/programs/composition.ts`). Запис, де позиція – не рядок і не об'єкт з `name`, або `system_code`/`purpose` не рядок – не у форматі: запасний шлях не вмикається. Поки показ групами не зроблено (наступний крок), вигляд «Що входить» не змінюється: назви виводяться як раніше.
+
+Перевірка після запуску: `select count(*) from system_sets;` – 0; анонімним ключем `body_systems`, `system_sets`, `system_set_items` повертають порожній список.
+
+Відкат (оборотний, таблиці порожні): `drop table public.system_set_items, public.system_sets, public.body_systems;`
+
 ---
 
 ## 7. Історія
 
+- 2.3 · 22.11.2026 – пакет 2, крок 1 (§6.8): міграція `body_system_sets` (`body_systems`, `system_sets`, `system_set_items`, RLS, у базі ще не запущена); позиція `checkup_programs.composition` може бути об'єктом `{name, system_code, purpose}`, `parseStoredComposition` приймає обидва види.
 - 2.2 · 17.11.2026 – міграції `turkey_currency_details`, `turkey_seed_1_clinics_branches`, `turkey_seed_2_programs_{acibadem,anadolu,liv}` (TURKEY-MIGRATION.md v0.6, розділ 2): колонки `checkup_programs.currency` (NOT NULL DEFAULT 'UAH', CHECK UAH/USD/EUR; 137 наявних рядків отримали UAH) і `details` (jsonb); 3 клініки, 2 філії, 19 програм USD. Live-лічильники в розділі 1 оновлено (programs 156, clinics 42, branches 21).
 - 2.1.1 · 05.11.2026 – §6.2, «Додати дослідження»: обстеження з порожнім `min_age` не показується (my-plan v0.5 §6, рішення Ігоря 05.11).
 - 2.1 · 04.11.2026 – крок 2 A9 у новій редакції під `docs/ux/specs/2026-11-my-plan.md` v0.2: `examinations` з полями картки (min_age, purpose_ua, rationale_type, rationale_ua, source_ref, harm_ua, harm_reviewed_at, included_in_slug, offer_as_extra); нова `risk_factors`; `examination_recommendations` – `platform_program_slug`, `risk_factor_code`, `locked` замість `platform_program_id` і `condition_code`; `clinic_service_examinations.in_price` – правило ціни; правила Базового плану, «Додати дослідження», ризик-флоу, ціни і заявки; крок 6 – наповнює Ігор. Чернетка 2.1 від 30.09 у dev не потрапила, її зміни тут не відтворено.
