@@ -55,12 +55,7 @@ export const planEvents = {
 
 /** Події списку програм вікової сторінки (age-page-zones v0.9.2 §8). Без GA подія нікуди не йде.
  *  catalog_link_click – клік по посиланню на каталог хабу статі; спрацьовує лише коли посилання увімкнене.
- *  Запис з картки – entry_point «card» (у ліді – суфікс source_cta). */
-export type ProgramEntryPoint = 'card' | 'sticky';
+ */
 export const programEvents = {
   catalogLinkClick: (p: { filter_age: string; programs_count: number }) => track('catalog_link_click', p),
-  // Лишається, поки ProgramPicker і режим agePrograms у StickyMobileCta ще є в репозиторії (вікові сторінки їх не монтують,
-  // події не спрацьовують). Видалити разом із ними – питання Нормативу.
-  pickerOpen: (p: { count: number; entry_point: ProgramEntryPoint }) => track('program_picker_open', p),
-  pick: (p: { program: string; clinic: string; position: number; entry_point: ProgramEntryPoint }) => track('program_pick', p),
 };

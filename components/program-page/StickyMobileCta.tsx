@@ -3,9 +3,8 @@
 import { useEffect, useState } from 'react';
 import { BookCta } from '@/components/city/BookingFlow';
 import { buttonClass } from '@/components/frame/Button';
-import { openProgramPicker } from '@/components/city/ProgramPicker';
 import { formatPrice, type Currency } from '@/lib/format/price';
-import { fillLabel, mergeLabels } from '@/lib/format/labels';
+import { mergeLabels } from '@/lib/format/labels';
 
 // Блок 1c обох MD (5a-female-40-50/vid-50-kharkiv.md): постійний CTA на мобільному,
 // зʼявляється після прокрутки повз Hero. components-map-FIXED.md §16 не містить
@@ -14,20 +13,12 @@ import { fillLabel, mergeLabels } from '@/lib/format/labels';
 
 /** Словник підписів (ui-kit v1.16.1 §6.14 п. 1; components-map v7.5 §30.1). Дефолти – українські. */
 export interface StickyMobileCtaLabels {
-  pickProgram: string;
-  /** {price} – ціна з валютою, напр. «10 460 грн». */
-  pickProgramFrom: string;
   book: string;
-  /** {price} – ціна з валютою. */
-  bookWithPrice: string;
   browse: string;
 }
 
 export const STICKY_MOBILE_CTA_LABELS: StickyMobileCtaLabels = {
-  pickProgram: 'Обрати програму',
-  pickProgramFrom: 'Обрати програму · від {price}',
   book: 'Записатися',
-  bookWithPrice: 'Записатися · {price}',
   browse: 'Переглянути',
 };
 
@@ -54,19 +45,13 @@ export interface StickyMobileCtaProps {
   /** Хаб діагнозу (рішення Ігоря 21.10, 3А): лише кнопка-перехід у зону лікарів (`zoneId`) на всю ширину,
    *  без назви і ціни; у зоні панель схована (у картках лікарів – свої кнопки запису). Кнопка – structural (не запис). */
   browseOnly?: boolean;
-  /** Вікова сторінка (age-page-zones v0.7.1 §6; ui-kit v1.14 §6.1, §6.11). Одна crimson-кнопка на екрані.
-   *  2+ програми – «Обрати програму · від {min} грн» → список програм (ProgramPicker); видно після першого екрана,
-   *  крім блоку «Мій план» (`hideWhenVisibleId`: 'plan-zone' – там панель плану).
-   *  Одна програма – «Записатися · {ціна} грн» → форма запису; схована, поки кнопку картки видно ('program-buy').
-   *  Панель не змінює програму під час прокрутки. Desktop (від 1024px) – панелі немає, плаваючий блок праворуч. */
-  agePrograms?: { count: number; minPrice: number | null };
   /** Підписи: передаються лише змінені ключі, решта – українські дефолти. Напис кнопки до зони програми – `labels.browse`. */
   labels?: Partial<StickyMobileCtaLabels>;
   /** Валюта цін у панелі, дефолт 'UAH'. */
   currency?: Currency;
 }
 
-export default function StickyMobileCta({ programNameShort, price, programSlug, sourceCta, revealAfterId, look = 'default', zoneId, hideWhenVisibleId, browseOnly = false, agePrograms, labels, currency = 'UAH' }: StickyMobileCtaProps) {
+export default function StickyMobileCta({ programNameShort, price, programSlug, sourceCta, revealAfterId, look = 'default', zoneId, hideWhenVisibleId, browseOnly = false, labels, currency = 'UAH' }: StickyMobileCtaProps) {
   const L = mergeLabels(STICKY_MOBILE_CTA_LABELS, labels);
   const [visible, setVisible] = useState(false);
   const [inZone, setInZone] = useState(!zoneId);
@@ -91,31 +76,6 @@ export default function StickyMobileCta({ programNameShort, price, programSlug, 
   }, []);
 
   if (!visible) return null;
-
-  if (agePrograms) {
-    if (agePrograms.count < 1) return null;
-    const shell =
-      'fixed bottom-0 left-0 right-0 z-[150] lg:hidden bg-white border-t border-gray-200 px-5 pt-3 pb-[calc(12px+env(safe-area-inset-bottom,0px))]';
-    return (
-      <div className={shell} style={{ boxShadow: '0 -8px 24px rgba(0,0,0,0.04)' }}>
-        {agePrograms.count > 1 ? (
-          <button
-            type="button"
-            onClick={() => openProgramPicker(agePrograms.count)}
-            className={buttonClass({ variant: 'booking', size: 'lg', fullWidth: true })}
-          >
-            {agePrograms.minPrice ? fillLabel(L.pickProgramFrom, { price: formatPrice(agePrograms.minPrice, currency) }) : L.pickProgram}
-          </button>
-        ) : (
-          <BookCta
-            programSlug={programSlug ?? ''}
-            sourceCta={sourceCta ?? ''}
-            label={typeof price === 'number' ? fillLabel(L.bookWithPrice, { price: formatPrice(price, currency) }) : L.book}
-          />
-        )}
-      </div>
-    );
-  }
 
   if (browseOnly) {
     if (inZone || !zoneId) return null;
