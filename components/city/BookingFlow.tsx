@@ -1,6 +1,7 @@
 'use client';
 
 import { buttonClass } from '@/components/frame/Button';
+import { programEvents } from '@/lib/ga4';
 
 import { useEffect, useState } from 'react';
 import type { CheckupProgram } from '@/lib/types';
@@ -186,6 +187,19 @@ export function BookCta({
     >
       {label}
     </button>
+  );
+}
+
+/** Посилання на каталог хабу статі (age-page-zones v0.9.2 §2.4). Подія catalog_link_click – лише коли посилання виведене. */
+export function CatalogLink({ href, label, filterAge, programsCount }: { href: string; label: string; filterAge: string; programsCount: number }) {
+  return (
+    <a
+      href={href}
+      className="text-[15px] font-semibold text-link hover:underline"
+      onClick={() => programEvents.catalogLinkClick({ filter_age: filterAge, programs_count: programsCount })}
+    >
+      {label}
+    </a>
   );
 }
 
