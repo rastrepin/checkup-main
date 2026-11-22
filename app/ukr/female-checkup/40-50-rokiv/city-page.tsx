@@ -4,13 +4,11 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { fetchClinicOffers, type ClinicOffer, type OfferBranch, type OfferClinic } from '@/lib/programs/clinic-offer';
 import { priceDateNotice } from '@/lib/programs/type5a';
-import StickyMobileCta from '@/components/program-page/StickyMobileCta';
 import CrossAgeNav from '@/components/shared/CrossAgeNav';
 import { ageClinicSlugsFor, getCheckupCity, type CheckupCity } from '@/lib/cities/checkup-cities';
 import InPageNav, { type InPageNavItem } from '@/components/shared/InPageNav';
 import Header from '@/components/frame/Header'
 import Hero from '@/components/frame/Hero'
-import TwoWays from '@/components/frame/TwoWays'
 import ZoneHeader from '@/components/frame/ZoneHeader'
 import ClampMobile from '@/components/frame/ClampMobile'
 import Accordion from '@/components/frame/Accordion'
@@ -37,8 +35,9 @@ import {
 } from '@/lib/programs/age-page-shared';
 import MyPlan from '@/components/plan/MyPlan';
 import SiteFooter from '@/components/frame/SiteFooter';
-import AgeProgramsZone, { pickerPrograms, visitsMeta, type AgeZoneCard } from '@/components/city/AgeProgramsZone';
-import ProgramPicker from '@/components/city/ProgramPicker';
+import AgeProgramsZone, { MAX_AGE_CARDS, visitsMeta, type AgeZoneCard } from '@/components/city/AgeProgramsZone';
+import { clinicZoneTexts } from '@/lib/content/age-page-texts';
+import { fetchMyPlan } from '@/lib/plan/data';
 
 // Вікова сторінка міста – SPRINT-KHARKIV-v0, тип 5a. Шаблон для всіх міст з lib/cities/checkup-cities.ts (конвеєр міграції, 30.10.2026).
 // Контент: content/kharkiv/female-40-50-rokiv.md дослівно.
@@ -253,7 +252,7 @@ export default async function FemaleAge4050CityPage({ citySlug }: { citySlug: st
       firstOfClinic: oi === 0,
       key: `${d.clinic?.slug ?? 'clinic'}-${o?.program.slug ?? 'none'}`,
     })),
-  );
+  ).slice(0, MAX_AGE_CARDS);
   const multiClinic = clinicsData.length > 1;
 
   const showPrograms = Boolean(program && clinic && composition);
@@ -264,7 +263,11 @@ export default async function FemaleAge4050CityPage({ citySlug }: { citySlug: st
       ? [{ key: c.key, program: c.program, clinic: c.clinic, branches: c.branches, composition: c.composition, meta: c.cardMeta, notice: c.notice }]
       : [],
   );
-  const zoneMin = showPrograms ? minPrice(clinicsData.flatMap((d) => d.offers)) : null;
+  // Тексти зони програм – ключ 6c_clinic_zone у .md; ключа немає – тексту немає (lib/content/age-page-texts.ts).
+  const zoneTexts = clinicZoneTexts(city, 'female', '40-50-rokiv', zoneCards.length);
+  // Закріплена панель вікової сторінки – лише панель плану (MyPlanClient): відступ під футером, коли вона є на сторінці.
+  const planData = await fetchMyPlan('female', '40-50-rokiv', city);
+  const planPanel = Boolean(planData && planData.clinics.length > 0);
 
   const navItems: InPageNavItem[] = [
     { id: ID.list, label: 'Що перевірити' },
@@ -397,11 +400,8 @@ export default async function FemaleAge4050CityPage({ citySlug }: { citySlug: st
           </div>
         </div>
 
-        {/* 3а. «Два способи пройти чекап» (age-page-zones v0.6 §2.3): картки-якорі на #plan і #programs; програм немає – секції немає.
-            {min} – minPrice(offers), та сама функція, що рахує ціну в meta. */}
-        <TwoWays mdName="female-40-50-rokiv" city={city} minPrice={showPrograms ? minPrice(clinicsData.flatMap((d) => d.offers)) : null} />
 
-        {/* «Мій план обстеження» – docs/ux/specs/2026-11-my-plan.md v0.7 §0: після «Два способи», перед програмами клінік; дані з бази, блоку немає без Базового плану. */}
+        {/* «Мій план обстеження» – docs/ux/specs/2026-11-my-plan.md v0.7 §0: перед програмами клінік (age-page-zones v0.9.2 §2: «Які обстеження» → «Мій план» → програми); дані з бази, блоку немає без Базового плану. */}
         <MyPlan gender="female" seg="40-50-rokiv" city={city} />
 
         {/* ЗОНА ПРОГРАМИ (макет v2, 21.10; рішення Ігоря 1А 2А): локація – один раз на клініку, над її програмами;
@@ -410,17 +410,19 @@ export default async function FemaleAge4050CityPage({ citySlug }: { citySlug: st
         {/* Зона програм (age-page-zones v0.6 §2, рядок 6): H2 «Програми клінік в {місті}», одна клініка – «Програма {клініка}».
             #programs-zone – межа зони для закріпленої панелі (§6). */}
         <div id="programs-zone">
-        {program && clinic && (
+        {program && clinic && (zoneTexts.h2 ? (
           <ZoneHeader
             id={ID.programs}
             eyebrow={multiClinic ? 'Програми клінік' : 'Програма клініки'}
-            title={multiClinic ? `Програми клінік в ${city.loc}` : `Програма ${clinic.name}`}
-            sub="Склад програми, її лікарі й ціна."
+            title={zoneTexts.h2}
+            sub={zoneTexts.sub ?? undefined}
           />
-        )}
+        ) : (
+          <div id={ID.programs} className="scroll-mt-16" />
+        ))}
         <div className="bg-[var(--zone-program-bg)]">
           <div className="max-w-[1200px] mx-auto px-5 sm:px-6 lg:px-14 pt-8 lg:pt-12 pb-[var(--space-section)]">
-            <AgeProgramsZone cards={zoneCards} cityLoc={city.loc} sourceCta={SOURCE_CTA} minPrice={zoneMin}>
+            <AgeProgramsZone cards={zoneCards} cityLoc={city.loc} sourceCta={SOURCE_CTA} nature={zoneTexts.nature}>
               {zoneCards.length === 0 && (
                 <p className={TEXT}>Дані про програму клініки зараз недоступні. Перелік обстежень із цієї сторінки можна пройти в будь-якій клініці.</p>
               )}
@@ -564,7 +566,7 @@ export default async function FemaleAge4050CityPage({ citySlug }: { citySlug: st
           </div>
         </section>
       </main>
-      <SiteFooter city={city.slug} stickyPad={Boolean(program && clinic && composition)} />
+      <SiteFooter city={city.slug} stickyPad={planPanel} />
 
       {program && clinic && composition && (
         <BookingFlow
@@ -576,19 +578,6 @@ export default async function FemaleAge4050CityPage({ citySlug }: { citySlug: st
           programsComposition={{ [program.slug]: composition.counts }}
         />
       )}
-      {/* Закріплена панель (age-page-zones v0.7.1 §6): 2+ програми – «Обрати програму · від {min} грн» → список; одна – «Записатися · {ціна} грн».
-          Одна програма – панель схована, поки кнопку картки видно; у «Мій план» – панель плану. */}
-      {zoneCards.length > 0 && (
-        <StickyMobileCta
-          agePrograms={{ count: zoneCards.length, minPrice: zoneMin }}
-          price={zoneCards[0].program.price_discount}
-          programSlug={zoneCards[0].program.slug}
-          sourceCta={`${SOURCE_CTA}_sticky`}
-          revealAfterId="hero"
-          hideWhenVisibleId={zoneCards.length > 1 ? ['plan-zone'] : ['program-buy', 'plan-zone']}
-        />
-      )}
-      {zoneCards.length > 1 && <ProgramPicker programs={pickerPrograms(zoneCards)} sourceCta={SOURCE_CTA} />}
       {/* Інші клініки сторінки: модал запису на клініку, відкривається лише для її програм (BookingFlow). */}
       {clinicsData.slice(1).map((d) =>
         d.clinic && d.offers.length > 0 ? (

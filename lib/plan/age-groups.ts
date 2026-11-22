@@ -13,13 +13,15 @@ export interface AgeGroup {
   maxAge: number | null;
   /** Вік у тексті «Для {група}…»: «до 30 років». */
   label: string;
+  /** Група в родовому після «жінок / чоловіків» (плейсхолдер {groupGen} у .md): «до 30 років», «після 50 років». */
+  gen: string;
 }
 
 export const AGE_GROUPS: Record<AgeSegment, AgeGroup> = {
-  'do-30-rokiv': { code: 'do-30', minAge: 18, maxAge: 29, label: 'до 30 років' },
-  'do-40-rokiv': { code: '30-40', minAge: 30, maxAge: 39, label: '30–40 років' },
-  '40-50-rokiv': { code: '40-50', minAge: 40, maxAge: 49, label: '40–50 років' },
-  'vid-50-rokiv': { code: 'vid-50', minAge: 50, maxAge: null, label: 'від 50 років' },
+  'do-30-rokiv': { code: 'do-30', minAge: 18, maxAge: 29, label: 'до 30 років', gen: 'до 30 років' },
+  'do-40-rokiv': { code: '30-40', minAge: 30, maxAge: 39, label: '30–40 років', gen: '30–40 років' },
+  '40-50-rokiv': { code: '40-50', minAge: 40, maxAge: 49, label: '40–50 років', gen: '40–50 років' },
+  'vid-50-rokiv': { code: 'vid-50', minAge: 50, maxAge: null, label: 'від 50 років', gen: 'після 50 років' },
 };
 
 /** platform_programs.slug групи: female-checkup-30-40. */
@@ -32,4 +34,12 @@ export function ageOverlaps(g: AgeGroup, min: number | null, max: number | null)
   const lo = min ?? 0;
   const hi = max ?? 200;
   return lo <= (g.maxAge ?? 200) && hi >= g.minAge;
+}
+
+/** {genderGen} у .md: стать у родовому. */
+export const GENDER_GEN: Record<PlanGender, string> = { female: 'жінок', male: 'чоловіків' };
+
+/** {groupGen} у .md: «жінок до 30 років», «чоловіків після 50 років». */
+export function groupGen(gender: PlanGender, seg: AgeSegment): string {
+  return `${GENDER_GEN[gender]} ${AGE_GROUPS[seg].gen}`;
 }

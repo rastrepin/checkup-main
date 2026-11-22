@@ -31,7 +31,13 @@ function notPerformed(c: PlanClinic | null, slug: string) {
   return c?.prices[slug] === 'none';
 }
 
-export default function MyPlanClient({ data, header }: { data: MyPlanData; header?: ReactNode }) {
+/** Тексти з .md (4p_plan): null – ключа немає, тексту немає. */
+export interface MyPlanTexts {
+  saveNote: string | null;
+  disclaimer: string | null;
+}
+
+export default function MyPlanClient({ data, header, texts }: { data: MyPlanData; header?: ReactNode; texts?: MyPlanTexts }) {
   const [state, setState] = useState<PlanUserState>(EMPTY_STATE);
   const [riskOpen, setRiskOpen] = useState(false);
   const [flipped, setFlipped] = useState<string | null>(null);
@@ -43,8 +49,11 @@ export default function MyPlanClient({ data, header }: { data: MyPlanData; heade
   const summaryRef = useRef<HTMLDivElement>(null);
   const clinicRadio = useRef<HTMLInputElement>(null);
   const clinicSet = useRef<HTMLFieldSetElement>(null);
-  const [inZone, setInZone] = useState(false);
+  // Панель плану (age-page-zones v0.9.2 §6): від H2 «Мій план» до кінця сторінки; схована, поки видно підсумок плану
+  // з кнопкою запису або crimson «Записатися» в картці (одна програма).
+  const [reached, setReached] = useState(false);
   const [summaryOn, setSummaryOn] = useState(false);
+  const [cardBuyOn, setCardBuyOn] = useState(false);
   const [flash, setFlash] = useState(false);
   const [sideTop, setSideTop] = useState(24);
 
@@ -92,18 +101,27 @@ export default function MyPlanClient({ data, header }: { data: MyPlanData; heade
     return { total, date, ids: [...ids], missing, items: slugs.length - missing.length };
   }, [active, base, exams, state.added, state.dropped]);
 
-  // Панель плану (§8б): блок «Мій план» (#plan-zone, від H2 до кінця ризик-флоу) на екрані, підсумок – поза екраном.
+  // Панель плану: H2 «Мій план» (немає H2 – початок блоку) на екрані або вже пройдений; підсумок – на екрані чи ні;
+  // кнопка запису в картці програми видна лише коли програма на сторінці одна (при 2+ вона secondary).
   useEffect(() => {
-    const zone = document.getElementById('plan-zone');
+    const start = document.getElementById('plan-h2') ?? document.getElementById('plan-zone');
     const summary = summaryRef.current;
-    if (!zone || !summary || typeof IntersectionObserver === 'undefined') return;
-    const zo = new IntersectionObserver(([e]) => setInZone(e.isIntersecting));
+    if (!start || !summary || typeof IntersectionObserver === 'undefined') return;
     const so = new IntersectionObserver(([e]) => setSummaryOn(e.isIntersecting));
-    zo.observe(zone);
+    const ho = new IntersectionObserver(([e]) => setReached(e.isIntersecting || e.boundingClientRect.top < 0));
+    ho.observe(start);
     so.observe(summary);
+    const buys = Array.from(document.querySelectorAll('[id^="program-buy"]'));
+    const visible = new Set<Element>();
+    const bo = new IntersectionObserver((entries) => {
+      entries.forEach((e) => (e.isIntersecting ? visible.add(e.target) : visible.delete(e.target)));
+      setCardBuyOn(buys.length === 1 && visible.size > 0);
+    });
+    buys.forEach((b) => bo.observe(b));
     return () => {
-      zo.disconnect();
+      ho.disconnect();
       so.disconnect();
+      bo.disconnect();
     };
   }, []);
 
@@ -227,7 +245,7 @@ export default function MyPlanClient({ data, header }: { data: MyPlanData; heade
   const textBtn =
     'shrink-0 inline-flex items-center min-h-11 px-1 text-[14px] font-semibold text-link underline decoration-1 underline-offset-[3px] hover:decoration-2 rounded-[var(--radius-sm)]';
 
-  const showPanel = clinics.length > 0 && inZone && !summaryOn;
+  const showPanel = clinics.length > 0 && reached && !summaryOn && !cardBuyOn;
 
   return (
     <>
@@ -388,7 +406,8 @@ export default function MyPlanClient({ data, header }: { data: MyPlanData; heade
           <p role="status" className={`text-[14px] font-semibold text-ink ${status ? 'mt-2' : ''}`}>
             {status}
           </p>
-          <p className="mt-3 text-[13px] leading-relaxed text-text-secondary">{PLAN_T.disclaimer}</p>
+          {texts?.saveNote && <p className="mt-3 text-[13px] leading-relaxed text-text-secondary">{texts.saveNote}</p>}
+          {texts?.disclaimer && <p className="mt-3 text-[13px] leading-relaxed text-text-secondary">{texts.disclaimer}</p>}
         </div>
 
       {/* 7. «Додати дослідження» – на desktop картки по 2 в ряд у лівій колонці */}
@@ -477,8 +496,9 @@ export default function MyPlanClient({ data, header }: { data: MyPlanData; heade
       </div>
       </div>
 
-      {/* Панель плану mobile (§8б): лише коли блок на екрані, а підсумок – ні; з панеллю сторінки разом не буває
-          (StickyMobileCta схована, поки #plan-zone на екрані). Desktop – сайдбар, панелі немає. */}
+      {/* Панель плану mobile (age-page-zones v0.9.2 §6, my-plan §8б): єдина закріплена панель вікової сторінки.
+          Видно від H2 «Мій план» до кінця сторінки; схована, поки на екрані підсумок плану з кнопкою запису або
+          crimson «Записатися» в картці (одна програма). Вище H2 панелі немає. Desktop – сайдбар, панелі немає. */}
       {clinics.length > 0 && (
         <div
           className={`fixed bottom-0 inset-x-0 z-[150] md:hidden bg-white border-t border-[var(--border)] px-5 pt-3 pb-[calc(12px+env(safe-area-inset-bottom,0px))] flex items-center justify-between gap-3 ${
