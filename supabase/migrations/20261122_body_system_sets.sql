@@ -23,10 +23,6 @@ create table public.system_sets (
     check (gender_scope in ('any', 'female', 'male')),
   min_age smallint check (min_age between 0 and 120),                      -- порожньо – без межі
   max_age smallint check (max_age between 0 and 120),
-  rationale_type text
-    check (rationale_type in ('guideline', 'know_your_norm', 'doctor')),
-  rationale_ua text check (char_length(rationale_ua) <= 160),
-  source_ref text,                                                         -- назва джерела
   reviewed_by text,                                                        -- рецензент
   reviewed_at date,                                                        -- без дати набір не показується
   approved_at date,                                                        -- погодження Ігоря; без дати не показується

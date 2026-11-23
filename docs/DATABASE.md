@@ -484,7 +484,7 @@ where tablename in ('examinations', 'risk_factors', 'examination_recommendations
 
 ### 6.8 Пакет 2, крок 1 – набори за системами організму. Нічого не ламає
 
-Норма: `docs/ux/specs/2026-11-my-plan.md` v0.8.2 §8 (поля затверджує Норматив, 22.11.2026), `docs/ux/specs/2026-10-age-page-zones.md` v0.9.3 §4.1. Файл міграції: `supabase/migrations/20261122_body_system_sets.sql`. У базі міграція не запущена: запуск – після «так» Ігоря на PR. Наповнює Дует (рецензенти: Балан – жіночі набори, Мельник – чоловічі). На сайті після міграції нічого не змінюється: таблиці порожні, нічого їх не читає.
+Норма: `docs/ux/specs/2026-11-my-plan.md` v0.8.3 §8 (поля затверджує Норматив, 22.11.2026), `docs/ux/specs/2026-10-age-page-zones.md` v0.9.3 §4.1. Файл міграції: `supabase/migrations/20261122_body_system_sets.sql`. У базі міграція не запущена: запуск – після «так» Ігоря на PR. Наповнює Дует (рецензенти: Балан – жіночі набори, Мельник – чоловічі). На сайті після міграції нічого не змінюється: таблиці порожні, нічого їх не читає.
 
 ```sql
 create table public.body_systems (
@@ -504,9 +504,6 @@ create table public.system_sets (
   gender_scope text not null default 'any' check (gender_scope in ('any', 'female', 'male')),
   min_age smallint check (min_age between 0 and 120),                      -- порожньо – без межі
   max_age smallint check (max_age between 0 and 120),
-  rationale_type text check (rationale_type in ('guideline', 'know_your_norm', 'doctor')),
-  rationale_ua text check (char_length(rationale_ua) <= 160),
-  source_ref text,
   reviewed_by text,
   reviewed_at date,                                                        -- без дати набір не показується
   approved_at date,                                                        -- погодження Ігоря; без дати не показується
@@ -528,6 +525,8 @@ create index system_set_items_exam_idx on public.system_set_items (examination_s
 
 Розширений набір містить усі свої дослідження, разом з базовими (базові в нього повторюються).
 
+Полів обґрунтування (`rationale_type`, `rationale_ua`, `source_ref`) у наборів немає: набір – опція на розсуд людини, не рекомендація сервісу (рішення Ігоря 22.11, my-plan v0.8.3). Позначка шкоди – на рівні обстеження (`examinations.harm_ua`, `harm_reviewed_at`).
+
 RLS (увімкнено на всіх трьох; політик insert/update немає, запис – лише Table Editor і міграції):
 
 - `body_systems` – select де `is_active`;
@@ -544,7 +543,7 @@ RLS (увімкнено на всіх трьох; політик insert/update �
 
 ## 7. Історія
 
-- 2.3 · 22.11.2026 – пакет 2, крок 1 (§6.8): міграція `body_system_sets` (`body_systems`, `system_sets`, `system_set_items`, RLS, у базі ще не запущена); позиція `checkup_programs.composition` може бути об'єктом `{name, system_code, purpose}`, `parseStoredComposition` приймає обидва види.
+- 2.3 · 22.11.2026 – пакет 2, крок 1 (§6.8, my-plan v0.8.3 – у наборів немає полів обґрунтування): міграція `body_system_sets` (`body_systems`, `system_sets`, `system_set_items`, RLS, у базі ще не запущена); позиція `checkup_programs.composition` може бути об'єктом `{name, system_code, purpose}`, `parseStoredComposition` приймає обидва види.
 - 2.2 · 17.11.2026 – міграції `turkey_currency_details`, `turkey_seed_1_clinics_branches`, `turkey_seed_2_programs_{acibadem,anadolu,liv}` (TURKEY-MIGRATION.md v0.6, розділ 2): колонки `checkup_programs.currency` (NOT NULL DEFAULT 'UAH', CHECK UAH/USD/EUR; 137 наявних рядків отримали UAH) і `details` (jsonb); 3 клініки, 2 філії, 19 програм USD. Live-лічильники в розділі 1 оновлено (programs 156, clinics 42, branches 21).
 - 2.1.1 · 05.11.2026 – §6.2, «Додати дослідження»: обстеження з порожнім `min_age` не показується (my-plan v0.5 §6, рішення Ігоря 05.11).
 - 2.1 · 04.11.2026 – крок 2 A9 у новій редакції під `docs/ux/specs/2026-11-my-plan.md` v0.2: `examinations` з полями картки (min_age, purpose_ua, rationale_type, rationale_ua, source_ref, harm_ua, harm_reviewed_at, included_in_slug, offer_as_extra); нова `risk_factors`; `examination_recommendations` – `platform_program_slug`, `risk_factor_code`, `locked` замість `platform_program_id` і `condition_code`; `clinic_service_examinations.in_price` – правило ціни; правила Базового плану, «Додати дослідження», ризик-флоу, ціни і заявки; крок 6 – наповнює Ігор. Чернетка 2.1 від 30.09 у dev не потрапила, її зміни тут не відтворено.
