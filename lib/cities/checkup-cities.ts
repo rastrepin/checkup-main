@@ -98,7 +98,16 @@ export const CHECKUP_CITIES: Record<string, CheckupCity> = {
     clinicSlug: 'onclinic-dnipro',
     clinics: [{ slug: 'onclinic-dnipro', tildaPath: '/ukr/onclinic-dnipro', shortName: 'ОН Клінік' }],
     otherServices: {},
-    reviewer: null,
+    reviewer: {
+      // Рецензент жіночих вікових сторінок – рішення Ігоря 24.11.2026 («рецензенти ті ж самі», як на хабах).
+      // Дані – з lib/cities/hub-reviewers.ts (BALAN). Чоловічі вікові сторінки рецензента не мають: шаблон його не виводить.
+      name: 'Балан Анна Вікторівна',
+      jobTitle: 'лікар акушер-гінеколог',
+      org: 'КНП «КМЦРПМ»',
+      category: '',
+      experience: '',
+      reviewDate: '',
+    },
     contentDir: 'city-template',
     ruSlug: null,
   },
@@ -148,22 +157,28 @@ export const CHECKUP_CITIES: Record<string, CheckupCity> = {
     // /rovno на Tilda – 404 (02.11.2026).
     ruSlug: null,
   },
-  // Полтава: ОН Клінік Полтава (onclinic-poltava) і ЦМСД (cmsd-poltava) – варіант Б (рішення Ігоря 15.11.2026).
-  // «100% життя» (100zhyttya-poltava) є в базі, але поки не додаємо (рішення Ігоря 15.11.2026).
+  // Полтава: лише ОН Клінік Полтава (onclinic-poltava) – запуск без ЦМСД (рішення Ігоря 22.11.2026).
+  // ЦМСД (cmsd-poltava) і «100% життя» (100zhyttya-poltava) є в базі, але на сторінках міста не показуються.
   poltava: {
     slug: 'poltava',
     name: 'Полтава',
     loc: 'Полтаві',
     inCity: 'у Полтаві',
     clinicSlug: 'onclinic-poltava',
-    // Вікові сторінки Полтави показують програми обох клінік (рішення Ігоря 15.11.2026, відповідь «А»).
-    ageClinicSlugs: ['onclinic-poltava', 'cmsd-poltava'],
     clinics: [
       { slug: 'onclinic-poltava', tildaPath: '/ukr/onclinic-poltava', shortName: 'ОН Клінік' },
-      { slug: 'cmsd-poltava', tildaPath: '/ukr/cmsd-poltava', shortName: 'ЦМСД' },
     ],
     otherServices: {},
-    reviewer: null,
+    reviewer: {
+      // Рецензент жіночих вікових сторінок – рішення Ігоря 24.11.2026 («рецензенти ті ж самі», як на хабах).
+      // Дані – з lib/cities/hub-reviewers.ts (BALAN). Чоловічі вікові сторінки рецензента не мають: шаблон його не виводить.
+      name: 'Балан Анна Вікторівна',
+      jobTitle: 'лікар акушер-гінеколог',
+      org: 'КНП «КМЦРПМ»',
+      category: '',
+      experience: '',
+      reviewDate: '',
+    },
     contentDir: 'city-template',
     ruSlug: 'poltava',
   },

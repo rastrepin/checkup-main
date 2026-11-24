@@ -22,7 +22,15 @@ export interface CompositionServiceItem {
   name: string;
   serviceType: CompositionServiceType;
   visitNumber: number;
+  /** Система організму позиції (body_systems.code) – лише для складу з checkup_programs.composition в об'єктному форматі.
+   *  null або немає – позиція «Загальне обстеження» (GENERAL_EXAMINATION_LABEL). Показ групами – наступний крок. */
+  systemCode?: string | null;
+  /** «Для чого» позиції (рядок картки), якщо запис його містить. */
+  purpose?: string | null;
 }
+
+/** Група позицій без system_code (age-page-zones §4.1). */
+export const GENERAL_EXAMINATION_LABEL = 'Загальне обстеження';
 
 export interface CompositionGroup {
   type: string;
@@ -327,31 +335,59 @@ const EMPTY: ProgramComposition = {
 // (масиви рядків і ключ visits). Старі записи Харкова (аналізи об'єктами з кодами, *_extra, note) під
 // формат не підпадають, тож сторінки Харкова рендеряться як раніше – через program_services.
 
+/** Позиція запису: рядок (як було) або об'єкт {"name": "…", "system_code": "cardio", "purpose": "…"}. */
+interface StoredItem {
+  name: string;
+  systemCode: string | null;
+  purpose: string | null;
+}
+
 interface StoredComposition {
-  consultations: string[];
-  diagnostics: string[];
-  analyses: string[];
+  consultations: StoredItem[];
+  diagnostics: StoredItem[];
+  analyses: StoredItem[];
   visits: number | null;
 }
 
-const isStringArray = (v: unknown): v is string[] => Array.isArray(v) && v.every((x) => typeof x === 'string');
+const trimmed = (v: unknown): string | null => (typeof v === 'string' && v.trim() ? v.trim() : null);
 
-/** Розбір checkup_programs.composition; null – запис не у форматі файлів міст. */
+/** Одна позиція: рядок або об'єкт з name; інше – запис не підходить (undefined). Порожнє ім'я – позиція відкидається (null). */
+function parseStoredItem(x: unknown): StoredItem | null | undefined {
+  if (typeof x === 'string') {
+    const name = x.trim();
+    return name ? { name, systemCode: null, purpose: null } : null;
+  }
+  if (!x || typeof x !== 'object' || Array.isArray(x)) return undefined;
+  const o = x as Record<string, unknown>;
+  if (typeof o.name !== 'string') return undefined;
+  if (o.system_code != null && typeof o.system_code !== 'string') return undefined;
+  if (o.purpose != null && typeof o.purpose !== 'string') return undefined;
+  const name = o.name.trim();
+  return name ? { name, systemCode: trimmed(o.system_code), purpose: trimmed(o.purpose) } : null;
+}
+
+function parseStoredItems(v: unknown): StoredItem[] | null {
+  if (!Array.isArray(v)) return null;
+  const out: StoredItem[] = [];
+  for (const x of v) {
+    const it = parseStoredItem(x);
+    if (it === undefined) return null;
+    if (it) out.push(it);
+  }
+  return out;
+}
+
+/** Розбір checkup_programs.composition; null – запис не у форматі файлів міст. Позиція масиву – рядок (як зараз)
+ *  або об'єкт {name, system_code?, purpose?} (my-plan v0.8.2 §8); обидва види можуть бути в одному записі. */
 export function parseStoredComposition(raw: unknown): StoredComposition | null {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
   const r = raw as Record<string, unknown>;
   if (!('visits' in r) || !(r.visits === null || typeof r.visits === 'number')) return null;
-  const consultations = r.consultations ?? [];
-  const diagnostics = r.diagnostics ?? [];
-  const analyses = r.analyses ?? [];
-  if (!isStringArray(consultations) || !isStringArray(diagnostics) || !isStringArray(analyses)) return null;
-  const clean = (a: string[]) => a.map((x) => x.trim()).filter(Boolean);
-  const out = {
-    consultations: clean(consultations),
-    diagnostics: clean(diagnostics),
-    analyses: clean(analyses),
-    visits: r.visits as number | null,
-  };
+  const consultations = parseStoredItems(r.consultations ?? []);
+  const diagnostics = parseStoredItems(r.diagnostics ?? []);
+  const analyses = parseStoredItems(r.analyses ?? []);
+  if (!consultations || !diagnostics || !analyses) return null;
+  const out = { consultations, diagnostics, analyses, visits: r.visits as number | null };
   if (out.consultations.length + out.diagnostics.length + out.analyses.length === 0) return null;
   return out;
 }
@@ -367,10 +403,18 @@ function namesAsIs(names: string[]): string {
  *  своїми назвами (без категорій за кодами -OH). Візит кожної позиції в записі не вказано, тому всі
  *  позиції – перший візит; кількість візитів – з поля visits. */
 function compositionFromStored(stored: StoredComposition): ProgramComposition {
+  const toItem = (it: StoredItem, serviceType: CompositionServiceType): CompositionServiceItem => ({
+    code: null,
+    name: it.name,
+    serviceType,
+    visitNumber: 1,
+    systemCode: it.systemCode,
+    purpose: it.purpose,
+  });
   const items: CompositionServiceItem[] = [
-    ...stored.consultations.map((name) => ({ code: null, name, serviceType: 'consultation' as const, visitNumber: 1 })),
-    ...stored.diagnostics.map((name) => ({ code: null, name, serviceType: 'instrumental' as const, visitNumber: 1 })),
-    ...stored.analyses.map((name) => ({ code: null, name, serviceType: 'lab' as const, visitNumber: 1 })),
+    ...stored.consultations.map((it) => toItem(it, 'consultation')),
+    ...stored.diagnostics.map((it) => toItem(it, 'instrumental')),
+    ...stored.analyses.map((it) => toItem(it, 'lab')),
   ];
   return {
     items,
@@ -382,8 +426,8 @@ function compositionFromStored(stored: StoredComposition): ProgramComposition {
     summaryGroups: groupByType(items),
     consultationsSummary: buildConsultationsSummary(items),
     visit2ConsultationsSummary: '',
-    instrumentalSummary: namesAsIs(stored.diagnostics),
-    labSummary: namesAsIs(stored.analyses),
+    instrumentalSummary: namesAsIs(stored.diagnostics.map((i) => i.name)),
+    labSummary: namesAsIs(stored.analyses.map((i) => i.name)),
     labUncategorized: [],
     visitCount: stored.visits ?? 0,
     visit1Groups: groupByType(items),
