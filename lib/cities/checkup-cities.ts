@@ -98,7 +98,16 @@ export const CHECKUP_CITIES: Record<string, CheckupCity> = {
     clinicSlug: 'onclinic-dnipro',
     clinics: [{ slug: 'onclinic-dnipro', tildaPath: '/ukr/onclinic-dnipro', shortName: 'ОН Клінік' }],
     otherServices: {},
-    reviewer: null,
+    reviewer: {
+      // Рецензент жіночих вікових сторінок – рішення Ігоря 24.11.2026 («рецензенти ті ж самі», як на хабах).
+      // Дані – з lib/cities/hub-reviewers.ts (BALAN). Чоловічі вікові сторінки рецензента не мають: шаблон його не виводить.
+      name: 'Балан Анна Вікторівна',
+      jobTitle: 'лікар акушер-гінеколог',
+      org: 'КНП «КМЦРПМ»',
+      category: '',
+      experience: '',
+      reviewDate: '',
+    },
     contentDir: 'city-template',
     ruSlug: null,
   },
@@ -160,7 +169,16 @@ export const CHECKUP_CITIES: Record<string, CheckupCity> = {
       { slug: 'onclinic-poltava', tildaPath: '/ukr/onclinic-poltava', shortName: 'ОН Клінік' },
     ],
     otherServices: {},
-    reviewer: null,
+    reviewer: {
+      // Рецензент жіночих вікових сторінок – рішення Ігоря 24.11.2026 («рецензенти ті ж самі», як на хабах).
+      // Дані – з lib/cities/hub-reviewers.ts (BALAN). Чоловічі вікові сторінки рецензента не мають: шаблон його не виводить.
+      name: 'Балан Анна Вікторівна',
+      jobTitle: 'лікар акушер-гінеколог',
+      org: 'КНП «КМЦРПМ»',
+      category: '',
+      experience: '',
+      reviewDate: '',
+    },
     contentDir: 'city-template',
     ruSlug: 'poltava',
   },
