@@ -1,7 +1,7 @@
 # DATABASE.md – checkup-main
 
 Проект Supabase: `apuivrfokciooovrpmgj` (одна база для checkup-main, checkup-platform і medok).
-Версія: 2.3 · 22.11.2026 · Пакет 2, крок 1: таблиці `body_systems`, `system_sets`, `system_set_items` (міграція в PR, у базі ще не запущена) і об'єктний формат позиції складу. Попередня 2.2 · 17.11.2026 · Турція: `checkup_programs.currency` і `details`, 3 турецькі клініки, 2 філії, 19 програм USD (TURKEY-MIGRATION v0.6, розділ 2). Попередня: 2.1.1 · 05.11.2026 · 5 · НОРМАТИВ (§6.2 – порожній min_age не потрапляє в «Додати дослідження»). Попередня: 2.1 · 04.11.2026 (§1 – 4 таблиці кроку 2 A9; §6.2 – нова редакція під «Мій план»; §6.6, §6.7). Попередня: 2.0 · 27.09.2026. Схему знято з live-бази 27.09.2026 (information_schema, pg_policies, pg_constraint, schema_migrations), використання таблиць – grep коду checkup-main (sprint/kharkiv-v0) і checkup-platform (dev).
+Версія: 2.4 · 25.11.2026 · Позначки Ігоря в `clinics`: `checkup_capable`, `checkup_channel_checked_at`, `checkup_reviewer` (CONVEYOR-CITIES v1.2.1 §2.5; міграція в PR, у базі ще не запущена). Попередня 2.3 · 22.11.2026 · Пакет 2, крок 1: таблиці `body_systems`, `system_sets`, `system_set_items` (міграція в PR, у базі ще не запущена) і об'єктний формат позиції складу. Попередня 2.2 · 17.11.2026 · Турція: `checkup_programs.currency` і `details`, 3 турецькі клініки, 2 філії, 19 програм USD (TURKEY-MIGRATION v0.6, розділ 2). Попередня: 2.1.1 · 05.11.2026 · 5 · НОРМАТИВ (§6.2 – порожній min_age не потрапляє в «Додати дослідження»). Попередня: 2.1 · 04.11.2026 (§1 – 4 таблиці кроку 2 A9; §6.2 – нова редакція під «Мій план»; §6.6, §6.7). Попередня: 2.0 · 27.09.2026. Схему знято з live-бази 27.09.2026 (information_schema, pg_policies, pg_constraint, schema_migrations), використання таблиць – grep коду checkup-main (sprint/kharkiv-v0) і checkup-platform (dev).
 
 Файл – довідник, не джерело правди. Перед міграцією або запитом, що спирається на структуру, звіряти live-схему через Supabase MCP.
 
@@ -32,7 +32,7 @@
 | system_set_items | checkup-main | Дует (Table Editor) | checkup-main | 0 (таблиці ще немає в базі) | read public (лише набори, які видно) | 6.8 |
 | patient_criteria | заморожений квіз (Р40, Р48) | не знайдено | не знайдено | 0 | insert public | 2.5 |
 | quiz_configs | заморожений квіз | не знайдено | не знайдено | 2 | read public (is_active) | 2.5 |
-| clinics | спільна | міграції обох репо | обидва репо | 42 (live 17.11.2026, з них 3 турецькі) | read public (is_active) | 3.1 |
+| clinics | спільна | міграції обох репо; позначки 2.5 – Ігор, `checkup_channel_checked_at` – ДАНІ | обидва репо; дашборд готовності клінік | 46 (live 25.11.2026, з них 4 турецькі) | read public (is_active) | 3.1 |
 | clinic_branches | спільна | міграції | обидва репо | 21 (live 17.11.2026, з них 2 турецькі) | read public | 3.2 |
 | onclinic_leads | checkup-platform | /api/leads/onclinic | CRM | 44 | insert public і service_role; select, update – service_role | 4 |
 | ccrm_leads | checkup-platform | /api/leads/tilda (вебхук Tilda) | CRM | 29 | insert public | 4 |
@@ -179,6 +179,20 @@ id, name (NN), slug (NN, unique), city (NN, default 'kyiv'), district, district_
 
 `phone` – джерело номера для «Показати номер», якщо у філії немає `tracking_phone` (SEO-STANDARD 1.4, §6). Live 27.09: у onclinic-kharkiv порожній.
 `telegram_chat_id`, `notify_email` – читає checkup-platform (lib/clinic-notify.ts); checkup-main маршрутизує Telegram через env.
+
+**Позначки Ігоря (CONVEYOR-CITIES v1.2.1 §2.5, рішення Ігоря 15.11 і 25.11.2026).** Міграція `supabase/migrations/20261125_clinics_checkup_flags.sql` (у базі ще не запущена; запускає Ігор). Код сайту ці колонки не читає; їх читає дашборд «Готовність клінік – чекапи».
+
+| Колонка | Тип | Значення | Хто пише |
+|---|---|---|---|
+| checkup_capable | boolean NN default false | умова 1: є договір і клініка погодила новий формат. Клініка без позначки в конфіг міста не йде | Ігор |
+| checkup_channel_checked_at | date | умова 3: дата, коли Ігор підтвердив, що канал заявок працює. Порожньо – не перевірено | ДАНІ після підтвердження Ігоря |
+| checkup_reviewer | text, CHECK `agreed` / `without` / null | умова 9: `agreed` – згода рецензента є; `without` – Ігор погодив вихід без рецензента; порожньо – не вирішено | Ігор |
+
+Значення, які ставить міграція (25.11): `checkup_capable = true` – усі `onclinic-*` міст, `credoclinic`, `rokl`, `symbiotyka` (14 рядків; мережевий неактивний `onclinic` – ні); `oxfordmed`, `100zhyttya*`, `cmsd-poltava` і решта – false. `checkup_reviewer = 'agreed'` – `onclinic-dnipro`, `onclinic-poltava`, `onclinic-cherkasy`, `onclinic-kharkiv`; решта порожні. `checkup_channel_checked_at` – порожньо у всіх.
+
+Перевірка після запуску: `select slug, checkup_capable, checkup_reviewer, checkup_channel_checked_at from clinics where checkup_capable or checkup_reviewer is not null order by slug;` – 14 рядків, з них 4 з `agreed`.
+
+Відкат (оборотний, колонки нові): `alter table public.clinics drop constraint if exists clinics_checkup_reviewer_check, drop column if exists checkup_capable, drop column if exists checkup_channel_checked_at, drop column if exists checkup_reviewer;`
 
 ### 3.2 clinic_branches
 
@@ -543,6 +557,7 @@ RLS (увімкнено на всіх трьох; політик insert/update �
 
 ## 7. Історія
 
+- 2.4 · 25.11.2026 – §3.1: позначки Ігоря в `clinics` (`checkup_capable`, `checkup_channel_checked_at`, `checkup_reviewer` з CHECK) і їхні значення за рішенням Ігоря 25.11 (CONVEYOR-CITIES v1.2.1 §2.5, Етап 0 §3.1); міграція `clinics_checkup_flags` у PR, у базі ще не запущена. Live-лічильник `clinics` – 46.
 - 2.3 · 22.11.2026 – пакет 2, крок 1 (§6.8, my-plan v0.8.3 – у наборів немає полів обґрунтування): міграція `body_system_sets` (`body_systems`, `system_sets`, `system_set_items`, RLS, у базі ще не запущена); позиція `checkup_programs.composition` може бути об'єктом `{name, system_code, purpose}`, `parseStoredComposition` приймає обидва види.
 - 2.2 · 17.11.2026 – міграції `turkey_currency_details`, `turkey_seed_1_clinics_branches`, `turkey_seed_2_programs_{acibadem,anadolu,liv}` (TURKEY-MIGRATION.md v0.6, розділ 2): колонки `checkup_programs.currency` (NOT NULL DEFAULT 'UAH', CHECK UAH/USD/EUR; 137 наявних рядків отримали UAH) і `details` (jsonb); 3 клініки, 2 філії, 19 програм USD. Live-лічильники в розділі 1 оновлено (programs 156, clinics 42, branches 21).
 - 2.1.1 · 05.11.2026 – §6.2, «Додати дослідження»: обстеження з порожнім `min_age` не показується (my-plan v0.5 §6, рішення Ігоря 05.11).
