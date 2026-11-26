@@ -153,6 +153,7 @@ export function BookCta({
   variant = 'primary',
   className = '',
   selectedAdditionalServices,
+  lead,
 }: {
   programSlug?: string;
   sourceCta: string;
@@ -163,6 +164,9 @@ export function BookCta({
   /** Резолвлені назви обраних доп. послуг (AdditionalServices) — опційно,
    *  прокидається в open-booking-flow. Рішення Cowork 29.08.2026 п.2. */
   selectedAdditionalServices?: string[];
+  /** Мітки ліда, які форма записує в leads.variant і leads.entry_point (значення – лише з тих, що приймає /api/leads:
+   *  entry_point 'page' | 'quiz' | 'search', variant 1–3). Каталог хабу статі: variant 3, entry_point 'page', sourceCta 'catalog'. */
+  lead?: { variant?: 1 | 2 | 3; entryPoint?: 'page' | 'quiz' | 'search' };
 }) {
   // ui-kit v1.1 §8: crimson (--brand-accent) – УСІ кнопки запису основного домену.
   // 'primary' і 'crimson' – одна роль (booking); 'crimson' лишається як аліас на один реліз.
@@ -180,7 +184,7 @@ export function BookCta({
       onClick={() =>
         window.dispatchEvent(
           new CustomEvent('open-booking-flow', {
-            detail: { programSlug: programSlug ?? null, sourceCta, selectedAdditionalServices },
+            detail: { programSlug: programSlug ?? null, sourceCta, selectedAdditionalServices, lead },
           })
         )
       }
@@ -226,6 +230,7 @@ export default function BookingFlow({
   const [programSlug, setProgramSlug] = useState<string | null>(null);
   // Форма відкрита зі списку програм (age-page-zones v0.7.1 §7): «← Інша програма» повертає до списку.
   const [fromPicker, setFromPicker] = useState(false);
+  const [leadMeta, setLeadMeta] = useState<{ variant?: 1 | 2 | 3; entryPoint?: 'page' | 'quiz' | 'search' } | null>(null);
   const [branchId, setBranchId] = useState<string>(branches[0]?.id ?? '');
   const [dateLabel, setDateLabel] = useState('');
   const [name, setName] = useState('');
@@ -244,11 +249,13 @@ export default function BookingFlow({
         sourceCta: string;
         selectedAdditionalServices?: string[];
         fromPicker?: boolean;
+        lead?: { variant?: 1 | 2 | 3; entryPoint?: 'page' | 'quiz' | 'search' };
       };
       // Кілька клінік на сторінці – по модалу на клініку: модал відкривається лише для своїх програм.
       if (detail.programSlug && programs.length > 0 && !programs.some((p) => p.slug === detail.programSlug)) return;
       setProgramSlug(detail.programSlug);
       setFromPicker(Boolean(detail.fromPicker));
+      setLeadMeta(detail.lead ?? null);
       setSourceCta(detail.sourceCta);
       setSelectedAdditionalServices(detail.selectedAdditionalServices ?? []);
       setStep(1);
@@ -310,6 +317,8 @@ export default function BookingFlow({
           selected_date_label: dateLabel || null,
           source_page: window.location.pathname,
           source_cta: sourceCta,
+          ...(leadMeta?.variant ? { variant: leadMeta.variant } : {}),
+          ...(leadMeta?.entryPoint ? { entry_point: leadMeta.entryPoint } : {}),
           // Обране в AdditionalServices — вираження інтересу, не замовлення (Р30).
           // Колонки під структурований перелік немає (рішення Cowork 29.08.2026 п.3) —
           // передається текстом у comment, той самий рядок іде в Telegram.
