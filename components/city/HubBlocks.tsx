@@ -441,7 +441,8 @@ export function hubJsonLd(opts: {
   dateModified: string;
   reviewer: HubReviewer;
   breadcrumbs: { name: string; item: string }[];
-  itemList: { name: string; url: string }[];
+  /** price + clinic – програма каталогу (Service з Offer, UAH); без них – посилання (ListItem з name і url). */
+  itemList: { name: string; url: string; price?: number | null; clinic?: string }[];
   faq: CityFaqItem[];
 }): object[] {
   const { reviewer } = opts;
@@ -486,7 +487,23 @@ export function hubJsonLd(opts: {
     out.push({
       '@context': 'https://schema.org',
       '@type': 'ItemList',
-      itemListElement: opts.itemList.map((it, i) => ({ '@type': 'ListItem', position: i + 1, name: it.name, url: it.url })),
+      itemListElement: opts.itemList.map((it, i) =>
+        it.clinic
+          ? {
+              '@type': 'ListItem',
+              position: i + 1,
+              item: {
+                '@type': 'Service',
+                name: it.name,
+                url: it.url,
+                provider: { '@type': 'MedicalClinic', name: it.clinic },
+                ...(typeof it.price === 'number' && it.price > 0
+                  ? { offers: { '@type': 'Offer', price: it.price, priceCurrency: 'UAH', url: it.url } }
+                  : {}),
+              },
+            }
+          : { '@type': 'ListItem', position: i + 1, name: it.name, url: it.url },
+      ),
     });
   }
   if (opts.faq.length) {

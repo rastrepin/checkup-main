@@ -14,7 +14,8 @@ import { HERO_DISCLAIMER, programsItemListLd } from '@/lib/programs/age-page-sha
 import MyPlan from '@/components/plan/MyPlan';
 import SiteFooter from '@/components/frame/SiteFooter';
 import AgeProgramsZone, { MAX_AGE_CARDS, visitsMeta, type AgeZoneCard } from '@/components/city/AgeProgramsZone';
-import { clinicZoneTexts } from '@/lib/content/age-page-texts';
+import { catalogHref, clinicZoneTexts } from '@/lib/content/age-page-texts';
+import { countForAge, fetchGenderCatalog } from '@/lib/programs/catalog';
 import { fetchMyPlan } from '@/lib/plan/data';
 
 // Вікова сторінка міста – чернетка SPRINT-KHARKIV-v0, каркас 5.2 (12 блоків).
@@ -212,7 +213,16 @@ export default async function MaleAgeDo30CityPage({ citySlug }: { citySlug: stri
       : [],
   );
   // Тексти зони програм – ключ 6c_clinic_zone у .md; ключа немає – тексту немає (lib/content/age-page-texts.ts).
-  const zoneTexts = clinicZoneTexts(city, 'male', 'do-30-rokiv', zoneCards.length);
+  // Каталог програм клінік хабу статі (gender-hub v0.1; НОРМАТИВ 26.11): посилання «Усі програми для … →» з фільтром за віком
+  // (#age=…) – лише для пар «стать + місто», де каталог є. {n} – програми каталогу для цього віку (catalog_more – понад 3, інакше catalog_all).
+  const catalog = await fetchGenderCatalog(city, 'male');
+  const catalogCount = countForAge(catalog, 'do-30-rokiv');
+  const zoneTexts = clinicZoneTexts(city, 'male', 'do-30-rokiv', catalogCount);
+  const catalogLabel = catalogCount > 3 ? zoneTexts.catalogMore : zoneTexts.catalogAll;
+  const catalogLink =
+    catalog.programs.length > 0 && catalogLabel
+      ? { href: catalogHref('male', 'do-30-rokiv', city), label: catalogLabel, filterAge: 'do-30-rokiv', programsCount: catalogCount }
+      : null;
   // Закріплена панель вікової сторінки – лише панель плану (MyPlanClient): відступ під футером, коли вона є на сторінці.
   const planData = await fetchMyPlan('male', 'do-30-rokiv', city);
   const planPanel = Boolean(planData && planData.clinics.length > 0);
@@ -321,7 +331,7 @@ export default async function MaleAgeDo30CityPage({ citySlug }: { citySlug: stri
               {zoneTexts.sub && <p className="mt-3 text-[17px] leading-relaxed text-gray-600">{zoneTexts.sub}</p>}
             </div>
             <div className="mt-6">
-              <AgeProgramsZone cards={zoneCards} cityLoc={city.loc} sourceCta={SOURCE_CTA} nature={zoneTexts.nature}>
+              <AgeProgramsZone cards={zoneCards} cityLoc={city.loc} sourceCta={SOURCE_CTA} nature={zoneTexts.nature} catalogLink={catalogLink}>
                 {zoneCards.length === 0 ? (
                   <p className={P}>Дані про програму клініки зараз недоступні. Перелік вище можна пройти в будь-якій клініці.</p>
                 ) : (

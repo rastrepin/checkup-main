@@ -53,6 +53,17 @@ export const planEvents = {
   bookStart: (p: PlanEventBase & { items: number; clinic: string; price: number }) => track('plan_book_start', p),
 };
 
+/** Події каталогу програм клінік на хабі статі (gender-hub v0.1 §8). Усі – з variant і entry_point каталогу.
+ *  Це параметри подій аналітики, не поля ліда: у лід каталог передає entry_point 'page' (маршрут заявок не змінюється). */
+export const CATALOG_EVENT_BASE = { variant: 3, entry_point: 'gender-hub' } as const;
+export const catalogEvents = {
+  listFilter: (p: { filter: 'age'; value: string; source: 'link' | 'manual' }) => track('list_filter', { ...p, ...CATALOG_EVENT_BASE }),
+  listSort: (p: { value: string }) => track('list_sort', { ...p, ...CATALOG_EVENT_BASE }),
+  listMore: (p: { shown: number; total: number }) => track('list_more', { ...p, ...CATALOG_EVENT_BASE }),
+  clinicOpen: (p: { clinic: string; program: string; position: number; sort: string; filters: string; has_discount: boolean }) =>
+    track('clinic_open', { ...p, ...CATALOG_EVENT_BASE }),
+};
+
 /** Події списку програм вікової сторінки (age-page-zones v0.9.2 §8). Без GA подія нікуди не йде.
  *  catalog_link_click – клік по посиланню на каталог хабу статі; спрацьовує лише коли посилання увімкнене.
  */
