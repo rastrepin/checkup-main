@@ -191,7 +191,16 @@ export const CHECKUP_CITIES: Record<string, CheckupCity> = {
     clinicSlug: 'onclinic-cherkasy',
     clinics: [{ slug: 'onclinic-cherkasy', tildaPath: '/ukr/onclinic-cherkasy', shortName: 'ОН Клінік' }],
     otherServices: {},
-    reviewer: null,
+    reviewer: {
+      // Рецензент жіночих вікових сторінок – рішення Ігоря 24.11.2026 («рецензенти ті самі», що в Дніпрі й Полтаві).
+      // Дані – з lib/cities/hub-reviewers.ts (BALAN). Чоловічі вікові сторінки рецензента не мають: шаблон його не виводить.
+      name: 'Балан Анна Вікторівна',
+      jobTitle: 'лікар акушер-гінеколог',
+      org: 'КНП «КМЦРПМ»',
+      category: '',
+      experience: '',
+      reviewDate: '',
+    },
     contentDir: 'city-template',
     ruSlug: 'cherkassy',
   },

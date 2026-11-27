@@ -105,3 +105,78 @@ export function planTexts(city: CheckupCity, gender: PlanGender, seg: AgeSegment
 export function catalogHref(gender: PlanGender, seg: AgeSegment, city: CheckupCity): string {
   return `/ukr/${gender}-checkup/${city.slug}#age=${seg}`;
 }
+
+// ─── Каталог програм клінік на хабі статі (content/{contentDir}/{стать}-checkup.md, розділ `## catalog`) ──────────
+// Плейсхолдери хабу – snake_case, як у файлі (рішення Нормативу 26.11): {in_city}, {min_price}, {group_gen}, {n}, {total}, {k}.
+// {in_city}, {min_price}, {gender_gen} підставляє сервер; {n}, {total}, {k}, {group_gen} залишаються в тексті для клієнта.
+// Ключа немає – тексту немає (рядок або елемент не виводиться).
+
+/** `key: "текст"` з підставленими значеннями; плейсхолдер без значення лишається в тексті ({n}, {total}, {k}, {group_gen}). */
+export function mdTemplate(raw: string | null, key: string, vars: CityMdVars): string | null {
+  const m = raw?.match(new RegExp(`^${key}:\\s*"(.*)"\\s*$`, 'm'));
+  const text = m ? fillPlaceholders(m[1], vars).trim() : '';
+  return text || null;
+}
+
+export interface CatalogTexts {
+  eyebrow: string | null;
+  h2: string | null;
+  /** «Програми від {min_price} грн» – вже з ціною; null – ціни немає або ключа немає. */
+  priceLine: string | null;
+  /** Речення про знижку – показується лише коли хоч одна програма каталогу має знижку. */
+  discount: string | null;
+  ageCardLink: string | null;
+  filterLabel: string | null;
+  filterAll: string | null;
+  /** Вікові групи за порядком: до 30, 30–40, 40–50, після 50. */
+  filterAges: string[];
+  sortLabel: string | null;
+  sortOptions: string[];
+  sortNote: string | null;
+  shown: string | null;
+  more: string | null;
+  open: string | null;
+  ageAny: string | null;
+  ageAfter40: string | null;
+  empty: string | null;
+  emptyPlanLink: string | null;
+  emptyAllLink: string | null;
+}
+
+export function catalogTexts(raw: string | null, vars: CityMdVars, minPrice: number | null): CatalogTexts {
+  const t = (key: string, extra: CityMdVars = {}) => mdTemplate(raw, key, { ...vars, ...extra });
+  const priceText = minPrice === null ? null : minPrice.toLocaleString('uk-UA').replace(/\s/g, '\u00a0');
+  return {
+    eyebrow: t('eyebrow'),
+    h2: t('h2'),
+    priceLine: priceText === null ? null : t('price_line', { min_price: priceText }),
+    discount: t('discount'),
+    ageCardLink: t('age_card_link'),
+    filterLabel: t('filter_label'),
+    filterAll: t('filter_all'),
+    filterAges: listFrom(raw, 'filter_ages'),
+    sortLabel: t('sort_label'),
+    sortOptions: listFrom(raw, 'sort_options'),
+    sortNote: t('sort_note'),
+    shown: t('shown'),
+    more: t('more'),
+    open: t('open'),
+    ageAny: t('program_age_any'),
+    ageAfter40: t('program_age_after_40'),
+    empty: t('empty'),
+    emptyPlanLink: t('empty_plan_link'),
+    emptyAllLink: t('empty_all_link'),
+  };
+}
+
+/** `key: ["a", "b"]` без підстановки (підписи фільтра і сортування). */
+function listFrom(raw: string | null, key: string): string[] {
+  const m = raw?.match(new RegExp(`^${key}:\\s*(\\[.*\\])\\s*$`, 'm'));
+  if (!m) return [];
+  try {
+    const arr: unknown = JSON.parse(m[1]);
+    return Array.isArray(arr) ? arr.filter((x): x is string => typeof x === 'string' && x.trim() !== '').map((x) => x.trim()) : [];
+  } catch {
+    return [];
+  }
+}

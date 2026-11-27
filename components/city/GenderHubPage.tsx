@@ -6,7 +6,6 @@ import CityMdBlocks from '@/components/city/CityMdBlocks';
 import {
   absUrl,
   AuthorAndRating,
-  ClinicsBlock,
   docMeta,
   docText,
   FaqBlock,
@@ -23,7 +22,13 @@ import {
 } from '@/components/city/HubBlocks';
 import { faqItems, loadCityMdSections, resolvedBlocks, sectionHeading, sectionText } from '@/lib/content/city-md';
 import { getCheckupCity, type CheckupCity } from '@/lib/cities/checkup-cities';
-import { cityVariant, fetchCityClinics, minPriceFor, SITE } from '@/lib/cities/hub-data';
+import { cityVariant, fetchCityClinics, SITE } from '@/lib/cities/hub-data';
+import ProgramCatalogBlock from '@/components/city/ProgramCatalogBlock';
+import { catalogTexts } from '@/lib/content/age-page-texts';
+import { countForAge, fetchGenderCatalog } from '@/lib/programs/catalog';
+import { CATALOG_AGES, isCatalogAge } from '@/lib/programs/catalog-age';
+import type { AgeSegment } from '@/lib/plan/age-groups';
+import { fillLabel } from '@/lib/format/labels';
 import { HUB_REVIEWERS } from '@/lib/cities/hub-reviewers';
 import SiteFooter from '@/components/frame/SiteFooter';
 
@@ -33,9 +38,10 @@ import SiteFooter from '@/components/frame/SiteFooter';
 // нові питання FAQ, рядок рецензента) і решта – {stat}-checkup.md v0 без змін.
 // Блоки 5 (клініки), 8 (рецензент FAQ), 10 (автор, рейтинг), 11 (GEO) – за правилами хабу міста
 // (docs/ux/specs/2026-11-city-hub.md §8); блок «Контакти клініки» v0 замінено блоком клінік (CITY-HUB-TEXTS §9).
-// Порядок: hero · вікові картки · що змінюється з віком · клініки · FAQ і рецензент · автор і джерела · GEO.
-// Вікові картки – лише посилання на вікові сторінки: без рядка програми і без «Записатися» (рішення Ігоря 14.11,
-// НОРМАТИВ 14.11 В.1). Клініка і ціна – лише в блоці клінік. Запису і crimson на сторінці немає (ui-kit §6.1).
+// Порядок (gender-hub v0.1 §1, НОРМАТИВ 26.11): hero · вікові картки · каталог програм клінік · що змінюється з віком ·
+// FAQ і рецензент · автор і джерела · GEO. Окремого блоку «Клініка-партнер» немає: клініки представляє каталог.
+// Вікові картки – вхід у фільтр каталогу: назва – посилання на вікову сторінку, під описом – «Програми клінік для цього віку · {n} ↓»
+// (ставить #age=…). Кнопок запису і цін у вікових картках немає; запис – лише в рамці програми каталогу (ui-kit §6.1).
 // Телефонів немає (PLATFORM-LINE §5). hreflang немає (SEO-MIGRATION §4).
 
 export type HubGender = 'female' | 'male';
@@ -59,17 +65,27 @@ function pageCity(gender: HubGender, citySlug: string) {
 }
 
 async function loadGenderHub(gender: HubGender, city: CheckupCity) {
-  const [clinics, minPrice] = await Promise.all([fetchCityClinics(city), minPriceFor(city, gender)]);
-  const vars = hubVars(city, clinics, minPrice, { shortNames: true });
+  // {min_price} у meta і в шапці каталогу – одне число: найменша ціна до сплати серед програм каталогу (gender-hub §3.1).
+  const [clinics, catalog] = await Promise.all([fetchCityClinics(city), fetchGenderCatalog(city, gender)]);
+  const vars = hubVars(city, clinics, catalog.minPrice, { shortNames: true });
   const doc = loadCityMdSections(city.contentDir, `${gender}-checkup`, vars);
-  return { clinics, vars, doc };
+  return { clinics, vars, doc, catalog };
+}
+
+/** Ключі meta description за порядком. Одна клініка в конфігурації міста і 2+ програми в каталозі – `meta_catalog_a`
+ *  («Програми клініки і ціни від {min_price} грн»; {min_price} – мінімум каталогу, те саме число, що в шапці каталогу).
+ *  Одна програма – `meta_a`, кілька клінік – `meta_b`, без ціни – `meta_noprice` (як було). */
+function metaKeys(city: CheckupCity, catalog: { programs: unknown[] }): string[] {
+  const variant = cityVariant(city);
+  if (variant === 'a' && catalog.programs.length >= 2) return ['meta_catalog_a', 'meta_a', 'meta_noprice'];
+  return [`meta_${variant}`, 'meta_noprice'];
 }
 
 export async function genderHubMetadataFor(gender: HubGender, citySlug: string): Promise<Metadata> {
   const { city, PAGE_URL } = pageCity(gender, citySlug);
-  const { doc } = await loadGenderHub(gender, city);
+  const { doc, catalog } = await loadGenderHub(gender, city);
   const title = docText(doc, 'title') ?? undefined;
-  const description = docMeta(doc, [`meta_${cityVariant(city)}`, 'meta_noprice']);
+  const description = docMeta(doc, metaKeys(city, catalog));
   return {
     title: title ? { absolute: title } : undefined,
     description,
@@ -81,7 +97,7 @@ export async function genderHubMetadataFor(gender: HubGender, citySlug: string):
 
 export default async function GenderHubPage({ gender, citySlug }: { gender: HubGender; citySlug: string }) {
   const { city, PAGE_URL } = pageCity(gender, citySlug);
-  const { clinics, vars, doc } = await loadGenderHub(gender, city);
+  const { clinics, vars, doc, catalog } = await loadGenderHub(gender, city);
   if (!doc) notFound();
   const g = G[gender];
   const variant = cityVariant(city);
@@ -92,16 +108,17 @@ export default async function GenderHubPage({ gender, citySlug }: { gender: HubG
   const cross = firstLink(s.cross);
   const faq = faqItems(s.faq);
   const reviewer = HUB_REVIEWERS[gender];
-  const showClinics = clinics.length > 0;
+  const showCatalog = catalog.programs.length > 0;
   const showGeo = geoHasContent(city, clinics);
+  const texts = catalogTexts(doc.raw.catalog ?? null, vars, catalog.minPrice);
 
-  const order = ['cards', 'changes', showClinics && 'clinics', 'faq', 'author', showGeo && 'geo'].filter((k): k is string => Boolean(k));
+  const order = ['cards', showCatalog && 'catalog', 'changes', 'faq', 'author', showGeo && 'geo'].filter((k): k is string => Boolean(k));
   const tone = (k: string): 'white' | 'muted' => (order.indexOf(k) % 2 === 0 ? 'white' : 'muted');
 
   const jsonLd = hubJsonLd({
     pageUrl: PAGE_URL,
     name: h1,
-    description: docMeta(doc, [`meta_${variant}`, 'meta_noprice']),
+    description: docMeta(doc, metaKeys(city, catalog)),
     dateModified: UPDATED_ISO,
     reviewer,
     breadcrumbs: [
@@ -109,8 +126,13 @@ export default async function GenderHubPage({ gender, citySlug }: { gender: HubG
       { name: city.name, item: `${SITE}/ukr/${city.slug}` },
       { name: g.crumb, item: PAGE_URL },
     ],
-    // ItemList – лише видимі посилання на вікові сторінки (SEO-MIGRATION §7).
-    itemList: cards.map((c) => ({ name: c.label, url: absUrl(c.href) })),
+    // ItemList – лише програми каталогу, що є в серверному HTML (gender-hub §7): назва програми, ціна до сплати, UAH.
+    itemList: catalog.programs.map((p) => ({
+      name: p.program.name_ua,
+      url: `${PAGE_URL}#clinic-${p.key}`,
+      price: p.payable,
+      clinic: p.clinic.name,
+    })),
     faq,
   });
 
@@ -130,17 +152,34 @@ export default async function GenderHubPage({ gender, citySlug }: { gender: HubG
         <Section tone={tone('cards')} id="vik">
           <H2>{sectionHeading(s.age_cards)}</H2>
           <div className="mt-6 grid grid-cols-1 gap-[var(--space-grid)] md:grid-cols-2">
-            {/* Картка віку (В.1–В.2): уся картка – зона натиску, один <a> з текстом заголовка; hover – рамка --border-strong. */}
-            {cards.map((c) => (
-              <a
-                key={c.href}
-                href={c.href}
-                className="group flex flex-col h-full bg-white border border-[var(--border)] rounded-[var(--radius-lg)] p-[var(--space-card)] hover:border-[var(--border-strong)]"
-              >
-                <h3 className="text-[20px] font-semibold leading-[1.3] text-ink group-hover:text-link">{c.label} →</h3>
-                {c.line && <p className="mt-2 text-[15px] leading-relaxed text-text-secondary">{c.line}</p>}
-              </a>
-            ))}
+            {/* Картка віку: назва – посилання на вікову сторінку (перелінковка), опис, рядок-вхід у фільтр каталогу (gender-hub §2).
+                Картка не є одним великим посиланням: у ній два посилання з різною дією. */}
+            {cards.map((c) => {
+              const seg = CATALOG_AGES.find((a) => c.href.includes(`/${a}/`)) as AgeSegment | undefined;
+              const n = showCatalog && seg ? countForAge(catalog, seg) : 0;
+              return (
+                <div
+                  key={c.href}
+                  className="group flex flex-col h-full bg-white border border-[var(--border)] rounded-[var(--radius-lg)] p-[var(--space-card)] hover:border-[var(--border-strong)]"
+                >
+                  <h3 className="text-[20px] font-semibold leading-[1.3] text-ink">
+                    <a href={c.href} className="hover:text-link">
+                      {c.label} →
+                    </a>
+                  </h3>
+                  {c.line && <p className="mt-2 text-[15px] leading-relaxed text-text-secondary">{c.line}</p>}
+                  {seg && isCatalogAge(seg) && n > 0 && texts.ageCardLink && (
+                    <a
+                      href={`#age=${seg}`}
+                      data-catalog-age={seg}
+                      className="mt-auto pt-3 inline-flex items-center min-h-[44px] text-[15px] font-semibold text-link hover:underline underline-offset-[3px]"
+                    >
+                      {fillLabel(texts.ageCardLink, { n })}
+                    </a>
+                  )}
+                </div>
+              );
+            })}
           </div>
           {cross && (
             <p className="mt-6 text-[15px]">
@@ -151,13 +190,13 @@ export default async function GenderHubPage({ gender, citySlug }: { gender: HubG
           )}
         </Section>
 
+        {/* Каталог програм клінік (gender-hub §1 блок 4): перший блок після вікових карток, до «Як обрати свій чекап». */}
+        {showCatalog && <ProgramCatalogBlock catalog={catalog} texts={texts} city={city} gender={gender} tone={tone('catalog')} />}
+
         {/* Що змінюється з віком – v0 без змін */}
         <Section tone={tone('changes')} width="read" id="shcho-zminiuietsia">
           <MdSectionBody section={s.what_changes} />
         </Section>
-
-        {/* 5. Клініки-партнери – замість «Контакти клініки» v0 */}
-        {showClinics && <ClinicsBlock doc={doc} city={city} clinics={clinics} shortNames tone={tone('clinics')} />}
 
         {/* 8. FAQ і рядок медичного рецензента */}
         <FaqBlock heading={sectionHeading(s.faq)} items={faq} reviewer={reviewer} tone={tone('faq')} />
@@ -174,7 +213,8 @@ export default async function GenderHubPage({ gender, citySlug }: { gender: HubG
         {/* 11. GEO – без H2, статичний текст з даних */}
         {showGeo && <GeoBlock doc={doc} city={city} clinics={clinics} vars={vars} shortNames tone={tone('geo')} />}
       </main>
-      <SiteFooter city={city.slug} />
+      {/* Відступ під закріпленою панеллю mobile каталогу (§5.1). */}
+      <SiteFooter city={city.slug} stickyPad={showCatalog} />
     </>
   );
 }
