@@ -72,11 +72,20 @@ async function loadGenderHub(gender: HubGender, city: CheckupCity) {
   return { clinics, vars, doc, catalog };
 }
 
+/** Ключі meta description за порядком. Одна клініка в конфігурації міста і 2+ програми в каталозі – `meta_catalog_a`
+ *  («Програми клініки і ціни від {min_price} грн»; {min_price} – мінімум каталогу, те саме число, що в шапці каталогу).
+ *  Одна програма – `meta_a`, кілька клінік – `meta_b`, без ціни – `meta_noprice` (як було). */
+function metaKeys(city: CheckupCity, catalog: { programs: unknown[] }): string[] {
+  const variant = cityVariant(city);
+  if (variant === 'a' && catalog.programs.length >= 2) return ['meta_catalog_a', 'meta_a', 'meta_noprice'];
+  return [`meta_${variant}`, 'meta_noprice'];
+}
+
 export async function genderHubMetadataFor(gender: HubGender, citySlug: string): Promise<Metadata> {
   const { city, PAGE_URL } = pageCity(gender, citySlug);
-  const { doc } = await loadGenderHub(gender, city);
+  const { doc, catalog } = await loadGenderHub(gender, city);
   const title = docText(doc, 'title') ?? undefined;
-  const description = docMeta(doc, [`meta_${cityVariant(city)}`, 'meta_noprice']);
+  const description = docMeta(doc, metaKeys(city, catalog));
   return {
     title: title ? { absolute: title } : undefined,
     description,
@@ -109,7 +118,7 @@ export default async function GenderHubPage({ gender, citySlug }: { gender: HubG
   const jsonLd = hubJsonLd({
     pageUrl: PAGE_URL,
     name: h1,
-    description: docMeta(doc, [`meta_${variant}`, 'meta_noprice']),
+    description: docMeta(doc, metaKeys(city, catalog)),
     dateModified: UPDATED_ISO,
     reviewer,
     breadcrumbs: [
