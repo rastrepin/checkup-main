@@ -20,7 +20,7 @@ import {
   MdSectionBody,
   SourcesList,
 } from '@/components/city/HubBlocks';
-import { faqItems, loadCityMdSections, resolvedBlocks, sectionHeading, sectionText } from '@/lib/content/city-md';
+import { faqItems, loadCityMdSections, resolvedBlocks, sectionHeading, sectionText, type CityMdSection, type MdBlock } from '@/lib/content/city-md';
 import { getCheckupCity, type CheckupCity } from '@/lib/cities/checkup-cities';
 import { cityVariant, fetchCityClinics, SITE } from '@/lib/cities/hub-data';
 import ProgramCatalogBlock from '@/components/city/ProgramCatalogBlock';
@@ -72,6 +72,19 @@ async function loadGenderHub(gender: HubGender, city: CheckupCity) {
   return { clinics, vars, doc, catalog };
 }
 
+/** Абзац «Лід: …» розділу age_cards (без префікса). Немає – null: тексти не вигадуємо. */
+function ageCardsLead(section: CityMdSection | undefined): MdBlock | null {
+  for (const b of resolvedBlocks(section)) {
+    if (b.type !== 'p') continue;
+    const first = b.content[0];
+    if (first?.type !== 'text' || !/^Лід:\s*/.test(first.text)) continue;
+    const text = first.text.replace(/^Лід:\s*/, '');
+    const content = text ? [{ ...first, text }, ...b.content.slice(1)] : b.content.slice(1);
+    return content.length > 0 ? { type: 'p', content } : null;
+  }
+  return null;
+}
+
 /** Ключі meta description за порядком. Одна клініка в конфігурації міста і 2+ програми в каталозі – `meta_catalog_a`
  *  («Програми клініки і ціни від {min_price} грн»; {min_price} – мінімум каталогу, те саме число, що в шапці каталогу).
  *  Одна програма – `meta_a`, кілька клінік – `meta_b`, без ціни – `meta_noprice` (як було). */
@@ -105,6 +118,7 @@ export default async function GenderHubPage({ gender, citySlug }: { gender: HubG
   const h1 = sectionText(s.h1) ?? '';
 
   const cards = linkItems(s.age_cards);
+  const ageLead = ageCardsLead(s.age_cards);
   const cross = firstLink(s.cross);
   const faq = faqItems(s.faq);
   const reviewer = HUB_REVIEWERS[gender];
@@ -151,6 +165,12 @@ export default async function GenderHubPage({ gender, citySlug }: { gender: HubG
         {/* Вікові картки */}
         <Section tone={tone('cards')} id="vik">
           <H2>{sectionHeading(s.age_cards)}</H2>
+          {/* Опис над картками: рядок «Лід: …» одразу після H2 у `## age_cards` (Контент); немає рядка – абзацу немає. */}
+          {ageLead && (
+            <div className="max-w-[720px] [&>p:first-child]:mt-3">
+              <CityMdBlocks blocks={[ageLead]} />
+            </div>
+          )}
           <div className="mt-6 grid grid-cols-1 gap-[var(--space-grid)] md:grid-cols-2">
             {/* Картка віку: назва – посилання на вікову сторінку (перелінковка), опис, рядок-вхід у фільтр каталогу (gender-hub §2).
                 Картка не є одним великим посиланням: у ній два посилання з різною дією. */}
