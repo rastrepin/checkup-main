@@ -104,13 +104,20 @@ export function ProgramIncludes({ composition }: { composition: ProgramCompositi
     <Accordion as="h4" summary="Що входить">
       <div className={`space-y-4 text-[15px] ${TEXT} pb-2`}>
         {composition.consultationsSummary && (
-          <div>
-            <p className="font-semibold text-ink mb-1">Консультації</p>
+          composition.visitsKnown ? (
+            <div>
+              <p className="font-semibold text-ink mb-1">Консультації</p>
+              <p>
+                Перший візит: {composition.consultationsSummary}.
+                {composition.visit2ConsultationsSummary && ` Другий візит: ${composition.visit2ConsultationsSummary}.`}
+              </p>
+            </div>
+          ) : (
+            /* Склад зі stored composition: візит позиції невідомий – рядок без «Перший візит» і «Другий візит». */
             <p>
-              Перший візит: {composition.consultationsSummary}.
-              {composition.visit2ConsultationsSummary && ` Другий візит: ${composition.visit2ConsultationsSummary}.`}
+              <span className="font-semibold text-ink">Консультації:</span> {composition.consultationsSummary}.
             </p>
-          </div>
+          )
         )}
         {lab.length > 0 && (
           <div>

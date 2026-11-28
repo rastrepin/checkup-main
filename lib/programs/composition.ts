@@ -61,6 +61,9 @@ export interface ProgramComposition {
   /** Лабораторні позиції без категорії опису (LAB_CATEGORY_BY_CODE): у labSummary не
    *  виводяться. Для звіту і перевірки даних. */
   labUncategorized: string[];
+  /** Візит кожної позиції відомий: склад з program_services (visit_number). false – склад зі stored composition
+   *  (checkup_programs.composition): візиту позиції там немає, тож «Перший візит / Другий візит» не показуються. */
+  visitsKnown: boolean;
   /** Для Блоку 7 "Як це проходить". */
   visitCount: number;
   visit1Groups: CompositionGroup[];
@@ -321,6 +324,7 @@ const EMPTY: ProgramComposition = {
   instrumentalSummary: '',
   labSummary: '',
   labUncategorized: [],
+  visitsKnown: false,
   visitCount: 0,
   visit1Groups: [],
   visit2Items: [],
@@ -429,6 +433,7 @@ function compositionFromStored(stored: StoredComposition): ProgramComposition {
     instrumentalSummary: namesAsIs(stored.diagnostics.map((i) => i.name)),
     labSummary: namesAsIs(stored.analyses.map((i) => i.name)),
     labUncategorized: [],
+    visitsKnown: false,
     visitCount: stored.visits ?? 0,
     visit1Groups: groupByType(items),
     visit2Items: [],
@@ -501,6 +506,7 @@ async function fetchServicesComposition(
       instrumentalSummary: buildInstrumentalSummary(summaryItems),
       labSummary: buildLabSummary(summaryItems),
       labUncategorized: uncategorizedLab(summaryItems),
+      visitsKnown: true,
       visitCount,
       visit1Groups: groupByType(visit1Items),
       visit2Items,
